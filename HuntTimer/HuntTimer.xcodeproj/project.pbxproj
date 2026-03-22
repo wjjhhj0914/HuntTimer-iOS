@@ -8,6 +8,12 @@
 
 /* Begin PBXBuildFile section */
 		93D4F3B62F702C9A0053F2A5 /* RealmSwift in Frameworks */ = {isa = PBXBuildFile; productRef = 93D4F3B52F702C9A0053F2A5 /* RealmSwift */; };
+		93D4F3B92F7030190053F2A5 /* RxCocoa in Frameworks */ = {isa = PBXBuildFile; productRef = 93D4F3B82F7030190053F2A5 /* RxCocoa */; };
+		93D4F3BB2F7030190053F2A5 /* RxSwift in Frameworks */ = {isa = PBXBuildFile; productRef = 93D4F3BA2F7030190053F2A5 /* RxSwift */; };
+		93D4F3BE2F70302F0053F2A5 /* Alamofire in Frameworks */ = {isa = PBXBuildFile; productRef = 93D4F3BD2F70302F0053F2A5 /* Alamofire */; };
+		93D4F3C12F7030400053F2A5 /* Kingfisher in Frameworks */ = {isa = PBXBuildFile; productRef = 93D4F3C02F7030400053F2A5 /* Kingfisher */; };
+		93D4F3C42F7030B70053F2A5 /* FSCalendar in Frameworks */ = {isa = PBXBuildFile; productRef = 93D4F3C32F7030B70053F2A5 /* FSCalendar */; };
+		93D4F3C72F7030CD0053F2A5 /* Toast in Frameworks */ = {isa = PBXBuildFile; productRef = 93D4F3C62F7030CD0053F2A5 /* Toast */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -40,7 +46,13 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				93D4F3BB2F7030190053F2A5 /* RxSwift in Frameworks */,
+				93D4F3C42F7030B70053F2A5 /* FSCalendar in Frameworks */,
+				93D4F3BE2F70302F0053F2A5 /* Alamofire in Frameworks */,
+				93D4F3B92F7030190053F2A5 /* RxCocoa in Frameworks */,
 				93D4F3B62F702C9A0053F2A5 /* RealmSwift in Frameworks */,
+				93D4F3C72F7030CD0053F2A5 /* Toast in Frameworks */,
+				93D4F3C12F7030400053F2A5 /* Kingfisher in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -84,6 +96,12 @@
 			name = HuntTimer;
 			packageProductDependencies = (
 				93D4F3B52F702C9A0053F2A5 /* RealmSwift */,
+				93D4F3B82F7030190053F2A5 /* RxCocoa */,
+				93D4F3BA2F7030190053F2A5 /* RxSwift */,
+				93D4F3BD2F70302F0053F2A5 /* Alamofire */,
+				93D4F3C02F7030400053F2A5 /* Kingfisher */,
+				93D4F3C32F7030B70053F2A5 /* FSCalendar */,
+				93D4F3C62F7030CD0053F2A5 /* Toast */,
 			);
 			productName = HuntTimer;
 			productReference = 93D4F37C2F7006DE0053F2A5 /* HuntTimer.app */;
@@ -115,6 +133,11 @@
 			minimizedProjectReferenceProxies = 1;
 			packageReferences = (
 				93D4F3B22F702C9A0053F2A5 /* XCRemoteSwiftPackageReference "realm-swift" */,
+				93D4F3B72F7030190053F2A5 /* XCRemoteSwiftPackageReference "RxSwift" */,
+				93D4F3BC2F70302F0053F2A5 /* XCRemoteSwiftPackageReference "Alamofire" */,
+				93D4F3BF2F7030400053F2A5 /* XCRemoteSwiftPackageReference "Kingfisher" */,
+				93D4F3C22F7030B70053F2A5 /* XCRemoteSwiftPackageReference "FSCalendar" */,
+				93D4F3C52F7030CD0053F2A5 /* XCRemoteSwiftPackageReference "Toast-Swift" */,
 			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = 93D4F37D2F7006DE0053F2A5 /* Products */;
@@ -374,6 +397,46 @@
 				kind = branch;
 			};
 		};
+		93D4F3B72F7030190053F2A5 /* XCRemoteSwiftPackageReference "RxSwift" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/ReactiveX/RxSwift.git";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 6.10.2;
+			};
+		};
+		93D4F3BC2F70302F0053F2A5 /* XCRemoteSwiftPackageReference "Alamofire" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/Alamofire/Alamofire";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 5.11.1;
+			};
+		};
+		93D4F3BF2F7030400053F2A5 /* XCRemoteSwiftPackageReference "Kingfisher" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/onevcat/Kingfisher";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 8.8.0;
+			};
+		};
+		93D4F3C22F7030B70053F2A5 /* XCRemoteSwiftPackageReference "FSCalendar" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/WenchaoD/FSCalendar.git";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 2.8.4;
+			};
+		};
+		93D4F3C52F7030CD0053F2A5 /* XCRemoteSwiftPackageReference "Toast-Swift" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/scalessec/Toast-Swift.git";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 5.1.1;
+			};
+		};
 /* End XCRemoteSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
@@ -381,6 +444,36 @@
 			isa = XCSwiftPackageProductDependency;
 			package = 93D4F3B22F702C9A0053F2A5 /* XCRemoteSwiftPackageReference "realm-swift" */;
 			productName = RealmSwift;
+		};
+		93D4F3B82F7030190053F2A5 /* RxCocoa */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 93D4F3B72F7030190053F2A5 /* XCRemoteSwiftPackageReference "RxSwift" */;
+			productName = RxCocoa;
+		};
+		93D4F3BA2F7030190053F2A5 /* RxSwift */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 93D4F3B72F7030190053F2A5 /* XCRemoteSwiftPackageReference "RxSwift" */;
+			productName = RxSwift;
+		};
+		93D4F3BD2F70302F0053F2A5 /* Alamofire */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 93D4F3BC2F70302F0053F2A5 /* XCRemoteSwiftPackageReference "Alamofire" */;
+			productName = Alamofire;
+		};
+		93D4F3C02F7030400053F2A5 /* Kingfisher */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 93D4F3BF2F7030400053F2A5 /* XCRemoteSwiftPackageReference "Kingfisher" */;
+			productName = Kingfisher;
+		};
+		93D4F3C32F7030B70053F2A5 /* FSCalendar */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 93D4F3C22F7030B70053F2A5 /* XCRemoteSwiftPackageReference "FSCalendar" */;
+			productName = FSCalendar;
+		};
+		93D4F3C62F7030CD0053F2A5 /* Toast */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 93D4F3C52F7030CD0053F2A5 /* XCRemoteSwiftPackageReference "Toast-Swift" */;
+			productName = Toast;
 		};
 /* End XCSwiftPackageProductDependency section */
 	};
