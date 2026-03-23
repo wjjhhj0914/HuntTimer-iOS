@@ -24,23 +24,50 @@ final class LogView: BaseView {
     }()
 
     // MARK: - Public UI
-    let calendarToggle: UISegmentedControl = {
-        let sc = UISegmentedControl(items: ["📅 캘린더", "📋 목록"])
-        sc.selectedSegmentIndex = 0
-        sc.selectedSegmentTintColor = AppTheme.Color.primary
-        sc.setTitleTextAttributes([.foregroundColor: UIColor.white], for: .selected)
-        sc.setTitleTextAttributes([.foregroundColor: AppTheme.Color.textMedium], for: .normal)
-        return sc
+    let calendarButton: UIButton = {
+        var cfg = UIButton.Configuration.filled()
+        cfg.title = "캘린더"
+        cfg.image = UIImage(systemName: "calendar",
+                            withConfiguration: UIImage.SymbolConfiguration(pointSize: 11, weight: .semibold))
+        cfg.imagePadding = 4
+        cfg.imagePlacement = .leading
+        cfg.baseBackgroundColor = AppTheme.Color.primary
+        cfg.baseForegroundColor = .white
+        cfg.cornerStyle = .capsule
+        cfg.contentInsets = NSDirectionalEdgeInsets(top: 8, leading: 12, bottom: 8, trailing: 12)
+        cfg.titleTextAttributesTransformer = UIConfigurationTextAttributesTransformer { attr in
+            var a = attr; a.font = .systemFont(ofSize: 13, weight: .semibold); return a
+        }
+        return UIButton(configuration: cfg)
+    }()
+
+    let listButton: UIButton = {
+        var cfg = UIButton.Configuration.filled()
+        cfg.title = "목록"
+        cfg.image = UIImage(systemName: "list.bullet",
+                            withConfiguration: UIImage.SymbolConfiguration(pointSize: 11, weight: .semibold))
+        cfg.imagePadding = 4
+        cfg.imagePlacement = .leading
+        cfg.baseBackgroundColor = AppTheme.Color.primaryLight
+        cfg.baseForegroundColor = AppTheme.Color.textMedium
+        cfg.cornerStyle = .capsule
+        cfg.contentInsets = NSDirectionalEdgeInsets(top: 8, leading: 12, bottom: 8, trailing: 12)
+        cfg.titleTextAttributesTransformer = UIConfigurationTextAttributesTransformer { attr in
+            var a = attr; a.font = .systemFont(ofSize: 13, weight: .semibold); return a
+        }
+        return UIButton(configuration: cfg)
     }()
 
     var calendarContainer = UIView()
+    var summaryCardContainer = UIView()
 
     let calendarCollectionView: UICollectionView = {
         let layout = UICollectionViewFlowLayout()
         let itemW  = (UIScreen.main.bounds.width - 40 - 6 * 6) / 7
-        layout.itemSize                = CGSize(width: itemW, height: itemW + 16)
+        // +10: label(top3+~14) + gap3 + image20 + gap2 + dot6 + selectionBg padding6 → compact
+        layout.itemSize                = CGSize(width: itemW, height: itemW + 10)
         layout.minimumInteritemSpacing = 6
-        layout.minimumLineSpacing      = 4
+        layout.minimumLineSpacing      = 2
         let cv = UICollectionView(frame: .zero, collectionViewLayout: layout)
         cv.backgroundColor = .clear
         cv.isScrollEnabled = false
@@ -50,21 +77,22 @@ final class LogView: BaseView {
 
     let prevMonthButton: UIButton = {
         let btn = UIButton(type: .system)
-        btn.setTitle("‹", for: .normal)
-        btn.setTitleColor(AppTheme.Color.primary, for: .normal)
-        btn.titleLabel?.font = .systemFont(ofSize: 24, weight: .medium)
-        btn.backgroundColor  = AppTheme.Color.primaryLight
+        let cfg = UIImage.SymbolConfiguration(pointSize: 10, weight: .semibold)
+        btn.setImage(UIImage(systemName: "chevron.left", withConfiguration: cfg), for: .normal)
+        btn.tintColor = AppTheme.Color.primary
+        btn.backgroundColor = AppTheme.Color.primaryLight
         btn.layer.cornerRadius = 16
+        // SF Symbol은 UIButton.system 기본값(center/center)으로 정중앙 배치됨
         btn.snp.makeConstraints { $0.width.height.equalTo(32) }
         return btn
     }()
 
     let nextMonthButton: UIButton = {
         let btn = UIButton(type: .system)
-        btn.setTitle("›", for: .normal)
-        btn.setTitleColor(AppTheme.Color.primary, for: .normal)
-        btn.titleLabel?.font = .systemFont(ofSize: 24, weight: .medium)
-        btn.backgroundColor  = AppTheme.Color.primaryLight
+        let cfg = UIImage.SymbolConfiguration(pointSize: 10, weight: .semibold)
+        btn.setImage(UIImage(systemName: "chevron.right", withConfiguration: cfg), for: .normal)
+        btn.tintColor = AppTheme.Color.primary
+        btn.backgroundColor = AppTheme.Color.primaryLight
         btn.layer.cornerRadius = 16
         btn.snp.makeConstraints { $0.width.height.equalTo(32) }
         return btn
@@ -80,7 +108,11 @@ final class LogView: BaseView {
     // MARK: - Layout
     private func setupScrollView() {
         addSubview(scrollView)
-        scrollView.snp.makeConstraints { $0.edges.equalToSuperview() }
+        scrollView.snp.makeConstraints { make in
+            // Safe Area 상단을 기준으로 잡아 Status Bar와 겹침 방지
+            make.top.equalTo(safeAreaLayoutGuide.snp.top)
+            make.leading.trailing.bottom.equalToSuperview()
+        }
         scrollView.addSubview(contentStack)
         contentStack.snp.makeConstraints { make in
             make.top.leading.trailing.bottom.equalToSuperview()
@@ -92,14 +124,15 @@ final class LogView: BaseView {
         contentStack.addArrangedSubview(makeHeader())
         contentStack.addArrangedSubview(makeToggle())
         contentStack.addArrangedSubview(makeCalendarSection())
-        contentStack.addArrangedSubview(makeSummaryCard())
+        summaryCardContainer = makeSummaryCard()
+        contentStack.addArrangedSubview(summaryCardContainer)
         contentStack.addArrangedSubview(makeSessionList())
     }
 
     // MARK: - Sections
     private func makeHeader() -> UIView {
         let v     = UIView()
-        let title = UILabel.make(text: "활동 기록 📅", size: 22, weight: .black, color: AppTheme.Color.textDark)
+        let title = UILabel.make(text: "활동 기록", size: 22, weight: .black, color: AppTheme.Color.textDark)
         let sub   = UILabel.make(text: "뮤기의 사냥 히스토리", size: 13, color: AppTheme.Color.textMuted)
         let stack = UIStackView.make(axis: .vertical, spacing: 2)
         stack.addArrangedSubview(title)
@@ -115,14 +148,29 @@ final class LogView: BaseView {
 
     private func makeToggle() -> UIView {
         let v = UIView()
-        v.addSubview(calendarToggle)
-        calendarToggle.snp.makeConstraints { make in
+        let stack = UIStackView.make(axis: .horizontal, spacing: 8, distribution: .fillEqually)
+        stack.addArrangedSubview(calendarButton)
+        stack.addArrangedSubview(listButton)
+        v.addSubview(stack)
+        stack.snp.makeConstraints { make in
             make.top.bottom.equalToSuperview()
             make.leading.equalToSuperview().offset(20)
             make.trailing.equalToSuperview().offset(-20)
-            make.height.equalTo(38)
+            make.height.equalTo(44)
         }
         return v
+    }
+
+    func setToggleState(isCalendar: Bool) {
+        var calCfg = calendarButton.configuration!
+        calCfg.baseBackgroundColor = isCalendar ? AppTheme.Color.primary : AppTheme.Color.primaryLight
+        calCfg.baseForegroundColor = isCalendar ? .white : AppTheme.Color.textMedium
+        calendarButton.configuration = calCfg
+
+        var listCfg = listButton.configuration!
+        listCfg.baseBackgroundColor = isCalendar ? AppTheme.Color.primaryLight : AppTheme.Color.primary
+        listCfg.baseForegroundColor = isCalendar ? AppTheme.Color.textMedium : .white
+        listButton.configuration = listCfg
     }
 
     private func makeCalendarSection() -> UIView {
@@ -136,22 +184,26 @@ final class LogView: BaseView {
         navRow.addArrangedSubview(monthLabel)
         navRow.addArrangedSubview(nextMonthButton)
 
-        // Day-of-week header
+        // Calendar item width — 헤더와 그리드가 같은 itemW + 6pt 간격을 공유해야 열이 정렬됨
+        let itemW = (UIScreen.main.bounds.width - 40 - 6 * 6) / 7
+
+        // Day-of-week header: fillEqually 대신 itemW 고정 너비 + spacing 6으로 컬렉션뷰와 1:1 일치
         let daysKR = ["일", "월", "화", "수", "목", "금", "토"]
-        let dayHeaderRow = UIStackView.make(axis: .horizontal, distribution: .fillEqually)
+        let dayHeaderRow = UIStackView.make(axis: .horizontal, spacing: 6)
         daysKR.enumerated().forEach { i, d in
             let l = UILabel.make(
-                text: d, size: 11, weight: .semibold,
+                text: d, size: 11, weight: .bold,
                 color: i == 0 ? AppTheme.Color.primary : i == 6 ? UIColor(hex: "#7BA7FF") : AppTheme.Color.textMuted,
                 alignment: .center)
+            l.snp.makeConstraints { $0.width.equalTo(itemW) }
             dayHeaderRow.addArrangedSubview(l)
         }
 
         // Calendar height
-        let cells = buildCalendarCells()
-        let rows  = ceil(Double(cells.count) / 7.0)
-        let itemW = (UIScreen.main.bounds.width - 40 - 6 * 6) / 7
-        let calH  = CGFloat(rows) * (itemW + 16) + CGFloat(rows - 1) * 4
+        let cells  = buildCalendarCells()
+        let rows   = ceil(Double(cells.count) / 7.0)
+        // itemSize.height = itemW + 10 와 동일하게 유지
+        let calH   = CGFloat(rows) * (itemW + 10) + CGFloat(rows - 1) * 2
         calendarCollectionView.snp.makeConstraints { $0.height.equalTo(calH) }
 
         let mainStack = UIStackView.make(axis: .vertical, spacing: 8)

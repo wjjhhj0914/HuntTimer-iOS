@@ -25,17 +25,30 @@ final class LogViewController: BaseViewController {
     override func setupBind() {
         contentView.calendarCollectionView.dataSource = self
         contentView.calendarCollectionView.delegate   = self
-        contentView.calendarToggle.addTarget(self, action: #selector(toggleChanged(_:)), for: .valueChanged)
+        contentView.calendarButton.addTarget(self, action: #selector(calendarTapped), for: .touchUpInside)
+        contentView.listButton.addTarget(self, action: #selector(listTapped), for: .touchUpInside)
         contentView.prevMonthButton.addTarget(self, action: #selector(prevMonth), for: .touchUpInside)
         contentView.nextMonthButton.addTarget(self, action: #selector(nextMonth), for: .touchUpInside)
     }
 
     // MARK: - Actions
-    @objc private func toggleChanged(_ sc: UISegmentedControl) {
-        let isCalendar = sc.selectedSegmentIndex == 0
-        UIView.animate(withDuration: 0.22) {
-            self.contentView.calendarContainer.isHidden = !isCalendar
-            self.contentView.calendarContainer.alpha    = isCalendar ? 1 : 0
+    @objc private func calendarTapped() {
+        contentView.setToggleState(isCalendar: true)
+        UIView.animate(withDuration: 0.25) {
+            self.contentView.calendarContainer.isHidden     = false
+            self.contentView.calendarContainer.alpha        = 1
+            self.contentView.summaryCardContainer.isHidden  = false
+            self.contentView.summaryCardContainer.alpha     = 1
+        }
+    }
+
+    @objc private func listTapped() {
+        contentView.setToggleState(isCalendar: false)
+        UIView.animate(withDuration: 0.25) {
+            self.contentView.calendarContainer.isHidden     = true
+            self.contentView.calendarContainer.alpha        = 0
+            self.contentView.summaryCardContainer.isHidden  = true
+            self.contentView.summaryCardContainer.alpha     = 0
         }
     }
 
