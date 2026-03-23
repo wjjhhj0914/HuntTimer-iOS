@@ -77,7 +77,26 @@ extension LogViewController: UICollectionViewDataSource, UICollectionViewDelegat
     func collectionView(_ cv: UICollectionView, didSelectItemAt indexPath: IndexPath) {
         let cells = contentView.buildCalendarCells()
         guard let day = cells[indexPath.item] else { return }
+
+        // 이전 선택 셀 해제 (reloadData 없이 직접 업데이트)
+        if let prevDay = selectedDay,
+           let prevIdx = cells.firstIndex(where: { $0 == prevDay }),
+           let prevCell = cv.cellForItem(at: IndexPath(item: prevIdx, section: 0)) as? DayCell {
+            let hasAct = activityDays.contains(prevDay)
+            prevCell.configure(day: prevDay, isSelected: false, isToday: prevDay == 19,
+                               hasActivity: hasAct,
+                               imageURL: hasAct ? dayImageURLs[prevIdx % dayImageURLs.count] : nil)
+        }
+
         selectedDay = day
-        cv.reloadData()
+
+        // 새 선택 셀 업데이트 + 튕김 애니메이션
+        if let cell = cv.cellForItem(at: indexPath) as? DayCell {
+            let hasAct = activityDays.contains(day)
+            cell.configure(day: day, isSelected: true, isToday: day == 19,
+                           hasActivity: hasAct,
+                           imageURL: hasAct ? dayImageURLs[indexPath.item % dayImageURLs.count] : nil)
+            cell.animateBounce()
+        }
     }
 }

@@ -80,6 +80,36 @@ final class DayCell: UICollectionViewCell {
 
     required init?(coder: NSCoder) { fatalError("init(coder:) has not been implemented") }
 
+    // MARK: - Animations
+
+    /// 눌림: 빠르게 축소 / 뗌: 원래 크기로 복귀
+    override var isHighlighted: Bool {
+        didSet {
+            UIView.animate(
+                withDuration: isHighlighted ? 0.08 : 0.18,
+                delay: 0,
+                options: [.allowUserInteraction, .beginFromCurrentState]
+            ) {
+                self.contentView.transform = self.isHighlighted
+                    ? CGAffineTransform(scaleX: 0.85, y: 0.85)
+                    : .identity
+            }
+        }
+    }
+
+    /// 선택 확정 시 호출 — 현재 transform 위치(눌림 상태)에서 스프링으로 튕겨 돌아옴
+    func animateBounce() {
+        UIView.animate(
+            withDuration: 0.5,
+            delay: 0,
+            usingSpringWithDamping: 0.38,
+            initialSpringVelocity: 0.8,
+            options: [.allowUserInteraction, .beginFromCurrentState]
+        ) {
+            self.contentView.transform = .identity
+        }
+    }
+
     // MARK: - Configure
 
     func configure(day: Int?, isSelected: Bool, isToday: Bool, hasActivity: Bool, imageURL: String?) {
