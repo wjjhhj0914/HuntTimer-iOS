@@ -14,6 +14,7 @@
 		93D4F3C12F7030400053F2A5 /* Kingfisher in Frameworks */ = {isa = PBXBuildFile; productRef = 93D4F3C02F7030400053F2A5 /* Kingfisher */; };
 		93D4F3C42F7030B70053F2A5 /* FSCalendar in Frameworks */ = {isa = PBXBuildFile; productRef = 93D4F3C32F7030B70053F2A5 /* FSCalendar */; };
 		93D4F3C72F7030CD0053F2A5 /* Toast in Frameworks */ = {isa = PBXBuildFile; productRef = 93D4F3C62F7030CD0053F2A5 /* Toast */; };
+		93D4F4342F71087C0053F2A5 /* SnapKit in Frameworks */ = {isa = PBXBuildFile; productRef = 93D4F4332F71087C0053F2A5 /* SnapKit */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -47,6 +48,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				93D4F3BB2F7030190053F2A5 /* RxSwift in Frameworks */,
+				93D4F4342F71087C0053F2A5 /* SnapKit in Frameworks */,
 				93D4F3C42F7030B70053F2A5 /* FSCalendar in Frameworks */,
 				93D4F3BE2F70302F0053F2A5 /* Alamofire in Frameworks */,
 				93D4F3B92F7030190053F2A5 /* RxCocoa in Frameworks */,
@@ -102,6 +104,7 @@
 				93D4F3C02F7030400053F2A5 /* Kingfisher */,
 				93D4F3C32F7030B70053F2A5 /* FSCalendar */,
 				93D4F3C62F7030CD0053F2A5 /* Toast */,
+				93D4F4332F71087C0053F2A5 /* SnapKit */,
 			);
 			productName = HuntTimer;
 			productReference = 93D4F37C2F7006DE0053F2A5 /* HuntTimer.app */;
@@ -138,6 +141,7 @@
 				93D4F3BF2F7030400053F2A5 /* XCRemoteSwiftPackageReference "Kingfisher" */,
 				93D4F3C22F7030B70053F2A5 /* XCRemoteSwiftPackageReference "FSCalendar" */,
 				93D4F3C52F7030CD0053F2A5 /* XCRemoteSwiftPackageReference "Toast-Swift" */,
+				93D4F4322F71087C0053F2A5 /* XCRemoteSwiftPackageReference "SnapKit" */,
 			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = 93D4F37D2F7006DE0053F2A5 /* Products */;
@@ -437,6 +441,14 @@
 				minimumVersion = 5.1.1;
 			};
 		};
+		93D4F4322F71087C0053F2A5 /* XCRemoteSwiftPackageReference "SnapKit" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/SnapKit/SnapKit";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 5.7.1;
+			};
+		};
 /* End XCRemoteSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
@@ -474,6 +486,11 @@
 			isa = XCSwiftPackageProductDependency;
 			package = 93D4F3C52F7030CD0053F2A5 /* XCRemoteSwiftPackageReference "Toast-Swift" */;
 			productName = Toast;
+		};
+		93D4F4332F71087C0053F2A5 /* SnapKit */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 93D4F4322F71087C0053F2A5 /* XCRemoteSwiftPackageReference "SnapKit" */;
+			productName = SnapKit;
 		};
 /* End XCSwiftPackageProductDependency section */
 	};
