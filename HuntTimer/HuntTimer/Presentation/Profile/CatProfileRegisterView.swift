@@ -114,12 +114,17 @@ final class CatProfileRegisterView: BaseView {
     private let contentStack = UIStackView.make(axis: .vertical, spacing: 12)
     private var gradientLayer: CAGradientLayer?
 
+    /// 수정 모드 레이아웃 전환에 필요한 참조
+    private var ctaContainer: UIView?
+    private var scrollCTAConstraint: Constraint?
+
     // MARK: - Setup
     override func setupUI() {
         backgroundColor = AppTheme.Color.background
 
         let headerView = makeHeader()
         let ctaWrap    = makeCTAWrap()
+        ctaContainer   = ctaWrap
 
         addSubview(headerView)
         addSubview(scrollView)
@@ -146,7 +151,7 @@ final class CatProfileRegisterView: BaseView {
         scrollView.snp.makeConstraints { make in
             make.top.equalTo(headerView.snp.bottom)
             make.leading.trailing.equalToSuperview()
-            make.bottom.equalTo(ctaWrap.snp.top)
+            scrollCTAConstraint = make.bottom.equalTo(ctaWrap.snp.top).constraint
         }
         contentStack.snp.makeConstraints { make in
             make.top.bottom.equalToSuperview().inset(8)
@@ -448,6 +453,13 @@ final class CatProfileRegisterView: BaseView {
         row.addArrangedSubview(iconView)
         row.addArrangedSubview(labelV)
         return row
+    }
+
+    /// 수정 모드: CTA 영역을 숨기고 scrollView가 safeArea까지 확장되도록 제약을 전환
+    func hideCTAForEditMode() {
+        ctaContainer?.isHidden = true
+        scrollCTAConstraint?.deactivate()
+        scrollView.snp.makeConstraints { $0.bottom.equalTo(safeAreaLayoutGuide) }
     }
 
     private func makeInputField(content: UIView) -> UIView {

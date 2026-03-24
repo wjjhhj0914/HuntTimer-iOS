@@ -99,6 +99,7 @@ final class CatProfileViewController: BaseViewController {
             contentView.headerTitleLabel.text   = "프로필 수정"
             contentView.registerButton.isHidden = true
             contentView.saveButton.isHidden     = false
+            contentView.hideCTAForEditMode()
         }
     }
 
