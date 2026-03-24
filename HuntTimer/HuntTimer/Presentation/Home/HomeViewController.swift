@@ -30,7 +30,6 @@ final class HomeViewController: BaseViewController {
 
         let input = HomeViewModel.Input(
             viewDidLoad:        Observable.just(()),
-            bellButtonTapped:   contentView.bellButton.rx.tap.asObservable(),
             startHuntingTapped: contentView.startButton.rx.tap.asObservable(),
             seeAllTapped:       contentView.seeAllButton.rx.tap.asObservable()
         )

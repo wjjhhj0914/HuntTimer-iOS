@@ -17,18 +17,6 @@ final class HomeView: BaseView {
     // MARK: - Header
     let greetLabel  = UILabel.make(text: "", size: 13, color: AppTheme.Color.textMuted)
     let titleLabel  = UILabel.make(text: "", size: 22, weight: .black, color: AppTheme.Color.textDark)
-    let bellButton: UIButton = {
-        let btn = UIButton()
-        btn.backgroundColor = .white
-        btn.layer.cornerRadius = 20
-        AppTheme.applyCardShadow(to: btn, opacity: 0.12, radius: 8)
-        let label = UILabel.make(text: "🔔", size: 18)
-        label.isUserInteractionEnabled = false
-        btn.addSubview(label)
-        label.snp.makeConstraints { $0.center.equalToSuperview() }
-        return btn
-    }()
-
     let catProfileButton: UIButton = {
         let btn = UIButton()
         btn.backgroundColor = .white
@@ -132,16 +120,11 @@ final class HomeView: BaseView {
         textStack.addArrangedSubview(greetLabel)
         textStack.addArrangedSubview(titleLabel)
 
-        bellButton.snp.makeConstraints { $0.width.height.equalTo(40) }
         catProfileButton.snp.makeConstraints { $0.width.height.equalTo(40) }
-
-        let btnStack = UIStackView.make(axis: .horizontal, spacing: 8, alignment: .center)
-        btnStack.addArrangedSubview(catProfileButton)
-        btnStack.addArrangedSubview(bellButton)
 
         let row = UIStackView.make(axis: .horizontal, spacing: 8, alignment: .center)
         row.addArrangedSubview(textStack)
-        row.addArrangedSubview(btnStack)
+        row.addArrangedSubview(catProfileButton)
         return row.wrapped(insets: UIEdgeInsets(top: 0, left: 20, bottom: 0, right: 20))
     }
 

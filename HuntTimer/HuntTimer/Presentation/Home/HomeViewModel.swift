@@ -10,7 +10,6 @@ final class HomeViewModel {
 
     struct Input {
         let viewDidLoad: Observable<Void>
-        let bellButtonTapped: Observable<Void>
         let startHuntingTapped: Observable<Void>
         let seeAllTapped: Observable<Void>
     }
@@ -63,10 +62,6 @@ final class HomeViewModel {
             .map { "\($0)일 연속 🔥" }
 
         // ── Side effects ───────────────────────────────────────────────────
-        input.bellButtonTapped
-            .subscribe(onNext: { print("[HuntTimer] 벨 버튼 탭") })
-            .disposed(by: disposeBag)
-
         input.startHuntingTapped
             .subscribe(onNext: { print("[HuntTimer] 새 사냥 시작 탭") })
             .disposed(by: disposeBag)
