@@ -75,6 +75,36 @@ final class HomeViewController: BaseViewController {
         output.recentSessions
             .drive(onNext: { [weak self] sessions in self?.populateRecentSessions(sessions) })
             .disposed(by: disposeBag)
+
+        // 시작 버튼 타이틀
+        output.startButtonTitle
+            .drive(onNext: { [weak self] title in
+                self?.contentView.startButton.setTitle(title, for: .normal)
+            })
+            .disposed(by: disposeBag)
+
+        // hasCat: 섹션 show/hide
+        output.hasCat
+            .drive(onNext: { [weak self] hasCat in
+                guard let self else { return }
+                self.contentView.bannerSectionView?.isHidden   = !hasCat
+                self.contentView.progressSectionView?.isHidden  = !hasCat
+                self.contentView.quickStatsSectionView?.isHidden = !hasCat
+                self.contentView.recentSectionView?.isHidden   = !hasCat
+            })
+            .disposed(by: disposeBag)
+
+        // startButton: 고양이 미등록 시 → 프로필 등록 화면으로
+        contentView.startButton.rx.tap
+            .withLatestFrom(output.hasCat)
+            .filter { !$0 }
+            .subscribe(onNext: { [weak self] _ in
+                guard let self else { return }
+                let vc = CatProfileViewController()
+                vc.mode = .registration
+                self.navigationController?.pushViewController(vc, animated: true)
+            })
+            .disposed(by: disposeBag)
     }
 
     // MARK: - Helpers

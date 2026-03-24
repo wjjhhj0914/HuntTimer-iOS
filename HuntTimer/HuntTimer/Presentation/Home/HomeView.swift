@@ -102,12 +102,31 @@ final class HomeView: BaseView {
         }
     }
 
+    // hasCat에 따라 show/hide 할 섹션 참조
+    private(set) var bannerSectionView: UIView?
+    private(set) var progressSectionView: UIView?
+    private(set) var quickStatsSectionView: UIView?
+    private(set) var recentSectionView: UIView?
+
     private func buildSections() {
         contentStack.addArrangedSubview(makeHeaderSection())
-        contentStack.addArrangedSubview(makeBannerSection())
-        contentStack.addArrangedSubview(makeProgressSection())
-        contentStack.addArrangedSubview(makeQuickStatsSection())
-        contentStack.addArrangedSubview(makeRecentSection())
+
+        let banner = makeBannerSection()
+        bannerSectionView = banner
+        contentStack.addArrangedSubview(banner)
+
+        let progress = makeProgressSection()
+        progressSectionView = progress
+        contentStack.addArrangedSubview(progress)
+
+        let quickStats = makeQuickStatsSection()
+        quickStatsSectionView = quickStats
+        contentStack.addArrangedSubview(quickStats)
+
+        let recent = makeRecentSection()
+        recentSectionView = recent
+        contentStack.addArrangedSubview(recent)
+
         contentStack.addArrangedSubview(makeCTAButton())
         let spacer = UIView()
         spacer.snp.makeConstraints { $0.height.equalTo(12) }
