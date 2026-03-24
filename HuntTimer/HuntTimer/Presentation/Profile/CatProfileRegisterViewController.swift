@@ -2,16 +2,27 @@ import UIKit
 import PhotosUI
 import RealmSwift
 
-/// 냥이 프로필 등록 화면 ViewController
-final class CatProfileRegisterViewController: BaseViewController {
+// MARK: - ProfileMode
+enum ProfileMode {
+    case registration   // 최초 등록
+    case edit           // 수정
+}
 
-    // MARK: - Properties
-    private let contentView      = CatProfileRegisterView()
-    private var selectedBirthdate: Date?
-    private var isMale           = false
-    private var goalMinutes      = 30
-    /// Realm 저장 시 selectedBreed.rawValue(String)를 Cat.breed에 기록
-    private var selectedBreed: CatBreed?
+/// 냥이 프로필 등록 / 수정 화면 ViewController
+final class CatProfileViewController: BaseViewController {
+
+    // MARK: - Mode
+    var mode: ProfileMode = .registration
+    var catToEdit: Cat?
+
+    // MARK: - Temp State (Realm에 즉시 반영하지 않고 임시 보관)
+    private var tempBirthdate:    Date?      = nil
+    private var tempIsMale:       Bool       = false
+    private var tempGoalMinutes:  Int        = 30
+    private var tempBreed:        CatBreed?  = nil
+
+    // MARK: - View
+    private let contentView = CatProfileRegisterView()
 
     private let dateFormatter: DateFormatter = {
         let df = DateFormatter()
@@ -26,6 +37,12 @@ final class CatProfileRegisterViewController: BaseViewController {
     }
 
     // MARK: - Lifecycle
+    override func viewDidLoad() {
+        super.viewDidLoad()          // setupHierarchy → setupConstraints → setupBind
+        configureForMode()
+        if mode == .edit { loadEditData() }
+    }
+
     override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
         navigationController?.setNavigationBarHidden(true, animated: animated)
@@ -71,33 +88,95 @@ final class CatProfileRegisterViewController: BaseViewController {
         contentView.endEditing(true)
     }
 
+    // MARK: - Mode Configuration
+    private func configureForMode() {
+        switch mode {
+        case .registration:
+            contentView.headerTitleLabel.text   = "냥이 프로필 등록"
+            contentView.registerButton.isHidden = false
+            contentView.saveButton.isHidden     = true
+        case .edit:
+            contentView.headerTitleLabel.text   = "프로필 수정"
+            contentView.registerButton.isHidden = true
+            contentView.saveButton.isHidden     = false
+        }
+    }
+
+    // MARK: - Load Edit Data
+    private func loadEditData() {
+        guard let cat = catToEdit else { return }
+
+        // temp 변수에 현재 값 세팅
+        tempBirthdate   = cat.birthday
+        tempGoalMinutes = cat.targetTime
+        tempBreed       = CatBreed.from(rawValue: cat.breed)
+
+        // 이름
+        contentView.nameTextField.text = cat.name
+
+        // 생년월일
+        if let bd = cat.birthday {
+            contentView.birthdateLabel.text      = dateFormatter.string(from: bd)
+            contentView.birthdateLabel.textColor = AppTheme.Color.textMuted
+        } else {
+            contentView.unknownBirthdayToggle.isOn          = true
+            contentView.birthdateLabel.text                 = "생년월일 미정"
+            contentView.birthdateLabel.textColor            = AppTheme.Color.textMuted
+            contentView.dateFieldView.alpha                 = 0.5
+            contentView.dateFieldView.isUserInteractionEnabled = false
+        }
+
+        // 성별 (tempIsMale도 함께 업데이트됨)
+        if cat.isMale { maleTapped() } else { femaleTapped() }
+
+        // 목표 시간
+        contentView.goalMinuteLabel.text = "\(cat.targetTime)"
+
+        // 품종
+        if let breed = CatBreed.from(rawValue: cat.breed) {
+            contentView.breedDisplayLabel.text      = breed.displayName
+            contentView.breedDisplayLabel.textColor = AppTheme.Color.textMuted
+        }
+
+        // 프로필 사진
+        if let data = cat.profileImageData, let image = UIImage(data: data) {
+            contentView.photoImageView.image    = image
+            contentView.photoImageView.isHidden = false
+        }
+    }
+
     // MARK: - Navigation
     @objc private func backTapped() {
+        // temp 변수는 VC 소멸과 함께 자동 파기 — Realm 원본 데이터 보존
         navigationController?.popViewController(animated: true)
     }
 
+    // MARK: - Save
     @objc private func saveTapped() {
-        // 이름 유효성 검사
         let name = contentView.nameTextField.text?.trimmingCharacters(in: .whitespaces) ?? ""
         guard !name.isEmpty else {
             showAlert(title: "이름을 입력해주세요", message: "냥이의 이름을 입력해야 합니다.")
             return
         }
 
-        // Cat 객체 생성
+        switch mode {
+        case .registration: saveAsNew(name: name)
+        case .edit:         updateExisting(name: name)
+        }
+    }
+
+    private func saveAsNew(name: String) {
         let cat         = Cat()
         cat.name        = name
-        cat.isMale      = isMale
-        cat.birthday    = contentView.unknownBirthdayToggle.isOn ? nil : selectedBirthdate
-        cat.breed       = selectedBreed?.rawValue ?? ""
-        cat.targetTime  = goalMinutes
+        cat.isMale      = tempIsMale
+        cat.birthday    = contentView.unknownBirthdayToggle.isOn ? nil : tempBirthdate
+        cat.breed       = tempBreed?.rawValue ?? ""
+        cat.targetTime  = tempGoalMinutes
 
-        // 프로필 이미지 압축 저장
         if let image = contentView.photoImageView.image {
             cat.profileImageData = image.jpegData(compressionQuality: 0.8)
         }
 
-        // Realm 저장
         do {
             let realm = try Realm()
             try realm.write { realm.add(cat) }
@@ -106,7 +185,6 @@ final class CatProfileRegisterViewController: BaseViewController {
             return
         }
 
-        // 등록 완료 알럿 → 메인 탭으로 전환
         let alert = UIAlertController(title: "등록 완료!", message: "\(name) 냥이의 프로필이 등록됐어요 🐾", preferredStyle: .alert)
         alert.addAction(UIAlertAction(title: "시작하기", style: .default) { [weak self] _ in
             guard let windowScene = self?.view.window?.windowScene,
@@ -120,6 +198,29 @@ final class CatProfileRegisterViewController: BaseViewController {
         present(alert, animated: true)
     }
 
+    private func updateExisting(name: String) {
+        guard let cat = catToEdit else { return }
+
+        do {
+            let realm = try Realm()
+            try realm.write {
+                cat.name       = name
+                cat.isMale     = tempIsMale
+                cat.birthday   = contentView.unknownBirthdayToggle.isOn ? nil : tempBirthdate
+                cat.breed      = tempBreed?.rawValue ?? cat.breed
+                cat.targetTime = tempGoalMinutes
+                if let image = contentView.photoImageView.image {
+                    cat.profileImageData = image.jpegData(compressionQuality: 0.8)
+                }
+            }
+        } catch {
+            showAlert(title: "저장 실패", message: "프로필 저장 중 오류가 발생했습니다.\n\(error.localizedDescription)")
+            return
+        }
+
+        navigationController?.popViewController(animated: true)
+    }
+
     // MARK: - Helpers
     private func showAlert(title: String, message: String) {
         let alert = UIAlertController(title: title, message: message, preferredStyle: .alert)
@@ -129,7 +230,7 @@ final class CatProfileRegisterViewController: BaseViewController {
 
     // MARK: - Gender
     @objc private func femaleTapped() {
-        isMale = false
+        tempIsMale = false
         contentView.femaleButton.backgroundColor = AppTheme.Color.primary
         contentView.femaleButton.setTitleColor(.white, for: .normal)
         contentView.maleButton.backgroundColor = .clear
@@ -137,7 +238,7 @@ final class CatProfileRegisterViewController: BaseViewController {
     }
 
     @objc private func maleTapped() {
-        isMale = true
+        tempIsMale = true
         contentView.maleButton.backgroundColor = AppTheme.Color.primary
         contentView.maleButton.setTitleColor(.white, for: .normal)
         contentView.femaleButton.backgroundColor = .clear
@@ -159,11 +260,11 @@ final class CatProfileRegisterViewController: BaseViewController {
         guard !contentView.unknownBirthdayToggle.isOn else { return }
 
         let sheet = DatePickerBottomSheetViewController(
-            initialDate: selectedBirthdate ?? Calendar.current.date(byAdding: .year, value: -2, to: Date()) ?? Date()
+            initialDate: tempBirthdate ?? Calendar.current.date(byAdding: .year, value: -2, to: Date()) ?? Date()
         )
         sheet.onDateSelected = { [weak self] date in
             guard let self else { return }
-            self.selectedBirthdate = date
+            self.tempBirthdate = date
             self.contentView.birthdateLabel.text      = self.dateFormatter.string(from: date)
             self.contentView.birthdateLabel.textColor = AppTheme.Color.textMuted
         }
@@ -173,15 +274,15 @@ final class CatProfileRegisterViewController: BaseViewController {
     @objc private func toggleChanged(_ sender: UISwitch) {
         UIView.animate(withDuration: 0.2) {
             if sender.isOn {
-                self.contentView.birthdateLabel.text      = "생년월일 미정"
-                self.contentView.birthdateLabel.textColor = AppTheme.Color.textMuted
+                self.contentView.birthdateLabel.text                 = "생년월일 미정"
+                self.contentView.birthdateLabel.textColor            = AppTheme.Color.textMuted
                 self.contentView.dateFieldView.alpha                 = 0.5
                 self.contentView.dateFieldView.isUserInteractionEnabled = false
             } else {
-                let text = self.selectedBirthdate.map { self.dateFormatter.string(from: $0) }
+                let text = self.tempBirthdate.map { self.dateFormatter.string(from: $0) }
                               ?? "생년월일을 선택하세요"
-                self.contentView.birthdateLabel.text      = text
-                self.contentView.birthdateLabel.textColor = AppTheme.Color.textMuted
+                self.contentView.birthdateLabel.text                 = text
+                self.contentView.birthdateLabel.textColor            = AppTheme.Color.textMuted
                 self.contentView.dateFieldView.alpha                 = 1.0
                 self.contentView.dateFieldView.isUserInteractionEnabled = true
             }
@@ -190,10 +291,10 @@ final class CatProfileRegisterViewController: BaseViewController {
 
     // MARK: - Breed
     @objc private func breedTapped() {
-        let sheet = BreedPickerBottomSheetViewController(selectedBreed: selectedBreed)
+        let sheet = BreedPickerBottomSheetViewController(selectedBreed: tempBreed)
         sheet.onBreedSelected = { [weak self] breed in
             guard let self else { return }
-            self.selectedBreed = breed
+            self.tempBreed = breed
             self.contentView.breedDisplayLabel.text      = breed.displayName
             self.contentView.breedDisplayLabel.textColor = AppTheme.Color.textMuted
         }
@@ -202,10 +303,10 @@ final class CatProfileRegisterViewController: BaseViewController {
 
     // MARK: - Goal
     @objc private func goalTapped() {
-        let sheet = GoalPickerBottomSheetViewController(initialMinutes: goalMinutes)
+        let sheet = GoalPickerBottomSheetViewController(initialMinutes: tempGoalMinutes)
         sheet.onGoalSelected = { [weak self] minutes in
             guard let self else { return }
-            self.goalMinutes = minutes
+            self.tempGoalMinutes = minutes
             self.contentView.goalMinuteLabel.text = "\(minutes)"
         }
         present(sheet, animated: false)
@@ -213,7 +314,7 @@ final class CatProfileRegisterViewController: BaseViewController {
 }
 
 // MARK: - UITextFieldDelegate
-extension CatProfileRegisterViewController: UITextFieldDelegate {
+extension CatProfileViewController: UITextFieldDelegate {
     func textFieldShouldReturn(_ textField: UITextField) -> Bool {
         textField.resignFirstResponder()
         return true
@@ -221,7 +322,7 @@ extension CatProfileRegisterViewController: UITextFieldDelegate {
 }
 
 // MARK: - PHPickerViewControllerDelegate
-extension CatProfileRegisterViewController: PHPickerViewControllerDelegate {
+extension CatProfileViewController: PHPickerViewControllerDelegate {
 
     func picker(_ picker: PHPickerViewController, didFinishPicking results: [PHPickerResult]) {
         picker.dismiss(animated: true)

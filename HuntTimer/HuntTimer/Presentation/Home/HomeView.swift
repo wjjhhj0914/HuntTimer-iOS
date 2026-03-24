@@ -29,6 +29,20 @@ final class HomeView: BaseView {
         return btn
     }()
 
+    let catProfileButton: UIButton = {
+        let btn = UIButton()
+        btn.backgroundColor = .white
+        btn.layer.cornerRadius = 20
+        AppTheme.applyCardShadow(to: btn, opacity: 0.12, radius: 8)
+        let cfg = UIImage.SymbolConfiguration(pointSize: 16, weight: .medium)
+        let iv  = UIImageView(image: UIImage(systemName: "pawprint.circle.fill", withConfiguration: cfg))
+        iv.tintColor = AppTheme.Color.primary
+        iv.isUserInteractionEnabled = false
+        btn.addSubview(iv)
+        iv.snp.makeConstraints { $0.center.equalToSuperview() }
+        return btn
+    }()
+
     // MARK: - Banner
     let bannerImageView = AsyncImageView(contentMode: .scaleAspectFill)
     let streakLabel     = UILabel.make(text: "", size: 12, weight: .bold, color: .white)
@@ -119,10 +133,15 @@ final class HomeView: BaseView {
         textStack.addArrangedSubview(titleLabel)
 
         bellButton.snp.makeConstraints { $0.width.height.equalTo(40) }
+        catProfileButton.snp.makeConstraints { $0.width.height.equalTo(40) }
+
+        let btnStack = UIStackView.make(axis: .horizontal, spacing: 8, alignment: .center)
+        btnStack.addArrangedSubview(catProfileButton)
+        btnStack.addArrangedSubview(bellButton)
 
         let row = UIStackView.make(axis: .horizontal, spacing: 8, alignment: .center)
         row.addArrangedSubview(textStack)
-        row.addArrangedSubview(bellButton)
+        row.addArrangedSubview(btnStack)
         return row.wrapped(insets: UIEdgeInsets(top: 0, left: 20, bottom: 0, right: 20))
     }
 

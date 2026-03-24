@@ -5,6 +5,9 @@ import SnapKit
 final class CatProfileRegisterView: BaseView {
 
     // MARK: - Header
+    let headerTitleLabel = UILabel.make(text: "냥이 프로필 등록", size: 18, weight: .black,
+                                        color: AppTheme.Color.textDark)
+
     let backButton: UIButton = {
         let btn = UIButton(type: .system)
         let config = UIImage.SymbolConfiguration(pointSize: 14, weight: .medium)
@@ -160,10 +163,9 @@ final class CatProfileRegisterView: BaseView {
     // MARK: - Header
     private func makeHeader() -> UIView {
         let header = UIView()
-        let titleL  = UILabel.make(text: "냥이 프로필 등록", size: 18, weight: .black, color: AppTheme.Color.textDark)
 
         header.addSubview(backButton)
-        header.addSubview(titleL)
+        header.addSubview(headerTitleLabel)
         header.addSubview(saveButton)
 
         backButton.snp.makeConstraints { make in
@@ -171,7 +173,7 @@ final class CatProfileRegisterView: BaseView {
             make.centerY.equalToSuperview()
             make.width.height.equalTo(36)
         }
-        titleL.snp.makeConstraints { $0.center.equalToSuperview() }
+        headerTitleLabel.snp.makeConstraints { $0.center.equalToSuperview() }
         saveButton.snp.makeConstraints { make in
             make.trailing.equalToSuperview().offset(-20)
             make.centerY.equalToSuperview()
