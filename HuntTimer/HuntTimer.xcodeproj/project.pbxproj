@@ -7,6 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		9386CD0E2F7278DD00EED7CF /* RealmSwift in Embed Frameworks */ = {isa = PBXBuildFile; productRef = 93D4F3B52F702C9A0053F2A5 /* RealmSwift */; settings = {ATTRIBUTES = (CodeSignOnCopy, ); }; };
 		93D4F3B62F702C9A0053F2A5 /* RealmSwift in Frameworks */ = {isa = PBXBuildFile; productRef = 93D4F3B52F702C9A0053F2A5 /* RealmSwift */; };
 		93D4F3B92F7030190053F2A5 /* RxCocoa in Frameworks */ = {isa = PBXBuildFile; productRef = 93D4F3B82F7030190053F2A5 /* RxCocoa */; };
 		93D4F3BB2F7030190053F2A5 /* RxSwift in Frameworks */ = {isa = PBXBuildFile; productRef = 93D4F3BA2F7030190053F2A5 /* RxSwift */; };
@@ -16,6 +17,20 @@
 		93D4F3C72F7030CD0053F2A5 /* Toast in Frameworks */ = {isa = PBXBuildFile; productRef = 93D4F3C62F7030CD0053F2A5 /* Toast */; };
 		93D4F4342F71087C0053F2A5 /* SnapKit in Frameworks */ = {isa = PBXBuildFile; productRef = 93D4F4332F71087C0053F2A5 /* SnapKit */; };
 /* End PBXBuildFile section */
+
+/* Begin PBXCopyFilesBuildPhase section */
+		9386CD0F2F7278DD00EED7CF /* Embed Frameworks */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = "";
+			dstSubfolderSpec = 10;
+			files = (
+				9386CD0E2F7278DD00EED7CF /* RealmSwift in Embed Frameworks */,
+			);
+			name = "Embed Frameworks";
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
 		93D4F37C2F7006DE0053F2A5 /* HuntTimer.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = HuntTimer.app; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -87,6 +102,7 @@
 				93D4F3782F7006DE0053F2A5 /* Sources */,
 				93D4F3792F7006DE0053F2A5 /* Frameworks */,
 				93D4F37A2F7006DE0053F2A5 /* Resources */,
+				9386CD0F2F7278DD00EED7CF /* Embed Frameworks */,
 			);
 			buildRules = (
 			);
