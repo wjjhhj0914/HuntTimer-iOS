@@ -1,4 +1,5 @@
 import UIKit
+import RealmSwift
 
 class SceneDelegate: UIResponder, UIWindowSceneDelegate {
 
@@ -13,11 +14,18 @@ class SceneDelegate: UIResponder, UIWindowSceneDelegate {
 
         let window = UIWindow(windowScene: windowScene)
 
-        // TODO: 고양이 프로필이 등록된 경우 MainTabBarController로 바로 진입
-        let root = UINavigationController(rootViewController: WelcomeViewController())
-        root.setNavigationBarHidden(true, animated: false)
+        // 등록된 고양이 프로필이 있으면 메인 탭으로, 없으면 온보딩으로
+        let hasCat = (try? Realm())?.objects(Cat.self).isEmpty == false
+        let rootVC: UIViewController
+        if hasCat {
+            rootVC = MainTabBarController()
+        } else {
+            let nav = UINavigationController(rootViewController: WelcomeViewController())
+            nav.setNavigationBarHidden(true, animated: false)
+            rootVC = nav
+        }
 
-        window.rootViewController = root
+        window.rootViewController = rootVC
         window.backgroundColor = AppTheme.Color.background
         window.makeKeyAndVisible()
         self.window = window

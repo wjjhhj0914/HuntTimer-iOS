@@ -1,5 +1,6 @@
 import UIKit
 import PhotosUI
+import RealmSwift
 
 /// 냥이 프로필 등록 화면 ViewController
 final class CatProfileRegisterViewController: BaseViewController {
@@ -7,6 +8,7 @@ final class CatProfileRegisterViewController: BaseViewController {
     // MARK: - Properties
     private let contentView      = CatProfileRegisterView()
     private var selectedBirthdate: Date?
+    private var isMale           = false
     private var goalMinutes      = 30
     /// Realm 저장 시 selectedBreed.rawValue(String)를 Cat.breed에 기록
     private var selectedBreed: CatBreed?
@@ -75,14 +77,59 @@ final class CatProfileRegisterViewController: BaseViewController {
     }
 
     @objc private func saveTapped() {
-        // TODO: Realm 저장 후 홈으로 전환
-        let tabBar = MainTabBarController()
-        tabBar.modalPresentationStyle = .fullScreen
-        present(tabBar, animated: true)
+        // 이름 유효성 검사
+        let name = contentView.nameTextField.text?.trimmingCharacters(in: .whitespaces) ?? ""
+        guard !name.isEmpty else {
+            showAlert(title: "이름을 입력해주세요", message: "냥이의 이름을 입력해야 합니다.")
+            return
+        }
+
+        // Cat 객체 생성
+        let cat         = Cat()
+        cat.name        = name
+        cat.isMale      = isMale
+        cat.birthday    = contentView.unknownBirthdayToggle.isOn ? nil : selectedBirthdate
+        cat.breed       = selectedBreed?.rawValue ?? ""
+        cat.targetTime  = goalMinutes
+
+        // 프로필 이미지 압축 저장
+        if let image = contentView.photoImageView.image {
+            cat.profileImageData = image.jpegData(compressionQuality: 0.8)
+        }
+
+        // Realm 저장
+        do {
+            let realm = try Realm()
+            try realm.write { realm.add(cat) }
+        } catch {
+            showAlert(title: "저장 실패", message: "프로필 저장 중 오류가 발생했습니다.\n\(error.localizedDescription)")
+            return
+        }
+
+        // 등록 완료 알럿 → 메인 탭으로 전환
+        let alert = UIAlertController(title: "등록 완료!", message: "\(name) 냥이의 프로필이 등록됐어요 🐾", preferredStyle: .alert)
+        alert.addAction(UIAlertAction(title: "시작하기", style: .default) { [weak self] _ in
+            guard let windowScene = self?.view.window?.windowScene,
+                  let window      = windowScene.windows.first else { return }
+            UIView.transition(with: window,
+                              duration: 0.4,
+                              options: .transitionCrossDissolve) {
+                window.rootViewController = MainTabBarController()
+            }
+        })
+        present(alert, animated: true)
+    }
+
+    // MARK: - Helpers
+    private func showAlert(title: String, message: String) {
+        let alert = UIAlertController(title: title, message: message, preferredStyle: .alert)
+        alert.addAction(UIAlertAction(title: "확인", style: .default))
+        present(alert, animated: true)
     }
 
     // MARK: - Gender
     @objc private func femaleTapped() {
+        isMale = false
         contentView.femaleButton.backgroundColor = AppTheme.Color.primary
         contentView.femaleButton.setTitleColor(.white, for: .normal)
         contentView.maleButton.backgroundColor = .clear
@@ -90,6 +137,7 @@ final class CatProfileRegisterViewController: BaseViewController {
     }
 
     @objc private func maleTapped() {
+        isMale = true
         contentView.maleButton.backgroundColor = AppTheme.Color.primary
         contentView.maleButton.setTitleColor(.white, for: .normal)
         contentView.femaleButton.backgroundColor = .clear
