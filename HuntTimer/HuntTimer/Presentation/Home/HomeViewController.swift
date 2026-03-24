@@ -6,13 +6,20 @@ import RealmSwift
 /// 홈 화면 ViewController — RxSwift 바인딩만 담당
 final class HomeViewController: BaseViewController {
 
-    private let contentView = HomeView()
-    private let viewModel   = HomeViewModel()
-    private let disposeBag  = DisposeBag()
+    private let contentView          = HomeView()
+    private let viewModel            = HomeViewModel()
+    private let disposeBag           = DisposeBag()
+    private let viewWillAppearSubject = PublishSubject<Void>()
 
     // MARK: - loadView
     override func loadView() {
         view = contentView
+    }
+
+    // MARK: - Lifecycle
+    override func viewWillAppear(_ animated: Bool) {
+        super.viewWillAppear(animated)
+        viewWillAppearSubject.onNext(())
     }
 
     // MARK: - BaseViewController
@@ -30,6 +37,7 @@ final class HomeViewController: BaseViewController {
 
         let input = HomeViewModel.Input(
             viewDidLoad:        Observable.just(()),
+            viewWillAppear:     viewWillAppearSubject.asObservable(),
             startHuntingTapped: contentView.startButton.rx.tap.asObservable(),
             seeAllTapped:       contentView.seeAllButton.rx.tap.asObservable()
         )
