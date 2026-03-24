@@ -94,9 +94,11 @@ final class ShopProductCard: UIView {
         let priceL  = UILabel.make(text: product.price.wonFormatted, size: 14, weight: .black, color: AppTheme.Color.textDark)
 
         let cartBtn = UIButton(type: .system)
-        cartBtn.setTitle("🛒", for: .normal)
+        let cartConfig = UIImage.SymbolConfiguration(pointSize: 10, weight: .medium)
+        cartBtn.setImage(UIImage(systemName: "cart", withConfiguration: cartConfig), for: .normal)
+        cartBtn.tintColor = .white
         cartBtn.backgroundColor = AppTheme.Color.primary
-        cartBtn.layer.cornerRadius = 12
+        cartBtn.layer.cornerRadius = 14
         cartBtn.snp.makeConstraints { $0.width.height.equalTo(28) }
 
         let priceRow = UIStackView.make(axis: .horizontal, alignment: .center)
@@ -125,6 +127,9 @@ final class ShopProductCard: UIView {
     }
 
     private func updateLikeButton() {
-        likeBtn.setTitle(isLiked ? "❤️" : "🤍", for: .normal)
+        let config = UIImage.SymbolConfiguration(pointSize: 10, weight: .medium)
+        let symbolName = isLiked ? "heart.fill" : "heart"
+        likeBtn.setImage(UIImage(systemName: symbolName, withConfiguration: config), for: .normal)
+        likeBtn.tintColor = isLiked ? AppTheme.Color.primary : AppTheme.Color.textMuted
     }
 }

@@ -61,8 +61,8 @@ final class ShopView: BaseView {
         textS.addArrangedSubview(titleL)
         textS.addArrangedSubview(subL)
 
-        let searchBtn = makeIconButton("🔍", bg: .white)
-        let cartBtn   = makeIconButton("🛒", bg: AppTheme.Color.primary)
+        let searchBtn = makeIconButton("magnifyingglass", bg: .white, tint: AppTheme.Color.textDark)
+        let cartBtn   = makeIconButton("cart.fill", bg: AppTheme.Color.primary, tint: .white)
         let cartBadge = UILabel.make(text: "3", size: 9, weight: .bold,
                                      color: AppTheme.Color.textDark, alignment: .center)
         cartBadge.backgroundColor = AppTheme.Color.yellow
@@ -98,9 +98,11 @@ final class ShopView: BaseView {
         return v
     }
 
-    private func makeIconButton(_ emoji: String, bg: UIColor) -> UIButton {
+    private func makeIconButton(_ systemName: String, bg: UIColor, tint: UIColor) -> UIButton {
         let btn = UIButton(type: .system)
-        btn.setTitle(emoji, for: .normal)
+        let config = UIImage.SymbolConfiguration(pointSize: 16, weight: .medium)
+        btn.setImage(UIImage(systemName: systemName, withConfiguration: config), for: .normal)
+        btn.tintColor = tint
         btn.backgroundColor = bg
         btn.layer.cornerRadius = 20
         btn.snp.makeConstraints { $0.width.height.equalTo(40) }
