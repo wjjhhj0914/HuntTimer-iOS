@@ -1,6 +1,7 @@
 import Foundation
 import RxSwift
 import RxCocoa
+import RealmSwift
 
 // MARK: - TimerViewModel
 
@@ -27,13 +28,28 @@ final class TimerViewModel {
     // MARK: - Transform
 
     func transform(input: Input) -> Output {
-        // TODO: Realm 연동 — 세션 종료 시 PlaySession 저장
-        input.stopTapped
-            .subscribe(onNext: { print("[HuntTimer] 타이머 정지 — 세션 저장 예정") })
-            .disposed(by: disposeBag)
-
         return Output(
             sessionSaved: Observable.empty().asDriver(onErrorJustReturn: ())
         )
+    }
+
+    // MARK: - Session Save
+
+    func saveSession(startTime: Date, endTime: Date, duration: Int, targetDuration: Int) {
+        let session = PlaySession()
+        session.startTime = startTime
+        session.endTime = endTime
+        session.duration = duration
+        session.targetDuration = targetDuration
+
+        do {
+            let realm = try Realm()
+            try realm.write {
+                realm.add(session)
+            }
+            print("[HuntTimer] 세션 저장 완료 — duration: \(duration)초 / target: \(targetDuration)초")
+        } catch {
+            print("[HuntTimer] 세션 저장 실패:", error)
+        }
     }
 }
