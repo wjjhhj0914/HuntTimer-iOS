@@ -46,21 +46,29 @@ final class TimerView: BaseView {
     let presetStack = UIStackView.make(axis: .horizontal, spacing: 8, distribution: .fillEqually)
     var presetButtons: [UIButton] = []
 
-    let stopButton:  UIButton = makeControlButton(emoji: "⏹", bg: AppTheme.Color.primaryLight, fg: AppTheme.Color.primary)
-    let moreButton:  UIButton = makeControlButton(emoji: "⬇", bg: AppTheme.Color.yellowLight, fg: AppTheme.Color.yellowDark)
+    let stopButton:  UIButton = makeControlButton(systemName: "stop.fill",  pointSize: 22, bg: AppTheme.Color.primaryLight, fg: AppTheme.Color.primary)
+    let moreButton:  UIButton = makeControlButton(systemName: "pause.fill", pointSize: 22, bg: AppTheme.Color.yellowLight,  fg: AppTheme.Color.yellowDark)
+
+    // CAGradientLayer를 버튼 레이어에 직접 삽입하면 imageView 렌더링과 충돌 → 이미지로 미리 렌더링
     let startButton: UIButton = {
-        let btn = UIButton(type: .system)
-        btn.setTitle("▶", for: .normal)
-        btn.titleLabel?.font = .systemFont(ofSize: 28)
-        btn.setTitleColor(.white, for: .normal)
-        btn.layer.cornerRadius = 22
+        let btn = UIButton(type: .custom)
+
+        // 그라디언트를 72×72 이미지로 렌더링 → backgroundImage로 설정
+        let size = CGSize(width: 72, height: 72)
+        let gradLayer = AppTheme.primaryGradient()
+        gradLayer.frame = CGRect(origin: .zero, size: size)
+        let renderer = UIGraphicsImageRenderer(size: size)
+        let gradImage = renderer.image { ctx in gradLayer.render(in: ctx.cgContext) }
+        btn.setBackgroundImage(gradImage, for: .normal)
+
+        // play 아이콘 — .alwaysOriginal로 흰색 고정 (tintColor 상속 무관)
+        let symConfig = UIImage.SymbolConfiguration(pointSize: 30, weight: .bold)
+        let icon = UIImage(systemName: "play.fill", withConfiguration: symConfig)?
+            .withTintColor(.white, renderingMode: .alwaysOriginal)
+        btn.setImage(icon, for: .normal)
+
+        btn.layer.cornerRadius = 20
         btn.clipsToBounds = true
-        AppTheme.applyButtonShadow(to: btn)
-        let grad = AppTheme.primaryGradient()
-        btn.layer.insertSublayer(grad, at: 0)
-        DispatchQueue.main.async {
-            grad.frame = CGRect(x: 0, y: 0, width: 72, height: 72)
-        }
         return btn
     }()
 
@@ -204,12 +212,12 @@ final class TimerView: BaseView {
     }
 
     // MARK: - Factories
-    private static func makeControlButton(emoji: String, bg: UIColor, fg: UIColor) -> UIButton {
+    private static func makeControlButton(systemName: String, pointSize: CGFloat, bg: UIColor, fg: UIColor) -> UIButton {
         let btn = UIButton(type: .system)
-        btn.setTitle(emoji, for: .normal)
-        btn.titleLabel?.font = .systemFont(ofSize: 22)
+        let symConfig = UIImage.SymbolConfiguration(pointSize: pointSize, weight: .bold)
+        btn.setImage(UIImage(systemName: systemName, withConfiguration: symConfig), for: .normal)
+        btn.tintColor = fg
         btn.backgroundColor = bg
-        btn.setTitleColor(fg, for: .normal)
         btn.layer.cornerRadius = 16
         btn.clipsToBounds = true
         return btn
