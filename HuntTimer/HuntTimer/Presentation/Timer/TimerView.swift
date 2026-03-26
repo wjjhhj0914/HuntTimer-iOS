@@ -81,9 +81,6 @@ final class TimerView: BaseView {
 
     override func layoutSubviews() {
         super.layoutSubviews()
-        if let gl = bgGradientView.layer.sublayers?.first as? CAGradientLayer {
-            gl.frame = bgGradientView.bounds
-        }
     }
 
     // MARK: - Layout
@@ -104,21 +101,8 @@ final class TimerView: BaseView {
 
     private func makeBgSection() -> UIView {
         let container = UIView()
-        container.snp.makeConstraints { $0.height.equalTo(220) }
-        container.clipsToBounds = true
-        container.addSubview(bgImageView)
-        bgImageView.snp.makeConstraints { $0.edges.equalToSuperview() }
 
-        let gradLayer = CAGradientLayer()
-        gradLayer.colors     = [UIColor.clear.cgColor, AppTheme.Color.background.cgColor]
-        gradLayer.startPoint = CGPoint(x: 0.5, y: 0)
-        gradLayer.endPoint   = CGPoint(x: 0.5, y: 1.0)
-        bgGradientView.isUserInteractionEnabled = false
-        container.addSubview(bgGradientView)
-        bgGradientView.snp.makeConstraints { $0.edges.equalToSuperview() }
-        bgGradientView.layer.addSublayer(gradLayer)
-
-        // Status badge
+        // Status badge (이미지 제거, 배지만 유지)
         let statusBadge = UIView()
         statusBadge.backgroundColor = UIColor(white: 1, alpha: 0.75)
         statusBadge.layer.cornerRadius = 16
@@ -134,6 +118,7 @@ final class TimerView: BaseView {
         container.addSubview(statusBadge)
         statusBadge.snp.makeConstraints { make in
             make.top.equalToSuperview().offset(14)
+            make.bottom.equalToSuperview().offset(-14)
             make.leading.equalToSuperview().offset(16)
         }
 
