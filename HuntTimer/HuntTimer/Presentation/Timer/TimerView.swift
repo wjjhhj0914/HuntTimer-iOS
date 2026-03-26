@@ -243,7 +243,6 @@ final class TimerView: BaseView {
         iconView.tintColor            = fgColor
         iconView.contentMode          = .scaleAspectFit
         iconView.isUserInteractionEnabled = false
-        iconView.snp.makeConstraints  { $0.width.height.equalTo(12) }
 
         let lbl = UILabel()
         lbl.text          = labelText
@@ -258,7 +257,9 @@ final class TimerView: BaseView {
         chipStack.addArrangedSubview(lbl)
         chipStack.isUserInteractionEnabled = false
 
+        // 뷰 계층 완성 후 제약 설치 (iconView → chipStack → btn 순서 완료 후)
         btn.addSubview(chipStack)
+        iconView.snp.makeConstraints  { $0.width.height.equalTo(12) }
         chipStack.snp.makeConstraints { make in
             make.top.bottom.equalToSuperview().inset(4)
             make.leading.trailing.equalToSuperview().inset(4)
