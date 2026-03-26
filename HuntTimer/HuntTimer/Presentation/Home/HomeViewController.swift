@@ -65,7 +65,7 @@ final class HomeViewController: BaseViewController {
                 self.contentView.centerLabel.text           = elapsedText
                 self.contentView.unitLabel.text             = "/ \(goalMins)분"
                 self.contentView.progressPercentLabel.text  = "\(pct)%"
-                self.contentView.progressValueLabel.text    = "\(elapsedText) / \(goalMins)분"
+                self.contentView.progressValueLabel.text    = "\(elapsedText) | \(goalMins)분"
                 self.contentView.goalBadgeLabel.text        = "목표 \(pct)%"
                 self.contentView.timeBadgeLabel.text        = Self.formatRemaining(seconds: remainSecs)
                 // 화면 등장 시 0 → 현재값으로 부드럽게 차오르는 애니메이션
@@ -104,6 +104,15 @@ final class HomeViewController: BaseViewController {
                 self.contentView.progressSectionView?.isHidden  = !hasCat
                 self.contentView.quickStatsSectionView?.isHidden = !hasCat
                 self.contentView.recentSectionView?.isHidden   = !hasCat
+            })
+            .disposed(by: disposeBag)
+
+        // startButton: 고양이 등록 시 → 타이머 탭으로 전환
+        contentView.startButton.rx.tap
+            .withLatestFrom(output.hasCat)
+            .filter { $0 }
+            .subscribe(onNext: { [weak self] _ in
+                self?.tabBarController?.selectedIndex = 2
             })
             .disposed(by: disposeBag)
 
