@@ -137,20 +137,21 @@ final class TimerView: BaseView {
         bodyStack.layoutMargins = UIEdgeInsets(top: 0, left: 20, bottom: 24, right: 20)
         bodyStack.isLayoutMarginsRelativeArrangement = true
 
-        // Gauge — 두 레이블을 원형 내부 중앙에 배치
-        let timerLabels = UIStackView.make(axis: .vertical, spacing: 4, alignment: .center)
-        timerLabels.addArrangedSubview(elapsedLabel)
-        timerLabels.addArrangedSubview(remainingLabel)
-        timerLabels.isUserInteractionEnabled = false
-        gaugeView.addSubview(timerLabels)
-        timerLabels.snp.makeConstraints { $0.center.equalToSuperview() }
-
+        // Gauge — gaugeWrapper 위에 레이블 오버레이 (gaugeView의 sublayer 제거 사이클에 영향받지 않도록)
         let gaugeWrapper = UIView()
         gaugeWrapper.addSubview(gaugeView)
         gaugeView.snp.makeConstraints { make in
             make.center.equalToSuperview()
             make.width.height.equalTo(220)
         }
+
+        let timerLabels = UIStackView.make(axis: .vertical, spacing: 4, alignment: .center)
+        timerLabels.addArrangedSubview(elapsedLabel)
+        timerLabels.addArrangedSubview(remainingLabel)
+        timerLabels.isUserInteractionEnabled = false
+        gaugeWrapper.addSubview(timerLabels)
+        timerLabels.snp.makeConstraints { $0.center.equalToSuperview() }
+
         gaugeWrapper.snp.makeConstraints { $0.height.equalTo(220) }
 
         // "시간 설정" 헤더 — 좌측 정렬, bold 13pt
