@@ -30,9 +30,9 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
         // SceneDelegate보다 먼저 Realm을 열어 마이그레이션·파일 생성을 완료
         do {
             _ = try Realm()
-            print("📦 Realm 초기화 완료: \(config.fileURL?.path ?? "")")
+            print("Realm 초기화 완료: \(config.fileURL?.path ?? "")")
         } catch {
-            print("❌ Realm 초기화 실패: \(error)")
+            print("Realm 초기화 실패: \(error)")
             #if DEBUG
             forceResetRealm(config: config)
             #endif

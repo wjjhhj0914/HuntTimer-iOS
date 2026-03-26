@@ -1,4 +1,5 @@
 import UIKit
+import RealmSwift
 
 /// 타이머 화면 ViewController — 타이머 상태 기계 및 target-action 바인딩 담당
 final class TimerViewController: BaseViewController {
@@ -76,8 +77,8 @@ final class TimerViewController: BaseViewController {
             stopTimer()
             return
         }
-        endAndSaveSession()
-        stopTimer()
+        pauseTimer()
+        showMemoAlert()
         UIImpactFeedbackGenerator(style: .light).impactOccurred()
     }
 
@@ -145,15 +146,50 @@ final class TimerViewController: BaseViewController {
         showFinishedAlert()
     }
 
-    private func endAndSaveSession() {
+    private func endAndSaveSession(memo: String? = nil) {
         guard let startTime = sessionStartTime else { return }
         viewModel.saveSession(
             startTime: startTime,
             endTime: Date(),
             duration: elapsedSeconds,
-            targetDuration: totalSeconds
+            targetDuration: totalSeconds,
+            memo: memo
         )
         sessionStartTime = nil
+    }
+
+    private func showMemoAlert() {
+        let catName = fetchFirstCatName()
+        let alert = UIAlertController(
+            title: "오늘의 사냥은 어땠나요?",
+            message: "\(catName)와의 시간을 한 줄로 남겨주세요",
+            preferredStyle: .alert
+        )
+        alert.addTextField { tf in
+            tf.placeholder = "예: 오늘따라 특히 신나게 놀았어요 🐾"
+            tf.returnKeyType = .done
+        }
+        alert.addAction(UIAlertAction(title: "취소", style: .cancel) { [weak self] _ in
+            // 취소 시 타이머 재개
+            self?.startTimer()
+        })
+        alert.addAction(UIAlertAction(title: "완료", style: .default) { [weak self] _ in
+            guard let self else { return }
+            let text = alert.textFields?.first?.text?.trimmingCharacters(in: .whitespacesAndNewlines)
+            let memo = (text?.isEmpty == false) ? text : nil
+            self.endAndSaveSession(memo: memo)
+            self.stopTimer()
+            self.tabBarController?.selectedIndex = 0
+        })
+        present(alert, animated: true)
+    }
+
+    private func fetchFirstCatName() -> String {
+        if let realm = try? Realm(),
+           let cat = realm.objects(Cat.self).first {
+            return cat.name.isEmpty ? "냥이" : cat.name
+        }
+        return "냥이"
     }
 
     private func showFinishedAlert() {

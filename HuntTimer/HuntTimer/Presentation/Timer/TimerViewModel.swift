@@ -35,12 +35,13 @@ final class TimerViewModel {
 
     // MARK: - Session Save
 
-    func saveSession(startTime: Date, endTime: Date, duration: Int, targetDuration: Int) {
+    func saveSession(startTime: Date, endTime: Date, duration: Int, targetDuration: Int, memo: String? = nil) {
         let session = PlaySession()
         session.startTime = startTime
         session.endTime = endTime
         session.duration = duration
         session.targetDuration = targetDuration
+        session.memo = memo
 
         do {
             let realm = try Realm()
