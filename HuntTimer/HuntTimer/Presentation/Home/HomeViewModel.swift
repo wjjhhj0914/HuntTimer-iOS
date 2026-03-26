@@ -58,6 +58,15 @@ final class HomeViewModel {
         let hasCatRelay        = BehaviorRelay<Bool>(value: false)
         let startBtnTitleRelay = BehaviorRelay<String>(value: "")
 
+        // ── 세션 Relay ──────────────────────────────────────────────────────
+        let todayMinutesRelay   = BehaviorRelay<Int>(value: 0)
+        let completedCountRelay = BehaviorRelay<Int>(value: 0)
+        let streakDaysRelay     = BehaviorRelay<Int>(value: 0)
+        let weeklyHoursRelay    = BehaviorRelay<String>(value: "0시간")
+        let bestRecordRelay     = BehaviorRelay<String>(value: "0분")
+        let monthlyDaysRelay    = BehaviorRelay<String>(value: "0일")
+        let recentSessionsRelay = BehaviorRelay<[HuntSession]>(value: [])
+
         Observable.merge(input.viewDidLoad, input.viewWillAppear)
             .subscribe(onNext: { [weak self] in
                 guard let self else { return }
@@ -70,23 +79,26 @@ final class HomeViewModel {
                     hasCat:        hasCatRelay,
                     startBtnTitle: startBtnTitleRelay
                 )
+                self.reloadSessions(
+                    todayMinutes:   todayMinutesRelay,
+                    completedCount: completedCountRelay,
+                    streakDays:     streakDaysRelay,
+                    weeklyHours:    weeklyHoursRelay,
+                    bestRecord:     bestRecordRelay,
+                    monthlyDays:    monthlyDaysRelay,
+                    recentSessions: recentSessionsRelay
+                )
             })
             .disposed(by: disposeBag)
 
-        // ── 세션 관련 (추후 Realm 연동) ────────────────────────────────────
-        let todayMinutes   = BehaviorRelay<Int>(value: 0)
-        let completedCount = BehaviorRelay<Int>(value: 0)
-        let streakDays     = BehaviorRelay<Int>(value: 0)
-
         let progressRatio: Driver<Float> = Driver
-            .combineLatest(todayMinutes.asDriver(), goalMinutesRelay.asDriver())
+            .combineLatest(todayMinutesRelay.asDriver(), goalMinutesRelay.asDriver())
             .map { today, goal -> Float in
                 guard goal > 0 else { return 0 }
                 return min(1.0, Float(today) / Float(goal))
             }
 
-        let streakText = streakDays.asDriver()
-            .map { "\($0)일 연속 🔥" }
+        let streakText = streakDaysRelay.asDriver().map { "\($0)일 연속 🔥" }
 
         // ── Side effects ────────────────────────────────────────────────────
         input.startHuntingTapped
@@ -105,14 +117,14 @@ final class HomeViewModel {
             streakText:       streakText,
             heroCatName:      heroCatNameRelay.asDriver(),
             heroStatus:       heroStatusRelay.asDriver(),
-            todayMinutes:     todayMinutes.asDriver(),
+            todayMinutes:     todayMinutesRelay.asDriver(),
             goalMinutes:      goalMinutesRelay.asDriver(),
             progressRatio:    progressRatio,
-            completedCount:   completedCount.asDriver(),
-            weeklyHours:      .just("0시간"),
-            bestRecord:       .just("0분"),
-            monthlyDays:      .just("0일"),
-            recentSessions:   .just([]),
+            completedCount:   completedCountRelay.asDriver(),
+            weeklyHours:      weeklyHoursRelay.asDriver(),
+            bestRecord:       bestRecordRelay.asDriver(),
+            monthlyDays:      monthlyDaysRelay.asDriver(),
+            recentSessions:   recentSessionsRelay.asDriver(),
             hasCat:           hasCatRelay.asDriver(),
             startButtonTitle: startBtnTitleRelay.asDriver()
         )
@@ -149,6 +161,91 @@ final class HomeViewModel {
             startBtnTitle.accept("냥이 프로필 등록하기 🐾")
         }
         hasCat.accept(hasIt)
+    }
+
+    // MARK: - Session Realm reload
+
+    private func reloadSessions(
+        todayMinutes:   BehaviorRelay<Int>,
+        completedCount: BehaviorRelay<Int>,
+        streakDays:     BehaviorRelay<Int>,
+        weeklyHours:    BehaviorRelay<String>,
+        bestRecord:     BehaviorRelay<String>,
+        monthlyDays:    BehaviorRelay<String>,
+        recentSessions: BehaviorRelay<[HuntSession]>
+    ) {
+        guard let realm = try? Realm() else { return }
+        let all      = Array(realm.objects(PlaySession.self))
+        let calendar = Calendar.current
+
+        // ── 오늘 ────────────────────────────────────────────────────────────
+        let todaySessions = all.filter { calendar.isDateInToday($0.startTime) }
+        let todaySecs     = todaySessions.reduce(0) { $0 + $1.duration }
+        todayMinutes.accept(todaySecs / 60)
+        completedCount.accept(todaySessions.count)
+
+        // ── 연속 사냥일 (오늘 포함 역방향 탐색) ─────────────────────────────
+        streakDays.accept(Self.computeStreak(from: all, calendar: calendar))
+
+        // ── 이번 주 (7일) ───────────────────────────────────────────────────
+        let weekAgo    = calendar.date(byAdding: .day, value: -7, to: Date()) ?? Date()
+        let weeklySecs = all.filter { $0.startTime >= weekAgo }.reduce(0) { $0 + $1.duration }
+        weeklyHours.accept(Self.formatDuration(seconds: weeklySecs, style: .hoursOnly))
+
+        // ── 최고 기록 (단일 세션) ────────────────────────────────────────────
+        let bestSecs = all.max(by: { $0.duration < $1.duration })?.duration ?? 0
+        bestRecord.accept(bestSecs > 0 ? "\(bestSecs / 60)분" : "0분")
+
+        // ── 이번 달 사냥일 수 ────────────────────────────────────────────────
+        let monthStart  = calendar.date(from: calendar.dateComponents([.year, .month], from: Date())) ?? Date()
+        let monthDays   = Set(all.filter { $0.startTime >= monthStart }
+                                 .map { calendar.startOfDay(for: $0.startTime) }).count
+        monthlyDays.accept("\(monthDays)일")
+
+        // ── 최근 3회 세션 → HuntSession 변환 ────────────────────────────────
+        let formatter        = DateFormatter()
+        formatter.locale     = Locale(identifier: "ko_KR")
+        formatter.dateFormat = "a h:mm"
+
+        let recent = all.sorted { $0.startTime > $1.startTime }.prefix(3)
+        let huntSessions: [HuntSession] = recent.enumerated().map { idx, s in
+            let mins = s.duration / 60
+            return HuntSession(
+                id:              idx + 1,
+                time:            formatter.string(from: s.startTime),
+                toy:             s.toys.first?.name ?? "장난감 없음",
+                durationText:    mins > 0 ? "\(mins)분" : "1분 미만",
+                durationSeconds: s.duration,
+                calories:        Int(Double(s.duration) / 60.0 * 2.8),
+                imageURL:        ""
+            )
+        }
+        recentSessions.accept(huntSessions)
+    }
+
+    // MARK: - Helpers
+
+    private static func computeStreak(from sessions: [PlaySession], calendar: Calendar) -> Int {
+        let activeDays = Set(sessions.map { calendar.startOfDay(for: $0.startTime) })
+        var streak     = 0
+        var date       = calendar.startOfDay(for: Date())
+        while activeDays.contains(date) {
+            streak += 1
+            guard let prev = calendar.date(byAdding: .day, value: -1, to: date) else { break }
+            date = prev
+        }
+        return streak
+    }
+
+    private enum DurationStyle { case hoursOnly, full }
+
+    private static func formatDuration(seconds: Int, style: DurationStyle) -> String {
+        let h = seconds / 3600
+        let m = (seconds % 3600) / 60
+        switch style {
+        case .hoursOnly: return h > 0 ? "\(h)시간" : "\(m)분"
+        case .full:      return h > 0 ? (m > 0 ? "\(h)시간 \(m)분" : "\(h)시간") : "\(m)분"
+        }
     }
 
     // MARK: - Korean postposition helper
