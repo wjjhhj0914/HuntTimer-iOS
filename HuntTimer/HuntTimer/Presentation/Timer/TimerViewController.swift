@@ -18,6 +18,13 @@ final class TimerViewController: BaseViewController {
     private var timer: Timer?
     private var sessionStartTime: Date?   // 타이머 최초 시작 시각 (일시정지 후 재개 시 유지)
 
+    // MARK: - Toy Selection
+    /// 선택된 장난감 이름 (nil = 선택 안 함 or 미선택)
+    private(set) var selectedToy: String? = nil
+    /// 선택된 칩 인덱스 (-1 = 아무것도 선택 안 됨)
+    private var selectedToyIndex: Int = -1
+    private let toyNames: [String?] = ["깃털 낚싯대", "벌레 낚싯대", "레이저", "방울 공", "인형", nil]
+
     // MARK: - loadView
     override func loadView() {
         view = contentView
@@ -44,6 +51,11 @@ final class TimerViewController: BaseViewController {
             btn.addTarget(self, action: #selector(controlButtonPressed(_:)), for: .touchDown)
             btn.addTarget(self, action: #selector(controlButtonReleased(_:)),
                           for: [.touchUpInside, .touchUpOutside, .touchCancel])
+        }
+
+        // 장난감 칩 탭
+        contentView.toyChipButtons.forEach { btn in
+            btn.addTarget(self, action: #selector(toyChipTapped(_:)), for: .touchUpInside)
         }
 
         updatePresetButtons()
@@ -85,6 +97,13 @@ final class TimerViewController: BaseViewController {
     @objc private func moreTapped() {
         guard isRunning else { return }
         pauseTimer()
+        UIImpactFeedbackGenerator(style: .light).impactOccurred()
+    }
+
+    @objc private func toyChipTapped(_ sender: UIButton) {
+        selectedToyIndex = sender.tag
+        selectedToy      = toyNames[sender.tag]
+        updateToyUI()
         UIImpactFeedbackGenerator(style: .light).impactOccurred()
     }
 
@@ -245,6 +264,21 @@ final class TimerViewController: BaseViewController {
                 self.contentView.moreButton.alpha      = 0.45
                 self.contentView.stopButton.isEnabled  = false
                 self.contentView.stopButton.alpha      = 0.45
+            }
+        }
+    }
+
+    private func updateToyUI() {
+        contentView.toyChipButtons.enumerated().forEach { idx, btn in
+            let isSelected = idx == selectedToyIndex
+            let isMuted    = idx == contentView.toyChipButtons.count - 1   // "선택 안 함"
+            let fgColor: UIColor = isSelected ? .white
+                                              : (isMuted ? AppTheme.Color.textMuted : AppTheme.Color.primary)
+            UIView.animate(withDuration: 0.15) {
+                btn.backgroundColor = isSelected ? AppTheme.Color.primary : AppTheme.Color.primaryLight
+                btn.alpha           = isSelected ? 1.0 : 0.6
+                self.contentView.toyChipIconViews[idx].tintColor = fgColor
+                self.contentView.toyChipLabels[idx].textColor    = fgColor
             }
         }
     }
