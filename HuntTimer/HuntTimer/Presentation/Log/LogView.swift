@@ -269,34 +269,37 @@ final class LogView: BaseView {
     }
 
     private func makeSessionList() -> UIView {
-        // Empty state setup (inside makeSessionList so superview is available)
+        // emptyStateView: content drives height (top/bottom inset → no height conflict)
         let emptyStack = UIStackView.make(axis: .vertical, spacing: 8, alignment: .center)
-        let emptyEmoji = UILabel.make(text: "🐾", size: 36, alignment: .center)
-        let emptyMsg   = UILabel.make(text: "기록이 없습니다", size: 14,
-                                      color: AppTheme.Color.textMuted, alignment: .center)
-        emptyStack.addArrangedSubview(emptyEmoji)
-        emptyStack.addArrangedSubview(emptyMsg)
+        emptyStack.addArrangedSubview(UILabel.make(text: "🐾", size: 36, alignment: .center))
+        emptyStack.addArrangedSubview(UILabel.make(text: "기록이 없습니다", size: 14,
+                                                   color: AppTheme.Color.textMuted, alignment: .center))
         emptyStateView.addSubview(emptyStack)
-        emptyStack.snp.makeConstraints { $0.center.equalToSuperview() }
-        emptyStateView.snp.makeConstraints { $0.height.equalTo(100) }
+        emptyStack.snp.makeConstraints { make in
+            make.top.bottom.equalToSuperview().inset(20)
+            make.centerX.equalToSuperview()
+        }
         emptyStateView.isHidden = true
 
-        let wrapper   = UIView()
         let headerRow = UIStackView.make(axis: .horizontal, alignment: .center)
         sessionSummaryLabel.setContentHuggingPriority(.required, for: .horizontal)
         headerRow.addArrangedSubview(sessionTitleLabel)
         headerRow.addArrangedSubview(sessionSummaryLabel)
 
-        let timelineContainer = UIView()
+        // contentSwitch: UIStackView이므로 isHidden인 뷰를 자동 collapse
+        // → rowsStack/emptyStateView 양쪽을 edges로 쓰는 충돌을 방지
+        let contentSwitch = UIStackView.make(axis: .vertical, spacing: 0)
+        contentSwitch.addArrangedSubview(rowsStack)
+        contentSwitch.addArrangedSubview(emptyStateView)
+
         let lineView = UIView()
         lineView.backgroundColor   = AppTheme.Color.primaryLight
         lineView.layer.cornerRadius = 1
-        timelineContainer.addSubview(lineView)
-        timelineContainer.addSubview(rowsStack)
-        timelineContainer.addSubview(emptyStateView)
 
-        rowsStack.snp.makeConstraints      { $0.edges.equalToSuperview() }
-        emptyStateView.snp.makeConstraints { $0.edges.equalToSuperview() }
+        let timelineContainer = UIView()
+        timelineContainer.addSubview(lineView)
+        timelineContainer.addSubview(contentSwitch)
+        contentSwitch.snp.makeConstraints { $0.edges.equalToSuperview() }
         lineView.snp.makeConstraints { make in
             make.leading.equalToSuperview().offset(24)
             make.top.equalToSuperview().offset(24)
@@ -308,6 +311,7 @@ final class LogView: BaseView {
         mainStack.addArrangedSubview(headerRow)
         mainStack.addArrangedSubview(timelineContainer)
 
+        let wrapper = UIView()
         wrapper.addSubview(mainStack)
         mainStack.snp.makeConstraints { make in
             make.top.bottom.equalToSuperview()
@@ -334,8 +338,9 @@ final class LogView: BaseView {
 
     // MARK: - Timeline Row
     private func makeTimelineRow(_ session: HuntSession) -> UIView {
-        let container = UIView()
-        let imgView   = AsyncImageView(contentMode: .scaleAspectFill, cornerRadius: 14)
+        // UIStackView를 직접 반환 — plain UIView wrapper는 rowsStack 내에서
+        // intrinsic height를 제공하지 못해 셀이 겹치는 원인이 됨
+        let imgView = AsyncImageView(contentMode: .scaleAspectFill, cornerRadius: 14)
         imgView.loadImage(from: session.imageURL)
         imgView.layer.borderWidth = 2
         imgView.layer.borderColor = UIColor.white.cgColor
@@ -365,9 +370,7 @@ final class LogView: BaseView {
         let outerRow = UIStackView.make(axis: .horizontal, spacing: 8, alignment: .center)
         outerRow.addArrangedSubview(imgView)
         outerRow.addArrangedSubview(card)
-        container.addSubview(outerRow)
-        outerRow.snp.makeConstraints { $0.edges.equalToSuperview() }
-        return container
+        return outerRow
     }
 
     private func makePillLabel(_ text: String, bg: UIColor, fg: UIColor) -> UIView {
