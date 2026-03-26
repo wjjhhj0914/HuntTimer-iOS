@@ -197,8 +197,12 @@ final class TimerView: BaseView {
         let headerRow = UIStackView.make(axis: .horizontal, spacing: 4, alignment: .center)
         let titleL = UILabel.make(text: "장난감 선택 영역", size: 13, weight: .bold, color: AppTheme.Color.textDark)
         let optL   = UILabel.make(text: "(선택 사항)", size: 11, color: AppTheme.Color.textMuted)
+        titleL.setContentHuggingPriority(.required, for: .horizontal)
+        optL.setContentHuggingPriority(.required, for: .horizontal)
+        let headerSpacer = UIView()
         headerRow.addArrangedSubview(titleL)
         headerRow.addArrangedSubview(optL)
+        headerRow.addArrangedSubview(headerSpacer)
 
         // 칩 행
         let chipsRow = UIStackView.make(axis: .horizontal, spacing: 5, distribution: .fillEqually)
