@@ -98,6 +98,9 @@ final class TimerViewController: BaseViewController {
     // MARK: - Timer Logic
     private func startTimer() {
         guard elapsedSeconds < totalSeconds else { return }
+        // 중복 타이머 방지: 혹시 살아있는 타이머가 있으면 먼저 정리
+        timer?.invalidate()
+        timer = nil
         if sessionStartTime == nil { sessionStartTime = Date() }  // 최초 시작 시각만 기록 (재개 시 유지)
         isRunning = true
         isPaused  = false
