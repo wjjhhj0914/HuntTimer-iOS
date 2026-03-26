@@ -4,9 +4,9 @@ import SnapKit
 /// 기록 화면 루트 뷰 — 모든 UI 선언과 SnapKit 레이아웃을 담당
 final class LogView: BaseView {
 
-    // MARK: - Calendar State (display-only)
-    let year  = 2026
-    let month = 2   // 0-indexed: March
+    // MARK: - Calendar State (mutable — VC가 월 이동 시 갱신)
+    var year: Int  = Calendar.current.component(.year,  from: Date())
+    var month: Int = Calendar.current.component(.month, from: Date()) - 1  // 0-indexed
 
     // MARK: - Scroll (private)
     private let scrollView: UIScrollView = {
@@ -58,13 +58,12 @@ final class LogView: BaseView {
         return UIButton(configuration: cfg)
     }()
 
-    var calendarContainer = UIView()
+    var calendarContainer    = UIView()
     var summaryCardContainer = UIView()
 
     let calendarCollectionView: UICollectionView = {
         let layout = UICollectionViewFlowLayout()
         let itemW  = (UIScreen.main.bounds.width - 40 - 6 * 6) / 7
-        // +10: label(top3+~14) + gap3 + image20 + gap2 + dot6 + selectionBg padding6 → compact
         layout.itemSize                = CGSize(width: itemW, height: itemW + 10)
         layout.minimumInteritemSpacing = 6
         layout.minimumLineSpacing      = 2
@@ -82,7 +81,6 @@ final class LogView: BaseView {
         btn.tintColor = AppTheme.Color.primary
         btn.backgroundColor = AppTheme.Color.primaryLight
         btn.layer.cornerRadius = 16
-        // SF Symbol은 UIButton.system 기본값(center/center)으로 정중앙 배치됨
         btn.snp.makeConstraints { $0.width.height.equalTo(32) }
         return btn
     }()
@@ -98,6 +96,19 @@ final class LogView: BaseView {
         return btn
     }()
 
+    // MARK: - Calendar month label (VC가 월 이동 시 갱신)
+    let monthLabel = UILabel.make(text: "", size: 16, weight: .bold,
+                                  color: AppTheme.Color.textDark, alignment: .center)
+
+    // MARK: - Session list stored properties (VC가 직접 갱신)
+    let sessionTitleLabel   = UILabel.make(text: "날짜를 선택하세요", size: 15,
+                                           weight: .bold, color: AppTheme.Color.textDark)
+    let sessionSummaryLabel = UILabel.make(text: "", size: 12, color: AppTheme.Color.textMuted)
+    let rowsStack           = UIStackView.make(axis: .vertical, spacing: 8)
+    let emptyStateView      = UIView()
+
+    private var calendarHeightConstraint: Constraint?
+
     // MARK: - BaseView
     override func setupUI() {
         backgroundColor = AppTheme.Color.background
@@ -109,7 +120,6 @@ final class LogView: BaseView {
     private func setupScrollView() {
         addSubview(scrollView)
         scrollView.snp.makeConstraints { make in
-            // Safe Area 상단을 기준으로 잡아 Status Bar와 겹침 방지
             make.top.equalTo(safeAreaLayoutGuide.snp.top)
             make.leading.trailing.bottom.equalToSuperview()
         }
@@ -176,18 +186,13 @@ final class LogView: BaseView {
     private func makeCalendarSection() -> UIView {
         calendarContainer = UIView()
 
-        let monthLabel = UILabel.make(text: "2026년 3월", size: 16, weight: .bold,
-                                      color: AppTheme.Color.textDark, alignment: .center)
-
         let navRow = UIStackView.make(axis: .horizontal, alignment: .center)
         navRow.addArrangedSubview(prevMonthButton)
         navRow.addArrangedSubview(monthLabel)
         navRow.addArrangedSubview(nextMonthButton)
 
-        // Calendar item width — 헤더와 그리드가 같은 itemW + 6pt 간격을 공유해야 열이 정렬됨
         let itemW = (UIScreen.main.bounds.width - 40 - 6 * 6) / 7
 
-        // Day-of-week header: fillEqually 대신 itemW 고정 너비 + spacing 6으로 컬렉션뷰와 1:1 일치
         let daysKR = ["일", "월", "화", "수", "목", "금", "토"]
         let dayHeaderRow = UIStackView.make(axis: .horizontal, spacing: 6)
         daysKR.enumerated().forEach { i, d in
@@ -199,12 +204,12 @@ final class LogView: BaseView {
             dayHeaderRow.addArrangedSubview(l)
         }
 
-        // Calendar height
-        let cells  = buildCalendarCells()
-        let rows   = ceil(Double(cells.count) / 7.0)
-        // itemSize.height = itemW + 10 와 동일하게 유지
-        let calH   = CGFloat(rows) * (itemW + 10) + CGFloat(rows - 1) * 2
-        calendarCollectionView.snp.makeConstraints { $0.height.equalTo(calH) }
+        let cells = buildCalendarCells()
+        let rows  = ceil(Double(cells.count) / 7.0)
+        let calH  = CGFloat(rows) * (itemW + 10) + CGFloat(rows - 1) * 2
+        calendarCollectionView.snp.makeConstraints { make in
+            calendarHeightConstraint = make.height.equalTo(calH).constraint
+        }
 
         let mainStack = UIStackView.make(axis: .vertical, spacing: 8)
         mainStack.addArrangedSubview(navRow)
@@ -219,6 +224,16 @@ final class LogView: BaseView {
         }
 
         return calendarContainer
+    }
+
+    /// 월이 변경되었을 때 컬렉션뷰 높이를 재계산
+    func updateCalendarHeight() {
+        let itemW = (UIScreen.main.bounds.width - 40 - 6 * 6) / 7
+        let cells = buildCalendarCells()
+        let rows  = ceil(Double(cells.count) / 7.0)
+        let calH  = CGFloat(rows) * (itemW + 10) + CGFloat(rows - 1) * 2
+        calendarHeightConstraint?.update(offset: calH)
+        layoutIfNeeded()
     }
 
     private func makeSummaryCard() -> UIView {
@@ -254,26 +269,34 @@ final class LogView: BaseView {
     }
 
     private func makeSessionList() -> UIView {
+        // Empty state setup (inside makeSessionList so superview is available)
+        let emptyStack = UIStackView.make(axis: .vertical, spacing: 8, alignment: .center)
+        let emptyEmoji = UILabel.make(text: "🐾", size: 36, alignment: .center)
+        let emptyMsg   = UILabel.make(text: "기록이 없습니다", size: 14,
+                                      color: AppTheme.Color.textMuted, alignment: .center)
+        emptyStack.addArrangedSubview(emptyEmoji)
+        emptyStack.addArrangedSubview(emptyMsg)
+        emptyStateView.addSubview(emptyStack)
+        emptyStack.snp.makeConstraints { $0.center.equalToSuperview() }
+        emptyStateView.snp.makeConstraints { $0.height.equalTo(100) }
+        emptyStateView.isHidden = true
+
         let wrapper   = UIView()
         let headerRow = UIStackView.make(axis: .horizontal, alignment: .center)
-        let titleL    = UILabel.make(text: "3월 19일 기록", size: 15, weight: .bold, color: AppTheme.Color.textDark)
-        let subL      = UILabel.make(text: "총 5회 · 65분", size: 12, color: AppTheme.Color.textMuted)
-        headerRow.addArrangedSubview(titleL)
-        headerRow.addArrangedSubview(subL)
+        sessionSummaryLabel.setContentHuggingPriority(.required, for: .horizontal)
+        headerRow.addArrangedSubview(sessionTitleLabel)
+        headerRow.addArrangedSubview(sessionSummaryLabel)
 
         let timelineContainer = UIView()
         let lineView = UIView()
         lineView.backgroundColor   = AppTheme.Color.primaryLight
         lineView.layer.cornerRadius = 1
-
-        let rowsStack = UIStackView.make(axis: .vertical, spacing: 8)
-        SampleData.sessions.forEach { session in
-            rowsStack.addArrangedSubview(makeTimelineRow(session))
-        }
-
         timelineContainer.addSubview(lineView)
         timelineContainer.addSubview(rowsStack)
-        rowsStack.snp.makeConstraints { $0.edges.equalToSuperview() }
+        timelineContainer.addSubview(emptyStateView)
+
+        rowsStack.snp.makeConstraints      { $0.edges.equalToSuperview() }
+        emptyStateView.snp.makeConstraints { $0.edges.equalToSuperview() }
         lineView.snp.makeConstraints { make in
             make.leading.equalToSuperview().offset(24)
             make.top.equalToSuperview().offset(24)
@@ -292,6 +315,21 @@ final class LogView: BaseView {
             make.trailing.equalToSuperview().offset(-20)
         }
         return wrapper
+    }
+
+    /// 세션 목록을 갱신 — 빈 배열이면 empty state 표시
+    func reloadSessionRows(_ sessions: [HuntSession]) {
+        rowsStack.arrangedSubviews.forEach { $0.removeFromSuperview() }
+
+        if sessions.isEmpty {
+            rowsStack.isHidden      = true
+            emptyStateView.isHidden = false
+            sessionSummaryLabel.text = ""
+        } else {
+            rowsStack.isHidden      = false
+            emptyStateView.isHidden = true
+            sessions.forEach { rowsStack.addArrangedSubview(makeTimelineRow($0)) }
+        }
     }
 
     // MARK: - Timeline Row
@@ -347,12 +385,11 @@ final class LogView: BaseView {
 
     // MARK: - Calendar Data
     func buildCalendarCells() -> [Int?] {
-        let firstDay = Calendar(identifier: .gregorian)
-            .component(.weekday, from: DateComponents(calendar: .current,
-                                                      year: year, month: month + 1, day: 1).date ?? Date()) - 1
-        let daysInMonth = Calendar(identifier: .gregorian)
-            .range(of: .day, in: .month,
-                   for: DateComponents(calendar: .current, year: year, month: month + 1).date ?? Date())!.count
+        let cal      = Calendar(identifier: .gregorian)
+        let comps    = DateComponents(calendar: .current, year: year, month: month + 1, day: 1)
+        let firstDay = cal.component(.weekday, from: comps.date ?? Date()) - 1
+        let daysInMonth = cal.range(of: .day, in: .month,
+                                    for: DateComponents(calendar: .current, year: year, month: month + 1).date ?? Date())!.count
         var cells: [Int?] = Array(repeating: nil, count: firstDay)
         (1...daysInMonth).forEach { cells.append($0) }
         while cells.count % 7 != 0 { cells.append(nil) }
