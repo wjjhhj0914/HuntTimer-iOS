@@ -25,6 +25,7 @@ final class TimerViewController: BaseViewController {
     override func viewDidLoad() {
         super.viewDidLoad()
         updateDisplay()
+        updateStatusUI()
     }
 
     // MARK: - BaseViewController
@@ -181,12 +182,33 @@ final class TimerViewController: BaseViewController {
             if self.isRunning {
                 self.contentView.statusDot.backgroundColor = AppTheme.Color.primary
                 self.contentView.statusLabel.text          = "🐾 사냥 중!"
+                // 사냥 중: 재생 비활성화 / 일시정지·정지 활성화
+                self.contentView.startButton.isEnabled = false
+                self.contentView.startButton.alpha     = 0.45
+                self.contentView.moreButton.isEnabled  = true
+                self.contentView.moreButton.alpha      = 1.0
+                self.contentView.stopButton.isEnabled  = true
+                self.contentView.stopButton.alpha      = 1.0
             } else if self.isPaused {
                 self.contentView.statusDot.backgroundColor = AppTheme.Color.yellow
                 self.contentView.statusLabel.text          = "⏸ 일시정지"
+                // 일시정지: 재생·정지 활성화 / 일시정지 비활성화
+                self.contentView.startButton.isEnabled = true
+                self.contentView.startButton.alpha     = 1.0
+                self.contentView.moreButton.isEnabled  = false
+                self.contentView.moreButton.alpha      = 0.45
+                self.contentView.stopButton.isEnabled  = true
+                self.contentView.stopButton.alpha      = 1.0
             } else {
                 self.contentView.statusDot.backgroundColor = AppTheme.Color.textMuted
                 self.contentView.statusLabel.text          = "사냥 준비"
+                // 준비: 재생만 활성화 / 일시정지·정지 비활성화
+                self.contentView.startButton.isEnabled = true
+                self.contentView.startButton.alpha     = 1.0
+                self.contentView.moreButton.isEnabled  = false
+                self.contentView.moreButton.alpha      = 0.45
+                self.contentView.stopButton.isEnabled  = false
+                self.contentView.stopButton.alpha      = 0.45
             }
         }
     }
