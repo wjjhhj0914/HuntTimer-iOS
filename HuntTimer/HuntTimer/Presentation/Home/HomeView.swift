@@ -38,14 +38,31 @@ final class HomeView: BaseView {
     let heroStatusLabel = UILabel.make(text: "", size: 18, weight: .black, color: .white)
 
     // MARK: - Progress
-    let gaugeView          = CircularProgressView(size: 130)
-    let centerLabel           = UILabel.make(text: "", size: 22, weight: .black, color: AppTheme.Color.textDark, alignment: .center)
-    let unitLabel             = UILabel.make(text: "", size: 11, color: AppTheme.Color.textMuted, alignment: .center)
-    let progressPercentLabel  = UILabel.make(text: "", size: 10, weight: .semibold, color: AppTheme.Color.primary, alignment: .center)
-    let progressValueLabel = UILabel.make(text: "", size: 17, weight: .black, color: AppTheme.Color.textDark)
-    let goalBadgeLabel     = UILabel.make(text: "", size: 11, weight: .semibold, color: AppTheme.Color.primary)
-    let timeBadgeLabel     = UILabel.make(text: "", size: 11, weight: .semibold, color: AppTheme.Color.yellowDark)
-    let sessionCountLabel  = UILabel.make(text: "", size: 11, color: AppTheme.Color.textMuted)
+    let gaugeView = CircularProgressView(size: 160)
+
+    /// 원형 게이지 중앙 — 오직 퍼센트 숫자만 표시하는 압도적 레이블
+    let percentLabel: UILabel = {
+        let label = UILabel()
+        label.text          = "0%"
+        label.textAlignment = .center
+        label.textColor     = AppTheme.Color.textDark
+        label.adjustsFontSizeToFitWidth = true
+        label.minimumScaleFactor        = 0.6
+        let baseFont = UIFont.systemFont(ofSize: 52, weight: .black)
+        label.font   = baseFont.fontDescriptor
+            .withDesign(.rounded)
+            .map { UIFont(descriptor: $0, size: 52) } ?? baseFont
+        return label
+    }()
+
+    // 하위 호환 — 뷰 계층에는 추가하지 않지만 VC 참조를 유지
+    let centerLabel          = UILabel.make(text: "", size: 22, weight: .black, color: AppTheme.Color.textDark, alignment: .center)
+    let unitLabel            = UILabel.make(text: "", size: 11, color: AppTheme.Color.textMuted, alignment: .center)
+    let progressPercentLabel = UILabel.make(text: "", size: 10, weight: .semibold, color: AppTheme.Color.primary, alignment: .center)
+    let progressValueLabel   = UILabel.make(text: "", size: 17, weight: .black, color: AppTheme.Color.textDark)
+    let goalBadgeLabel       = UILabel.make(text: "", size: 11, weight: .semibold, color: AppTheme.Color.primary)
+    let timeBadgeLabel       = UILabel.make(text: "", size: 11, weight: .semibold, color: AppTheme.Color.yellowDark)
+    let sessionCountLabel    = UILabel.make(text: "", size: 11, color: AppTheme.Color.textMuted)
 
     // MARK: - Quick Stats
     let weeklyValueLabel  = UILabel.make(text: "", size: 13, weight: .bold, color: AppTheme.Color.textDark, alignment: .center)
@@ -202,32 +219,25 @@ final class HomeView: BaseView {
         let card = UIView()
         card.applyCardStyle(cornerRadius: AppTheme.Radius.xxLarge)
 
-        let innerStack = UIStackView.make(axis: .vertical, spacing: 0, alignment: .center)
-        innerStack.addArrangedSubview(centerLabel)
-        innerStack.addArrangedSubview(unitLabel)
-        innerStack.addArrangedSubview(progressPercentLabel)
-        gaugeView.addSubview(innerStack)
-        innerStack.snp.makeConstraints { $0.center.equalToSuperview() }
-        gaugeView.snp.makeConstraints { $0.width.height.equalTo(130) }
+        // 퍼센트 레이블을 게이지 중앙에 배치
+        gaugeView.addSubview(percentLabel)
+        percentLabel.snp.makeConstraints { make in
+            make.center.equalToSuperview()
+            make.leading.trailing.equalToSuperview().inset(12)
+        }
+        gaugeView.snp.makeConstraints { $0.width.height.equalTo(160) }
 
         let headerLabel = UILabel.make(text: "오늘의 사냥 목표", size: 12, color: AppTheme.Color.textMedium)
-        let goalBadge   = makePill(label: goalBadgeLabel, bg: AppTheme.Color.primaryLight)
-        let timeBadge   = makePill(label: timeBadgeLabel, bg: AppTheme.Color.yellowLight)
-        let badgeRow    = UIStackView.make(axis: .vertical, spacing: 6, alignment: .leading)
-        badgeRow.addArrangedSubview(goalBadge)
-        badgeRow.addArrangedSubview(timeBadge)
 
-        let infoStack = UIStackView.make(axis: .vertical, spacing: 6)
-        infoStack.addArrangedSubview(headerLabel)
-        infoStack.addArrangedSubview(progressValueLabel)
-        infoStack.addArrangedSubview(badgeRow)
-        infoStack.addArrangedSubview(sessionCountLabel)
-
-        let row = UIStackView.make(axis: .horizontal, spacing: 16, alignment: .center)
-        row.addArrangedSubview(gaugeView)
-        row.addArrangedSubview(infoStack)
-        card.addSubview(row)
-        row.snp.makeConstraints { $0.edges.equalToSuperview().inset(16) }
+        // 게이지만 중앙 정렬로 카드 가득 채우기
+        let stack = UIStackView.make(axis: .vertical, spacing: 14, alignment: .center)
+        stack.addArrangedSubview(headerLabel)
+        stack.addArrangedSubview(gaugeView)
+        card.addSubview(stack)
+        stack.snp.makeConstraints { make in
+            make.top.bottom.equalToSuperview().inset(20)
+            make.leading.trailing.equalToSuperview().inset(16)
+        }
 
         return card.wrapped(insets: UIEdgeInsets(top: 0, left: 20, bottom: 0, right: 20))
     }

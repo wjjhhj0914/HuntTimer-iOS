@@ -59,16 +59,10 @@ final class HomeViewController: BaseViewController {
         Driver.combineLatest(output.todaySeconds, output.goalMinutes, output.progressRatio)
             .drive(onNext: { [weak self] todaySecs, goalMins, ratio in
                 guard let self else { return }
-                let elapsedText  = Self.formatElapsed(seconds: todaySecs)
-                let remainSecs   = max(0, goalMins * 60 - todaySecs)
-                let pct          = Int(ratio * 100)
-                self.contentView.centerLabel.text           = elapsedText
-                self.contentView.unitLabel.text             = "/ \(goalMins)분"
-                self.contentView.progressPercentLabel.text  = "\(pct)%"
-                self.contentView.progressValueLabel.text    = "\(elapsedText) / \(goalMins)분"
-                self.contentView.goalBadgeLabel.text        = "목표 \(pct)%"
-                self.contentView.timeBadgeLabel.text        = Self.formatRemaining(seconds: remainSecs)
-                self.contentView.gaugeView.updateProgress(ratio)
+                // 원형 중앙 — 압도적 퍼센트 레이블
+                self.contentView.percentLabel.text = Self.formatPercent(todaySecs: todaySecs, goalMins: goalMins)
+                // 게이지: 화면 등장 시 0 → 현재값으로 차오르는 애니메이션
+                self.contentView.gaugeView.animateProgress(ratio)
             })
             .disposed(by: disposeBag)
 
@@ -120,6 +114,17 @@ final class HomeViewController: BaseViewController {
     }
 
     // MARK: - Helpers
+
+    /// 초 단위 정밀 계산: (오늘 총 초 / 목표 초) * 100
+    /// - 0초: "0%"  |  1분 미만: "< 1%"  |  이상: 반올림 정수%
+    private static func formatPercent(todaySecs: Int, goalMins: Int) -> String {
+        let goalSecs = goalMins * 60
+        guard goalSecs > 0, todaySecs > 0 else { return "0%" }
+        let ratio = Double(todaySecs) / Double(goalSecs)
+        if ratio < 0.01 { return "< 1%" }
+        return "\(min(Int((ratio * 100).rounded()), 100))%"
+    }
+
     private static func formatElapsed(seconds: Int) -> String {
         if seconds < 60 { return "\(seconds)초" }
         let m = seconds / 60, s = seconds % 60
