@@ -25,8 +25,8 @@ final class HomeViewModel {
         let streakText: Driver<String>
         let heroCatName: Driver<String>
         let heroStatus: Driver<String>
-        // Progress gauge
-        let todayMinutes: Driver<Int>
+        // Progress gauge — 초 단위로 보존하여 1분 미만 데이터 손실 방지
+        let todaySeconds: Driver<Int>
         let goalMinutes: Driver<Int>
         let progressRatio: Driver<Float>
         let completedCount: Driver<Int>
@@ -59,7 +59,7 @@ final class HomeViewModel {
         let startBtnTitleRelay = BehaviorRelay<String>(value: "")
 
         // ── 세션 Relay ──────────────────────────────────────────────────────
-        let todayMinutesRelay   = BehaviorRelay<Int>(value: 0)
+        let todaySecondsRelay   = BehaviorRelay<Int>(value: 0)
         let completedCountRelay = BehaviorRelay<Int>(value: 0)
         let streakDaysRelay     = BehaviorRelay<Int>(value: 0)
         let weeklyHoursRelay    = BehaviorRelay<String>(value: "0시간")
@@ -80,7 +80,7 @@ final class HomeViewModel {
                     startBtnTitle: startBtnTitleRelay
                 )
                 self.reloadSessions(
-                    todayMinutes:   todayMinutesRelay,
+                    todaySeconds:   todaySecondsRelay,
                     completedCount: completedCountRelay,
                     streakDays:     streakDaysRelay,
                     weeklyHours:    weeklyHoursRelay,
@@ -92,10 +92,11 @@ final class HomeViewModel {
             .disposed(by: disposeBag)
 
         let progressRatio: Driver<Float> = Driver
-            .combineLatest(todayMinutesRelay.asDriver(), goalMinutesRelay.asDriver())
-            .map { today, goal -> Float in
-                guard goal > 0 else { return 0 }
-                return min(1.0, Float(today) / Float(goal))
+            .combineLatest(todaySecondsRelay.asDriver(), goalMinutesRelay.asDriver())
+            .map { todaySecs, goalMins -> Float in
+                let goalSecs = goalMins * 60
+                guard goalSecs > 0 else { return 0 }
+                return min(1.0, Float(todaySecs) / Float(goalSecs))
             }
 
         let streakText = streakDaysRelay.asDriver().map { "\($0)일 연속 🔥" }
@@ -117,7 +118,7 @@ final class HomeViewModel {
             streakText:       streakText,
             heroCatName:      heroCatNameRelay.asDriver(),
             heroStatus:       heroStatusRelay.asDriver(),
-            todayMinutes:     todayMinutesRelay.asDriver(),
+            todaySeconds:     todaySecondsRelay.asDriver(),
             goalMinutes:      goalMinutesRelay.asDriver(),
             progressRatio:    progressRatio,
             completedCount:   completedCountRelay.asDriver(),
@@ -166,7 +167,7 @@ final class HomeViewModel {
     // MARK: - Session Realm reload
 
     private func reloadSessions(
-        todayMinutes:   BehaviorRelay<Int>,
+        todaySeconds:   BehaviorRelay<Int>,
         completedCount: BehaviorRelay<Int>,
         streakDays:     BehaviorRelay<Int>,
         weeklyHours:    BehaviorRelay<String>,
@@ -181,7 +182,7 @@ final class HomeViewModel {
         // ── 오늘 ────────────────────────────────────────────────────────────
         let todaySessions = all.filter { calendar.isDateInToday($0.startTime) }
         let todaySecs     = todaySessions.reduce(0) { $0 + $1.duration }
-        todayMinutes.accept(todaySecs / 60)
+        todaySeconds.accept(todaySecs)
         completedCount.accept(todaySessions.count)
 
         // ── 연속 사냥일 (오늘 포함 역방향 탐색) ─────────────────────────────
