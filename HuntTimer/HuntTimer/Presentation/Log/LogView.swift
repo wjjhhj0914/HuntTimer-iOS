@@ -8,8 +8,8 @@ final class LogView: BaseView {
     var year: Int  = Calendar.current.component(.year,  from: Date())
     var month: Int = Calendar.current.component(.month, from: Date()) - 1  // 0-indexed
 
-    // MARK: - Scroll (private)
-    private let scrollView: UIScrollView = {
+    // MARK: - Scroll (VC가 delegate 할당을 위해 접근)
+    let scrollView: UIScrollView = {
         let sv = UIScrollView()
         sv.showsVerticalScrollIndicator = false
         sv.alwaysBounceVertical = true
@@ -22,6 +22,10 @@ final class LogView: BaseView {
         sv.isLayoutMarginsRelativeArrangement = true
         return sv
     }()
+
+    // MARK: - Sticky Nav (scrollView 바깥 — 항상 상단에 고정)
+    /// 월 타이틀 행. scrollView 위에 배치되어 캘린더가 완전히 접혀도 보임
+    let stickyNavView = UIView()
 
     // MARK: - Public UI
     let calendarButton: UIButton = {
@@ -96,31 +100,59 @@ final class LogView: BaseView {
         return btn
     }()
 
-    // MARK: - Calendar month label (VC가 월 이동 시 갱신)
     let monthLabel = UILabel.make(text: "", size: 16, weight: .bold,
                                   color: AppTheme.Color.textDark, alignment: .center)
 
-    // MARK: - Session list stored properties (VC가 직접 갱신)
+    // MARK: - Session list stored properties
     let sessionTitleLabel   = UILabel.make(text: "날짜를 선택하세요", size: 15,
                                            weight: .bold, color: AppTheme.Color.textDark)
     let sessionSummaryLabel = UILabel.make(text: "", size: 12, color: AppTheme.Color.textMuted)
     let rowsStack           = UIStackView.make(axis: .vertical, spacing: 8)
     let emptyStateView      = UIView()
 
+    // MARK: - Collapse state
+    /// 캘린더 그리드의 전체 높이 — VC가 스크롤 진행도 계산에 사용
+    private(set) var calendarGridFullHeight: CGFloat = 0
+    private var calendarGridConstraint:  Constraint?
     private var calendarHeightConstraint: Constraint?
 
     // MARK: - BaseView
     override func setupUI() {
         backgroundColor = AppTheme.Color.background
-        setupScrollView()
+        setupStickyNav()    // 1) 고정 헤더 (scrollView 밖)
+        setupScrollView()   // 2) scrollView = stickyNavView 아래부터
         buildContent()
+    }
+
+    // MARK: - Sticky Nav
+    private func setupStickyNav() {
+        stickyNavView.backgroundColor = AppTheme.Color.background
+
+        let navRow = UIStackView.make(axis: .horizontal, alignment: .center)
+        navRow.addArrangedSubview(prevMonthButton)
+        navRow.addArrangedSubview(monthLabel)
+        navRow.addArrangedSubview(nextMonthButton)
+
+        stickyNavView.addSubview(navRow)
+        navRow.snp.makeConstraints { make in
+            make.top.bottom.equalToSuperview().inset(8)
+            make.leading.equalToSuperview().offset(20)
+            make.trailing.equalToSuperview().offset(-20)
+        }
+
+        addSubview(stickyNavView)
+        stickyNavView.snp.makeConstraints { make in
+            make.top.equalTo(safeAreaLayoutGuide.snp.top)
+            make.leading.trailing.equalToSuperview()
+        }
     }
 
     // MARK: - Layout
     private func setupScrollView() {
         addSubview(scrollView)
         scrollView.snp.makeConstraints { make in
-            make.top.equalTo(safeAreaLayoutGuide.snp.top)
+            // stickyNavView 바로 아래에서 시작
+            make.top.equalTo(stickyNavView.snp.bottom)
             make.leading.trailing.bottom.equalToSuperview()
         }
         scrollView.addSubview(contentStack)
@@ -157,7 +189,7 @@ final class LogView: BaseView {
     }
 
     private func makeToggle() -> UIView {
-        let v = UIView()
+        let v     = UIView()
         let stack = UIStackView.make(axis: .horizontal, spacing: 8, distribution: .fillEqually)
         stack.addArrangedSubview(calendarButton)
         stack.addArrangedSubview(listButton)
@@ -184,17 +216,16 @@ final class LogView: BaseView {
     }
 
     private func makeCalendarSection() -> UIView {
+        // calendarContainer = 접히는 그리드 영역 (navRow는 stickyNavView로 이동)
         calendarContainer = UIView()
-
-        let navRow = UIStackView.make(axis: .horizontal, alignment: .center)
-        navRow.addArrangedSubview(prevMonthButton)
-        navRow.addArrangedSubview(monthLabel)
-        navRow.addArrangedSubview(nextMonthButton)
+        calendarContainer.clipsToBounds = true  // 높이 축소 시 내용 클리핑
 
         let itemW = (UIScreen.main.bounds.width - 40 - 6 * 6) / 7
 
+        // 요일 헤더
         let daysKR = ["일", "월", "화", "수", "목", "금", "토"]
         let dayHeaderRow = UIStackView.make(axis: .horizontal, spacing: 6)
+        dayHeaderRow.snp.makeConstraints { $0.height.equalTo(16) }
         daysKR.enumerated().forEach { i, d in
             let l = UILabel.make(
                 text: d, size: 11, weight: .bold,
@@ -204,6 +235,7 @@ final class LogView: BaseView {
             dayHeaderRow.addArrangedSubview(l)
         }
 
+        // 컬렉션뷰 높이
         let cells = buildCalendarCells()
         let rows  = ceil(Double(cells.count) / 7.0)
         let calH  = CGFloat(rows) * (itemW + 10) + CGFloat(rows - 1) * 2
@@ -211,28 +243,55 @@ final class LogView: BaseView {
             calendarHeightConstraint = make.height.equalTo(calH).constraint
         }
 
-        let mainStack = UIStackView.make(axis: .vertical, spacing: 8)
-        mainStack.addArrangedSubview(navRow)
-        mainStack.addArrangedSubview(dayHeaderRow)
-        mainStack.addArrangedSubview(calendarCollectionView)
+        // 그리드 스택 (dayHeader + collectionView) — calendarContainer 상단에 고정
+        let gridStack = UIStackView.make(axis: .vertical, spacing: 8)
+        gridStack.addArrangedSubview(dayHeaderRow)
+        gridStack.addArrangedSubview(calendarCollectionView)
+        calendarContainer.addSubview(gridStack)
+        gridStack.snp.makeConstraints { make in
+            make.top.leading.trailing.equalToSuperview()
+            // bottom은 잡지 않음 — height constraint가 calendarContainer 크기를 결정
+        }
 
-        calendarContainer.addSubview(mainStack)
-        mainStack.snp.makeConstraints { make in
+        // calendarContainer 전체 높이 (= 접힌/펼쳐진 기준)
+        let gridFullH: CGFloat = 16 + 8 + calH   // dayHeaderH + spacing + calH
+        calendarGridFullHeight = gridFullH
+        calendarContainer.snp.makeConstraints { make in
+            calendarGridConstraint = make.height.equalTo(gridFullH).constraint
+        }
+
+        // 좌우 패딩 wrapper
+        let wrapper = UIView()
+        wrapper.addSubview(calendarContainer)
+        calendarContainer.snp.makeConstraints { make in
             make.top.bottom.equalToSuperview()
             make.leading.equalToSuperview().offset(20)
             make.trailing.equalToSuperview().offset(-20)
         }
-
-        return calendarContainer
+        return wrapper
     }
 
-    /// 월이 변경되었을 때 컬렉션뷰 높이를 재계산
+    // MARK: - Collapse API
+    /// 스크롤 진행도(0=펼침, 1=완전 접힘)에 따라 캘린더 그리드 높이·투명도 조정
+    func collapseCalendar(progress: CGFloat) {
+        let p = min(1, max(0, progress))
+        calendarGridConstraint?.update(offset: calendarGridFullHeight * (1 - p))
+        calendarContainer.alpha = 1 - p
+    }
+
+    /// 월 변경 후 캘린더 높이 재계산 및 완전 펼침 복원
     func updateCalendarHeight() {
         let itemW = (UIScreen.main.bounds.width - 40 - 6 * 6) / 7
         let cells = buildCalendarCells()
         let rows  = ceil(Double(cells.count) / 7.0)
         let calH  = CGFloat(rows) * (itemW + 10) + CGFloat(rows - 1) * 2
+
         calendarHeightConstraint?.update(offset: calH)
+
+        let gridFullH: CGFloat = 16 + 8 + calH
+        calendarGridFullHeight = gridFullH
+        calendarGridConstraint?.update(offset: gridFullH)  // 완전 펼침으로 복원
+        calendarContainer.alpha = 1
         layoutIfNeeded()
     }
 
@@ -269,7 +328,6 @@ final class LogView: BaseView {
     }
 
     private func makeSessionList() -> UIView {
-        // emptyStateView: content drives height (top/bottom inset → no height conflict)
         let emptyStack = UIStackView.make(axis: .vertical, spacing: 8, alignment: .center)
         emptyStack.addArrangedSubview(UILabel.make(text: "🐾", size: 36, alignment: .center))
         emptyStack.addArrangedSubview(UILabel.make(text: "기록이 없습니다", size: 14,
@@ -286,8 +344,6 @@ final class LogView: BaseView {
         headerRow.addArrangedSubview(sessionTitleLabel)
         headerRow.addArrangedSubview(sessionSummaryLabel)
 
-        // contentSwitch: UIStackView이므로 isHidden인 뷰를 자동 collapse
-        // → rowsStack/emptyStateView 양쪽을 edges로 쓰는 충돌을 방지
         let contentSwitch = UIStackView.make(axis: .vertical, spacing: 0)
         contentSwitch.addArrangedSubview(rowsStack)
         contentSwitch.addArrangedSubview(emptyStateView)
@@ -321,10 +377,9 @@ final class LogView: BaseView {
         return wrapper
     }
 
-    /// 세션 목록을 갱신 — 빈 배열이면 empty state 표시
+    /// 세션 목록 갱신 — 빈 배열이면 empty state 표시
     func reloadSessionRows(_ sessions: [HuntSession]) {
         rowsStack.arrangedSubviews.forEach { $0.removeFromSuperview() }
-
         if sessions.isEmpty {
             rowsStack.isHidden      = true
             emptyStateView.isHidden = false
@@ -338,8 +393,6 @@ final class LogView: BaseView {
 
     // MARK: - Timeline Row
     private func makeTimelineRow(_ session: HuntSession) -> UIView {
-        // UIStackView를 직접 반환 — plain UIView wrapper는 rowsStack 내에서
-        // intrinsic height를 제공하지 못해 셀이 겹치는 원인이 됨
         let imgView = AsyncImageView(contentMode: .scaleAspectFill, cornerRadius: 14)
         imgView.loadImage(from: session.imageURL)
         imgView.layer.borderWidth = 2

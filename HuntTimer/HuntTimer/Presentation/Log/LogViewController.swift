@@ -25,6 +25,7 @@ final class LogViewController: BaseViewController {
     override func setupBind() {
         contentView.calendarCollectionView.dataSource = self
         contentView.calendarCollectionView.delegate   = self
+        contentView.scrollView.delegate               = self   // sticky header collapse
         contentView.calendarButton.addTarget(self,  action: #selector(calendarTapped), for: .touchUpInside)
         contentView.listButton.addTarget(self,      action: #selector(listTapped),     for: .touchUpInside)
         contentView.prevMonthButton.addTarget(self, action: #selector(prevMonth),      for: .touchUpInside)
@@ -65,7 +66,9 @@ final class LogViewController: BaseViewController {
         currentDate = prev
         selectedDay = nil
         reloadCalendar()
-        contentView.sessionTitleLabel.text  = "날짜를 선택하세요"
+        // 월 이동 시 스크롤을 최상단으로 복원 → 캘린더 완전 펼침
+        contentView.scrollView.setContentOffset(.zero, animated: false)
+        contentView.sessionTitleLabel.text   = "날짜를 선택하세요"
         contentView.sessionSummaryLabel.text = ""
         contentView.reloadSessionRows([])
         UIImpactFeedbackGenerator(style: .light).impactOccurred()
@@ -76,7 +79,8 @@ final class LogViewController: BaseViewController {
         currentDate = next
         selectedDay = nil
         reloadCalendar()
-        contentView.sessionTitleLabel.text  = "날짜를 선택하세요"
+        contentView.scrollView.setContentOffset(.zero, animated: false)
+        contentView.sessionTitleLabel.text   = "날짜를 선택하세요"
         contentView.sessionSummaryLabel.text = ""
         contentView.reloadSessionRows([])
         UIImpactFeedbackGenerator(style: .light).impactOccurred()
@@ -171,6 +175,17 @@ final class LogViewController: BaseViewController {
         let curComps   = cal.dateComponents([.year, .month], from: currentDate)
         guard todayComps.year == curComps.year, todayComps.month == curComps.month else { return nil }
         return todayComps.day
+    }
+}
+
+// MARK: - UIScrollViewDelegate (Sticky Header Collapse)
+extension LogViewController: UIScrollViewDelegate {
+
+    func scrollViewDidScroll(_ scrollView: UIScrollView) {
+        let fullH    = contentView.calendarGridFullHeight
+        guard fullH > 0 else { return }
+        let progress = scrollView.contentOffset.y / fullH
+        contentView.collapseCalendar(progress: progress)
     }
 }
 
