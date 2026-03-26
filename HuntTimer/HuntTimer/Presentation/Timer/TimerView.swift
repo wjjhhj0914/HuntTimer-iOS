@@ -49,6 +49,10 @@ final class TimerView: BaseView {
     private(set) var toyChipIconViews: [UIImageView] = []
     private(set) var toyChipLabels:    [UILabel]     = []
 
+    // MARK: - Tip
+    let tipLabel = UILabel.make(text: "하루 30분 이상 놀아주면 냥이의 스트레스가 줄어요!",
+                                size: 12, color: UIColor(hex: "#9B7A00"), lines: 0)
+
     // MARK: - Preset & Controls
     let presetStack = UIStackView.make(axis: .horizontal, spacing: 8, distribution: .fillEqually)
     var presetButtons: [UIButton] = []
@@ -290,13 +294,14 @@ final class TimerView: BaseView {
         v.backgroundColor = AppTheme.Color.yellowLight
         v.layer.cornerRadius = AppTheme.Radius.large
         let stack = UIStackView.make(axis: .horizontal, spacing: 8, alignment: .center)
-        let emoji = UILabel.make(text: "💡", size: 20)
-        let tip   = UILabel.make(text: "하루 30분 이상 놀아주면 뮤기의 스트레스가 줄어요!",
-                                 size: 12, color: UIColor(hex: "#9B7A00"), lines: 0)
-        stack.addArrangedSubview(emoji)
-        stack.addArrangedSubview(tip)
+        let symCfg  = UIImage.SymbolConfiguration(pointSize: 10, weight: .semibold)
+        let bulbIcon = UIImageView(image: UIImage(systemName: "lightbulb.max", withConfiguration: symCfg))
+        bulbIcon.tintColor = UIColor(hex: "#9B7A00")
+        bulbIcon.setContentHuggingPriority(.required, for: .horizontal)
+        stack.addArrangedSubview(bulbIcon)
+        stack.addArrangedSubview(tipLabel)
         v.addSubview(stack)
-        stack.snp.makeConstraints { $0.edges.equalToSuperview().inset(12) }
+        stack.snp.makeConstraints { $0.edges.equalToSuperview().inset(14) }
         return v
     }
 }

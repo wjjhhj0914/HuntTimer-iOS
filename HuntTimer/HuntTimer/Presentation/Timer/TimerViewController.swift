@@ -36,6 +36,12 @@ final class TimerViewController: BaseViewController {
         updateStatusUI()
     }
 
+    override func viewWillAppear(_ animated: Bool) {
+        super.viewWillAppear(animated)
+        let name = fetchFirstCatName()
+        contentView.tipLabel.text = "하루 30분 이상 놀아주면 \(name)의 스트레스가 줄어요!"
+    }
+
     // MARK: - BaseViewController
     override func setupBind() {
         // 타이머 액션
@@ -236,7 +242,7 @@ final class TimerViewController: BaseViewController {
         UIView.animate(withDuration: 0.22) {
             if self.isRunning {
                 self.contentView.statusDot.backgroundColor = AppTheme.Color.primary
-                self.contentView.statusLabel.text          = "🐾 사냥 중!"
+                self.contentView.statusLabel.text          = "사냥 중!"
                 // 사냥 중: 재생 비활성화 / 일시정지·정지 활성화
                 self.contentView.startButton.isEnabled = false
                 self.contentView.startButton.alpha     = 0.45
@@ -246,7 +252,7 @@ final class TimerViewController: BaseViewController {
                 self.contentView.stopButton.alpha      = 1.0
             } else if self.isPaused {
                 self.contentView.statusDot.backgroundColor = AppTheme.Color.yellow
-                self.contentView.statusLabel.text          = "⏸ 일시정지"
+                self.contentView.statusLabel.text          = "일시정지"
                 // 일시정지: 재생·정지 활성화 / 일시정지 비활성화
                 self.contentView.startButton.isEnabled = true
                 self.contentView.startButton.alpha     = 1.0
