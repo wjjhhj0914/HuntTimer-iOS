@@ -56,21 +56,25 @@ final class HomeViewController: BaseViewController {
         output.heroStatus.drive(contentView.heroStatusLabel.rx.text).disposed(by: disposeBag)
 
         // Progress gauge
-        Driver.combineLatest(output.todayMinutes, output.goalMinutes, output.progressRatio)
-            .drive(onNext: { [weak self] today, goal, ratio in
+        Driver.combineLatest(output.todaySeconds, output.goalMinutes, output.progressRatio)
+            .drive(onNext: { [weak self] todaySecs, goalMins, ratio in
                 guard let self else { return }
-                self.contentView.centerLabel.text        = "\(today)"
-                self.contentView.unitLabel.text          = "/ \(goal)분"
-                self.contentView.progressValueLabel.text = "\(today) / \(goal)분"
-                self.contentView.goalBadgeLabel.text     = "🎯 목표 \(Int(ratio * 100))%"
-                self.contentView.timeBadgeLabel.text     = "⭐ \(goal - today)분 남음"
+                let elapsedText  = Self.formatElapsed(seconds: todaySecs)
+                let remainSecs   = max(0, goalMins * 60 - todaySecs)
+                let pct          = Int(ratio * 100)
+                self.contentView.centerLabel.text           = elapsedText
+                self.contentView.unitLabel.text             = "/ \(goalMins)분"
+                self.contentView.progressPercentLabel.text  = "\(pct)%"
+                self.contentView.progressValueLabel.text    = "\(elapsedText) / \(goalMins)분"
+                self.contentView.goalBadgeLabel.text        = "목표 \(pct)%"
+                self.contentView.timeBadgeLabel.text        = Self.formatRemaining(seconds: remainSecs)
                 self.contentView.gaugeView.updateProgress(ratio)
             })
             .disposed(by: disposeBag)
 
         output.completedCount
             .drive(onNext: { [weak self] count in
-                self?.contentView.sessionCountLabel.text = "⏱ 오늘 \(count)회 사냥 완료"
+                self?.contentView.sessionCountLabel.text = "오늘 \(count)회 사냥 완료"
             })
             .disposed(by: disposeBag)
 
@@ -116,6 +120,19 @@ final class HomeViewController: BaseViewController {
     }
 
     // MARK: - Helpers
+    private static func formatElapsed(seconds: Int) -> String {
+        if seconds < 60 { return "\(seconds)초" }
+        let m = seconds / 60, s = seconds % 60
+        return s > 0 ? "\(m)분 \(s)초" : "\(m)분"
+    }
+
+    private static func formatRemaining(seconds: Int) -> String {
+        if seconds == 0 { return "목표 달성!" }
+        if seconds < 60 { return "\(seconds)초 남음" }
+        let m = seconds / 60, s = seconds % 60
+        return s > 0 ? "\(m)분 \(s)초 남음" : "\(m)분 남음"
+    }
+
     private func populateRecentSessions(_ sessions: [HuntSession]) {
         contentView.recentStack.arrangedSubviews.forEach { $0.removeFromSuperview() }
         sessions.forEach { contentView.recentStack.addArrangedSubview(contentView.makeSessionRow($0)) }
