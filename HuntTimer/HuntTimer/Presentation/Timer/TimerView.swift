@@ -18,12 +18,12 @@ final class TimerView: BaseView {
     private let contentStack = UIStackView.make(axis: .vertical, spacing: 0)
 
     // MARK: - Background
-    let bgImageView: AsyncImageView = {
-        let iv = AsyncImageView(contentMode: .scaleAspectFill)
-        iv.loadImage(from: "https://images.unsplash.com/photo-1744710835733-936ab49ee0b4?w=800")
-        return iv
-    }()
-    let bgGradientView = UIView()
+//    let bgImageView: AsyncImageView = {
+//        let iv = AsyncImageView(contentMode: .scaleAspectFill)
+//        iv.loadImage(from: "https://images.unsplash.com/photo-1744710835733-936ab49ee0b4?w=800")
+//        return iv
+//    }()
+//    let bgGradientView = UIView()
 
     // MARK: - Status Badge
     let statusDot: UIView = {
@@ -211,10 +211,10 @@ final class TimerView: BaseView {
         // 칩 행
         let chipsRow = UIStackView.make(axis: .horizontal, spacing: 5, distribution: .fillEqually)
         let items: [(icon: String, label: String, muted: Bool)] = [
-            ("leaf.fill",   "깃털\n낚싯대", false),
-            ("ant.fill",    "벌레\n낚싯대", false),
+            ("leaf.fill",   "깃털", false),
+            ("ant.fill",    "벌레", false),
             ("bolt.fill",   "레이저",      false),
-            ("circle.fill", "방울 공",     false),
+            ("timelapse", "카샤카샤",     false),
             ("teddybear",   "인형",        false),
             ("xmark",       "선택 안 함",  true),
         ]
