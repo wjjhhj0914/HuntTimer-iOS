@@ -20,6 +20,8 @@ final class ProfileView: BaseView {
     }()
 
     // MARK: - Public UI
+    private(set) var catSettingsCard: UIView = UIView()
+
     let memorialToggle: UISwitch = {
         let s = UISwitch()
         s.onTintColor = AppTheme.Color.purple
@@ -54,7 +56,7 @@ final class ProfileView: BaseView {
     // MARK: - Hero Section
     private func makeHeroSection() -> UIView {
         let heroBG = UIView()
-        heroBG.backgroundColor = AppTheme.Color.primaryLight
+//        heroBG.backgroundColor = AppTheme.Color.primaryLight
 
         let circle1 = UIView()
         circle1.backgroundColor  = AppTheme.Color.primary.withAlphaComponent(0.3)
@@ -84,11 +86,9 @@ final class ProfileView: BaseView {
         AppTheme.applyCardShadow(to: avatarImageView, opacity: 0.25, radius: 12)
 
         let editButton = UIButton(type: .system)
-        editButton.setTitle("✏️", for: .normal)
-        editButton.backgroundColor   = AppTheme.Color.primary
-        editButton.layer.cornerRadius = 16
-        editButton.layer.borderWidth  = 2
-        editButton.layer.borderColor  = UIColor.white.cgColor
+        let pencilCfg = UIImage.SymbolConfiguration(pointSize: 28, weight: .semibold)
+        editButton.setImage(UIImage(systemName: "pencil.circle.fill", withConfiguration: pencilCfg), for: .normal)
+        editButton.tintColor = AppTheme.Color.primary
         editButton.snp.makeConstraints { $0.width.height.equalTo(32) }
 
         avatarContainer.addSubview(avatarImageView)
@@ -115,22 +115,25 @@ final class ProfileView: BaseView {
             ("⏱️", "41.5h", "총 시간"),
             ("🏅", "4개",   "배지"),
         ]
-        let statsRow = UIStackView.make(axis: .horizontal, spacing: 12, distribution: .fillEqually)
+        let statsRow = UIStackView.make(axis: .horizontal, spacing: 12, alignment: .center, distribution: .fillEqually)
         statsData.forEach { emoji, val, lbl in
             let card = UIView()
-            card.backgroundColor   = UIColor(white: 1, alpha: 0.70)
+            card.backgroundColor   = AppTheme.Color.primaryLight
             card.layer.cornerRadius = AppTheme.Radius.medium
             let col = UIStackView.make(axis: .vertical, spacing: 2, alignment: .center)
             col.addArrangedSubview(UILabel.make(text: emoji, size: 16, alignment: .center))
             col.addArrangedSubview(UILabel.make(text: val, size: 14, weight: .bold,
                                                 color: AppTheme.Color.textDark, alignment: .center))
-            col.addArrangedSubview(UILabel.make(text: lbl, size: 10, color: AppTheme.Color.textMuted, alignment: .center))
+            col.addArrangedSubview(UILabel.make(text: lbl, size: 10, color: AppTheme.Color.primary, alignment: .center))
             card.addSubview(col)
+            // col: 좌우는 카드에 고정, 세로는 중앙 정렬 (top/bottom 미설정 → 카드 높이를 col이 결정하지 않음)
             col.snp.makeConstraints { make in
-                make.top.bottom.equalToSuperview().inset(10)
+                make.centerY.equalToSuperview()
                 make.leading.trailing.equalToSuperview().inset(6)
             }
             statsRow.addArrangedSubview(card)
+            // 카드 높이 = 카드 너비 (1:1 정사각형), fillEqually가 너비를 결정한 뒤 적용
+            card.snp.makeConstraints { $0.height.equalTo(card.snp.width) }
         }
 
         let mainStack = UIStackView.make(axis: .vertical, spacing: 10, alignment: .center)
@@ -138,6 +141,8 @@ final class ProfileView: BaseView {
         mainStack.addArrangedSubview(nameLabel)
         mainStack.addArrangedSubview(infoLabel)
         mainStack.addArrangedSubview(statsRow)
+        // statsRow는 mainStack과 동일한 너비로 고정 → fillEqually 분배가 카드 너비를 정확히 계산
+        statsRow.snp.makeConstraints { $0.width.equalToSuperview() }
 
         heroBG.addSubview(mainStack)
         mainStack.snp.makeConstraints { make in
@@ -158,21 +163,24 @@ final class ProfileView: BaseView {
         let title   = UILabel.make(text: "설정", size: 15, weight: .bold, color: AppTheme.Color.textDark)
 
         struct SettingRow {
-            let emoji: String; let label: String; let desc: String
+            let symbol: String; let label: String; let desc: String
             let bg: UIColor; let fg: UIColor; var hasToggle = false
         }
-        let rows: [SettingRow] = [
-            SettingRow(emoji: "🐱", label: "고양이 설정",  desc: "뮤기 프로필 수정",
-                       bg: AppTheme.Color.primaryLight, fg: AppTheme.Color.primary),
-            SettingRow(emoji: "🎯", label: "목표 설정",    desc: "하루 사냥 목표 시간",
-                       bg: AppTheme.Color.yellowLight,  fg: AppTheme.Color.yellowDark),
-            SettingRow(emoji: "💜", label: "추모 모드",    desc: "소중한 추억 간직하기",
-                       bg: AppTheme.Color.purpleLight,  fg: AppTheme.Color.purple, hasToggle: true),
+        let remainingRows: [SettingRow] = [
+            SettingRow(symbol: "cloud.rainbow.crop", label: "추모 모드", desc: "소중한 추억 간직하기",
+                       bg: AppTheme.Color.purpleLight, fg: AppTheme.Color.purple, hasToggle: true),
         ]
 
         let listStack = UIStackView.make(axis: .vertical, spacing: 8)
-        rows.forEach { row in
-            listStack.addArrangedSubview(makeSettingRow(row.emoji, row.label, row.desc,
+
+        // 고양이 설정 행 — ViewController에서 탭 이벤트를 연결할 수 있도록 참조 보존
+        let catRow = makeSettingRow("cat.fill", "고양이 설정", "뮤기 프로필 수정",
+                                    bg: AppTheme.Color.primaryLight, fg: AppTheme.Color.primary, toggle: false)
+        catSettingsCard = catRow
+        listStack.addArrangedSubview(catRow)
+
+        remainingRows.forEach { row in
+            listStack.addArrangedSubview(makeSettingRow(row.symbol, row.label, row.desc,
                                                         bg: row.bg, fg: row.fg, toggle: row.hasToggle))
         }
 
@@ -189,18 +197,21 @@ final class ProfileView: BaseView {
         return wrapper
     }
 
-    private func makeSettingRow(_ emoji: String, _ label: String, _ desc: String,
+    private func makeSettingRow(_ symbol: String, _ label: String, _ desc: String,
                                  bg: UIColor, fg: UIColor, toggle: Bool) -> UIView {
         let card = UIView()
         card.applyCardStyle(cornerRadius: AppTheme.Radius.large)
 
         let iconView = UIView()
-        iconView.backgroundColor  = bg
+        iconView.backgroundColor   = bg
         iconView.layer.cornerRadius = AppTheme.Radius.medium
         iconView.snp.makeConstraints { $0.width.height.equalTo(44) }
-        let iconLabel = UILabel.make(text: emoji, size: 20, alignment: .center)
-        iconView.addSubview(iconLabel)
-        iconLabel.snp.makeConstraints { $0.center.equalToSuperview() }
+        let symCfg  = UIImage.SymbolConfiguration(pointSize: 18, weight: .medium)
+        let iconIV  = UIImageView(image: UIImage(systemName: symbol, withConfiguration: symCfg))
+        iconIV.tintColor   = fg
+        iconIV.contentMode = .scaleAspectFit
+        iconView.addSubview(iconIV)
+        iconIV.snp.makeConstraints { $0.center.equalToSuperview() }
 
         let labelL = UILabel.make(text: label, size: 14, weight: .bold, color: AppTheme.Color.textDark)
         let descL  = UILabel.make(text: desc,  size: 11, color: AppTheme.Color.textMuted)
@@ -208,16 +219,30 @@ final class ProfileView: BaseView {
         textS.addArrangedSubview(labelL)
         textS.addArrangedSubview(descL)
 
-        let accessory: UIView = toggle
-            ? memorialToggle
-            : UILabel.make(text: "›", size: 20, color: AppTheme.Color.textMuted)
+        let accessory: UIView
+        if toggle {
+            accessory = memorialToggle
+        } else {
+            let chevronCfg = UIImage.SymbolConfiguration(pointSize: 13, weight: .semibold)
+            let chevronIV  = UIImageView(image: UIImage(systemName: "chevron.forward", withConfiguration: chevronCfg))
+            chevronIV.tintColor   = AppTheme.Color.textMuted
+            chevronIV.contentMode = .scaleAspectFit
+            accessory = chevronIV
+        }
+
+        textS.setContentHuggingPriority(.defaultLow, for: .horizontal)
+        accessory.setContentHuggingPriority(.required, for: .horizontal)
+        accessory.setContentCompressionResistancePriority(.required, for: .horizontal)
 
         let row = UIStackView.make(axis: .horizontal, spacing: 12, alignment: .center)
         row.addArrangedSubview(iconView)
         row.addArrangedSubview(textS)
         row.addArrangedSubview(accessory)
         card.addSubview(row)
-        row.snp.makeConstraints { $0.edges.equalToSuperview().inset(12) }
+        row.snp.makeConstraints { make in
+            make.top.bottom.leading.equalToSuperview().inset(12)
+            make.trailing.equalToSuperview().inset(14)
+        }
         return card
     }
 
@@ -278,31 +303,71 @@ final class ProfileView: BaseView {
     // MARK: - App Info Section
     private func makeAppInfoSection() -> UIView {
         let wrapper = UIView()
-        let rows: [(String, String)] = [
-            ("⚙️", "앱 설정"),
-            ("ℹ️", "버전 정보 v1.2.3"),
-            ("⭐", "리뷰 남기기"),
-        ]
-        let stack = UIStackView.make(axis: .vertical, spacing: 8)
-        rows.forEach { emoji, label in
-            let card = UIView()
-            card.applyCardStyle(cornerRadius: AppTheme.Radius.medium)
-            let e   = UILabel.make(text: emoji, size: 16)
-            let l   = UILabel.make(text: label, size: 13, color: AppTheme.Color.textMedium)
-            let a   = UILabel.make(text: "›", size: 20, color: AppTheme.Color.textMuted)
-            let row = UIStackView.make(axis: .horizontal, spacing: 10, alignment: .center)
-            row.addArrangedSubview(e)
-            row.addArrangedSubview(l)
-            row.addArrangedSubview(a)
-            card.addSubview(row)
-            row.snp.makeConstraints { make in
-                make.top.bottom.equalToSuperview().inset(13)
-                make.leading.trailing.equalToSuperview().inset(16)
-            }
-            stack.addArrangedSubview(card)
+        let title   = UILabel.make(text: "앱 정보", size: 15, weight: .bold, color: AppTheme.Color.textDark)
+
+        struct AppInfoRow {
+            let symbol: String; let label: String; let desc: String
+            let bg: UIColor; let fg: UIColor
         }
-        wrapper.addSubview(stack)
-        stack.snp.makeConstraints { make in
+        let rows: [AppInfoRow] = [
+            AppInfoRow(symbol: "gearshape.fill",   label: "앱 설정",          desc: "알림, 테마 설정",
+                       bg: UIColor(white: 0.92, alpha: 1), fg: AppTheme.Color.textMedium),
+            AppInfoRow(symbol: "info.circle.fill",  label: "버전 정보",        desc: "v1.2.3",
+                       bg: AppTheme.Color.primaryLight,    fg: AppTheme.Color.primary),
+            AppInfoRow(symbol: "star.fill",          label: "리뷰 남기기",      desc: "앱스토어에서 응원해주세요",
+                       bg: AppTheme.Color.yellowLight,     fg: AppTheme.Color.yellowDark),
+        ]
+
+        let listStack = UIStackView.make(axis: .vertical, spacing: 8)
+        rows.forEach { row in
+            let card = UIView()
+            card.applyCardStyle(cornerRadius: AppTheme.Radius.large)
+
+            let iconBG = UIView()
+            iconBG.backgroundColor   = row.bg
+            iconBG.layer.cornerRadius = AppTheme.Radius.medium
+            iconBG.snp.makeConstraints { $0.width.height.equalTo(44) }
+
+            let symCfg = UIImage.SymbolConfiguration(pointSize: 18, weight: .medium)
+            let iconIV = UIImageView(image: UIImage(systemName: row.symbol, withConfiguration: symCfg))
+            iconIV.tintColor   = row.fg
+            iconIV.contentMode = .scaleAspectFit
+            iconBG.addSubview(iconIV)
+            iconIV.snp.makeConstraints { $0.center.equalToSuperview() }
+
+            let labelL = UILabel.make(text: row.label, size: 14, weight: .bold, color: AppTheme.Color.textDark)
+            let descL  = UILabel.make(text: row.desc,  size: 11, color: AppTheme.Color.textMuted)
+            let textS  = UIStackView.make(axis: .vertical, spacing: 2)
+            textS.addArrangedSubview(labelL)
+            textS.addArrangedSubview(descL)
+
+            let chevronCfg2 = UIImage.SymbolConfiguration(pointSize: 13, weight: .semibold)
+            let chevron = UIImageView(image: UIImage(systemName: "chevron.forward", withConfiguration: chevronCfg2))
+            chevron.tintColor   = AppTheme.Color.textMuted
+            chevron.contentMode = .scaleAspectFit
+            // textS가 남은 공간을 채우고, chevron은 우측 끝에 고정
+            textS.setContentHuggingPriority(.defaultLow, for: .horizontal)
+            chevron.setContentHuggingPriority(.required, for: .horizontal)
+            chevron.setContentCompressionResistancePriority(.required, for: .horizontal)
+
+            let rowStack = UIStackView.make(axis: .horizontal, spacing: 12, alignment: .center)
+            rowStack.addArrangedSubview(iconBG)
+            rowStack.addArrangedSubview(textS)
+            rowStack.addArrangedSubview(chevron)
+            card.addSubview(rowStack)
+            rowStack.snp.makeConstraints { make in
+                make.top.bottom.leading.equalToSuperview().inset(12)
+                make.trailing.equalToSuperview().inset(14)
+            }
+            listStack.addArrangedSubview(card)
+        }
+
+        let mainStack = UIStackView.make(axis: .vertical, spacing: 12)
+        mainStack.addArrangedSubview(title)
+        mainStack.addArrangedSubview(listStack)
+
+        wrapper.addSubview(mainStack)
+        mainStack.snp.makeConstraints { make in
             make.top.bottom.equalToSuperview()
             make.leading.equalToSuperview().offset(20)
             make.trailing.equalToSuperview().offset(-20)
