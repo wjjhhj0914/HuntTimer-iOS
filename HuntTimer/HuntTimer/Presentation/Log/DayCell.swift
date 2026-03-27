@@ -27,6 +27,16 @@ final class DayCell: UICollectionViewCell {
 
     private let thumbImage = AsyncImageView(contentMode: .scaleAspectFill)
 
+    /// 사진 없을 때 기본 아이콘
+    private let catIconView: UIImageView = {
+        let iv = UIImageView()
+        let cfg = UIImage.SymbolConfiguration(pointSize: 9, weight: .medium)
+        iv.image = UIImage(systemName: "cat.fill", withConfiguration: cfg)
+        iv.tintColor = AppTheme.Color.primary
+        iv.contentMode = .scaleAspectFit
+        return iv
+    }()
+
     /// 활동 인디케이터 점
     private let dotView = UIView()
 
@@ -41,7 +51,9 @@ final class DayCell: UICollectionViewCell {
 
         // ── 이미지를 컨테이너에 넣기 (원형 클리핑은 컨테이너가 담당) ──
         imageContainer.addSubview(thumbImage)
+        imageContainer.addSubview(catIconView)
         thumbImage.snp.makeConstraints { $0.edges.equalToSuperview() }
+        catIconView.snp.makeConstraints { $0.center.equalToSuperview() }
 
         // ── Z-order: selectionBg → 나머지 ──────────────────────
         contentView.insertSubview(selectionBg, at: 0)
@@ -112,7 +124,7 @@ final class DayCell: UICollectionViewCell {
 
     // MARK: - Configure
 
-    func configure(day: Int?, isSelected: Bool, isToday: Bool, hasActivity: Bool, imageURL: String?) {
+    func configure(day: Int?, isSelected: Bool, isToday: Bool, hasActivity: Bool, imagePath: String?) {
         guard let day else {
             dayLabel.text               = ""
             selectionBg.backgroundColor = .clear
@@ -134,7 +146,17 @@ final class DayCell: UICollectionViewCell {
         imageContainer.isHidden = !hasActivity
         dotView.isHidden        = !hasActivity
 
-        if let url = imageURL, hasActivity { thumbImage.loadImage(from: url) }
+        if hasActivity {
+            if let path = imagePath, let img = UIImage(contentsOfFile: path) {
+                thumbImage.image    = img
+                thumbImage.isHidden = false
+                catIconView.isHidden = true
+            } else {
+                thumbImage.image    = nil
+                thumbImage.isHidden = true
+                catIconView.isHidden = false
+            }
+        }
 
         dotView.backgroundColor        = isSelected ? .white : AppTheme.Color.primary
         imageContainer.layer.borderColor = isSelected
