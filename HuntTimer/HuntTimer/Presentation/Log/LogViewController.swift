@@ -30,12 +30,19 @@ final class LogViewController: BaseViewController {
         contentView.prevMonthButton.addTarget(self, action: #selector(prevMonth),      for: .touchUpInside)
         contentView.nextMonthButton.addTarget(self, action: #selector(nextMonth),      for: .touchUpInside)
 
+        contentView.profileButton.addTarget(self, action: #selector(profileTapped), for: .touchUpInside)
+
         reloadCalendar()
 
         // 오늘 날짜로 초기 선택
         let todayDay = Calendar.current.component(.day, from: Date())
         selectedDay = todayDay
         reloadSessions(for: Date())
+    }
+
+    // MARK: - Navigation
+    @objc private func profileTapped() {
+        navigationController?.pushViewController(ProfileViewController(), animated: true)
     }
 
     // MARK: - Toggle Actions

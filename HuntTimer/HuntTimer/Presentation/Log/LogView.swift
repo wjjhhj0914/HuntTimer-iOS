@@ -96,6 +96,19 @@ final class LogView: BaseView {
         return btn
     }()
 
+    // MARK: - Profile Button
+    let profileButton: UIButton = {
+        let btn = UIButton(type: .system)
+        let cfg = UIImage.SymbolConfiguration(pointSize: 16, weight: .medium)
+        btn.setImage(UIImage(systemName: "pawprint.circle.fill", withConfiguration: cfg), for: .normal)
+        btn.tintColor = AppTheme.Color.primary
+        btn.backgroundColor = .white
+        btn.layer.cornerRadius = 20
+        AppTheme.applyCardShadow(to: btn, opacity: 0.12, radius: 8)
+        btn.snp.makeConstraints { $0.width.height.equalTo(40) }
+        return btn
+    }()
+
     // MARK: - Calendar month label (VC가 월 이동 시 갱신)
     let monthLabel = UILabel.make(text: "", size: 16, weight: .bold,
                                   color: AppTheme.Color.textDark, alignment: .center)
@@ -144,11 +157,16 @@ final class LogView: BaseView {
         let v     = UIView()
         let title = UILabel.make(text: "활동 기록", size: 22, weight: .black, color: AppTheme.Color.textDark)
         let sub   = UILabel.make(text: "뮤기의 사냥 히스토리", size: 13, color: AppTheme.Color.textMuted)
-        let stack = UIStackView.make(axis: .vertical, spacing: 2)
-        stack.addArrangedSubview(title)
-        stack.addArrangedSubview(sub)
-        v.addSubview(stack)
-        stack.snp.makeConstraints { make in
+        let textStack = UIStackView.make(axis: .vertical, spacing: 2)
+        textStack.addArrangedSubview(title)
+        textStack.addArrangedSubview(sub)
+
+        let row = UIStackView.make(axis: .horizontal, spacing: 8, alignment: .center)
+        row.addArrangedSubview(textStack)
+        row.addArrangedSubview(profileButton)
+
+        v.addSubview(row)
+        row.snp.makeConstraints { make in
             make.top.bottom.equalToSuperview()
             make.leading.equalToSuperview().offset(20)
             make.trailing.equalToSuperview().offset(-20)
