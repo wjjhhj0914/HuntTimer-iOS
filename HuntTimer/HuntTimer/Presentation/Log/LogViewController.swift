@@ -14,6 +14,8 @@ final class LogViewController: BaseViewController {
         return Calendar.current.date(from: comps) ?? Date()
     }()
     private var activityDays: Set<Int> = []
+    /// 날짜별 첫 번째 사진 경로 (사진이 없는 날짜는 포함하지 않음)
+    private var activityPhotos: [Int: String] = [:]
     private var selectedDay: Int?
 
     // MARK: - loadView
@@ -102,8 +104,8 @@ final class LogViewController: BaseViewController {
         contentView.year  = year
         contentView.month = month - 1   // 0-indexed
 
-        // Realm에서 해당 월의 활동 일자 조회
-        activityDays = loadActivityDays(year: year, month: month)
+        // Realm에서 해당 월의 활동 일자 및 사진 경로 조회
+        (activityDays, activityPhotos) = loadActivityData(year: year, month: month)
 
         contentView.updateCalendarHeight()
         contentView.calendarCollectionView.reloadData()
@@ -130,15 +132,47 @@ final class LogViewController: BaseViewController {
 
     // MARK: - Realm Queries
 
-    private func loadActivityDays(year: Int, month: Int) -> Set<Int> {
-        guard let realm = try? Realm() else { return [] }
+    private func loadActivityData(year: Int, month: Int) -> (Set<Int>, [Int: String]) {
+        guard let realm = try? Realm() else { return ([], [:]) }
         let cal        = Calendar.current
         let monthStart = cal.date(from: DateComponents(year: year, month: month, day: 1)) ?? Date()
         let monthEnd   = cal.date(byAdding: .month, value: 1, to: monthStart) ?? Date()
 
         let sessions = realm.objects(PlaySession.self)
             .filter("startTime >= %@ AND startTime < %@", monthStart, monthEnd)
-        return Set(sessions.map { cal.component(.day, from: $0.startTime) })
+
+        var days: Set<Int>       = []
+        var photos: [Int: String] = [:]
+        for session in sessions {
+            let day = cal.component(.day, from: session.startTime)
+            days.insert(day)
+            if photos[day] == nil, let path = session.photos.first?.imagePath, !path.isEmpty {
+                photos[day] = path
+            }
+        }
+        return (days, photos)
+    }
+
+    private func loadFirstPlaySession(for date: Date) -> PlaySession? {
+        guard let realm = try? Realm() else { return nil }
+        let cal      = Calendar.current
+        let dayStart = cal.startOfDay(for: date)
+        let dayEnd   = cal.date(byAdding: .day, value: 1, to: dayStart) ?? dayStart
+        return realm.objects(PlaySession.self)
+            .filter("startTime >= %@ AND startTime < %@", dayStart, dayEnd)
+            .sorted(byKeyPath: "startTime", ascending: true)
+            .first
+    }
+
+    private func presentDetailModal(for session: PlaySession) {
+        let vc = HuntDetailViewController()
+        vc.durationSeconds = session.duration
+        vc.toyName         = session.toys.first?.name
+        vc.imagePath       = session.photos.first?.imagePath
+        vc.memo            = session.memo
+        vc.modalPresentationStyle = .overFullScreen
+        vc.modalTransitionStyle   = .crossDissolve
+        present(vc, animated: true)
     }
 
     private func loadSessions(for date: Date) -> [HuntSession] {
@@ -211,11 +245,12 @@ extension LogViewController: UICollectionViewDataSource, UICollectionViewDelegat
         let cells = contentView.buildCalendarCells()
         let day   = cells[indexPath.item]
         let hasActivity = day.map { activityDays.contains($0) } ?? false
+        let imagePath   = day.flatMap { activityPhotos[$0] }
         cell.configure(day: day,
                        isSelected: day == selectedDay,
                        isToday:    day == todayDayInCurrentMonth,
                        hasActivity: hasActivity,
-                       imageURL:   nil)
+                       imagePath:   imagePath)
         return cell
     }
 
@@ -229,7 +264,8 @@ extension LogViewController: UICollectionViewDataSource, UICollectionViewDelegat
            let prevCell = cv.cellForItem(at: IndexPath(item: prevIdx, section: 0)) as? DayCell {
             prevCell.configure(day: prevDay, isSelected: false,
                                isToday: prevDay == todayDayInCurrentMonth,
-                               hasActivity: activityDays.contains(prevDay), imageURL: nil)
+                               hasActivity: activityDays.contains(prevDay),
+                               imagePath: activityPhotos[prevDay])
         }
 
         selectedDay = day
@@ -238,7 +274,8 @@ extension LogViewController: UICollectionViewDataSource, UICollectionViewDelegat
         if let cell = cv.cellForItem(at: indexPath) as? DayCell {
             cell.configure(day: day, isSelected: true,
                            isToday: day == todayDayInCurrentMonth,
-                           hasActivity: activityDays.contains(day), imageURL: nil)
+                           hasActivity: activityDays.contains(day),
+                           imagePath: activityPhotos[day])
             cell.animateBounce()
         }
 
@@ -251,6 +288,10 @@ extension LogViewController: UICollectionViewDataSource, UICollectionViewDelegat
         dateComps.day   = day
         if let date = cal.date(from: dateComps) {
             reloadSessions(for: date)
+            // 활동이 있는 날짜: 상세 기록 모달 표시
+            if activityDays.contains(day), let session = loadFirstPlaySession(for: date) {
+                presentDetailModal(for: session)
+            }
         }
     }
 }
