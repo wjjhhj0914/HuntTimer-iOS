@@ -22,6 +22,14 @@ final class ProfileViewController: BaseViewController {
     override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
         navigationController?.setNavigationBarHidden(false, animated: animated)
+        loadProfileImage()
+    }
+
+    private func loadProfileImage() {
+        guard let cat = (try? Realm())?.objects(Cat.self).first,
+              let data = cat.profileImageData,
+              let image = UIImage(data: data) else { return }
+        contentView.avatarImageView.image = image
     }
 
     override func viewWillDisappear(_ animated: Bool) {
@@ -67,6 +75,9 @@ final class ProfileViewController: BaseViewController {
         let tap = UITapGestureRecognizer(target: self, action: #selector(catSettingsTapped))
         contentView.catSettingsCard.isUserInteractionEnabled = true
         contentView.catSettingsCard.addGestureRecognizer(tap)
+
+        // 프로필 사진 편집 버튼
+        contentView.photoEditButton.addTarget(self, action: #selector(photoTapped), for: .touchUpInside)
     }
 
     // MARK: - Actions
@@ -74,11 +85,33 @@ final class ProfileViewController: BaseViewController {
         navigationController?.popViewController(animated: true)
     }
 
+    @objc private func photoTapped() {
+        guard UIImagePickerController.isSourceTypeAvailable(.photoLibrary) else { return }
+        let picker = UIImagePickerController()
+        picker.sourceType    = .photoLibrary
+        picker.allowsEditing = true
+        picker.delegate      = self
+        present(picker, animated: true)
+    }
+
     @objc private func catSettingsTapped() {
         let vc = CatProfileViewController()
         vc.mode     = .edit
         vc.catToEdit = (try? Realm())?.objects(Cat.self).first
         navigationController?.pushViewController(vc, animated: true)
+    }
+
+    // MARK: - Realm Save
+    private func saveProfileImage(_ image: UIImage) {
+        guard let realm = try? Realm(),
+              let cat   = realm.objects(Cat.self).first else { return }
+        guard let data = image.jpegData(compressionQuality: 0.8) else { return }
+        do {
+            try realm.write { cat.profileImageData = data }
+            contentView.avatarImageView.image = image
+        } catch {
+            print("[Profile] 이미지 저장 실패:", error)
+        }
     }
 
     // MARK: - Alerts
@@ -90,5 +123,21 @@ final class ProfileViewController: BaseViewController {
         )
         alert.addAction(UIAlertAction(title: "확인", style: .default))
         present(alert, animated: true)
+    }
+}
+
+// MARK: - UIImagePickerControllerDelegate + UINavigationControllerDelegate
+extension ProfileViewController: UIImagePickerControllerDelegate, UINavigationControllerDelegate {
+
+    func imagePickerController(_ picker: UIImagePickerController,
+                               didFinishPickingMediaWithInfo info: [UIImagePickerController.InfoKey: Any]) {
+        picker.dismiss(animated: true)
+        let image = info[.editedImage] as? UIImage ?? info[.originalImage] as? UIImage
+        guard let image else { return }
+        saveProfileImage(image)
+    }
+
+    func imagePickerControllerDidCancel(_ picker: UIImagePickerController) {
+        picker.dismiss(animated: true)
     }
 }

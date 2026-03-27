@@ -22,6 +22,23 @@ final class ProfileView: BaseView {
     // MARK: - Public UI
     private(set) var catSettingsCard: UIView = UIView()
 
+    let avatarImageView: AsyncImageView = {
+        let iv = AsyncImageView(contentMode: .scaleAspectFill, cornerRadius: 56)
+        iv.layer.borderWidth = 4
+        iv.layer.borderColor = UIColor.white.cgColor
+        AppTheme.applyCardShadow(to: iv, opacity: 0.25, radius: 12)
+        return iv
+    }()
+
+    let photoEditButton: UIButton = {
+        let btn = UIButton(type: .system)
+        let cfg = UIImage.SymbolConfiguration(pointSize: 28, weight: .semibold)
+        btn.setImage(UIImage(systemName: "pencil.circle.fill", withConfiguration: cfg), for: .normal)
+        btn.tintColor = AppTheme.Color.primary
+        btn.snp.makeConstraints { $0.width.height.equalTo(32) }
+        return btn
+    }()
+
     let memorialToggle: UISwitch = {
         let s = UISwitch()
         s.onTintColor = AppTheme.Color.purple
@@ -79,25 +96,13 @@ final class ProfileView: BaseView {
         }
 
         let avatarContainer = UIView()
-        let avatarImageView = AsyncImageView(contentMode: .scaleAspectFill, cornerRadius: 56)
-        avatarImageView.loadImage(from: "https://images.unsplash.com/photo-1702914954859-f037fc75b760?w=400")
-        avatarImageView.layer.borderWidth = 4
-        avatarImageView.layer.borderColor = UIColor.white.cgColor
-        AppTheme.applyCardShadow(to: avatarImageView, opacity: 0.25, radius: 12)
-
-        let editButton = UIButton(type: .system)
-        let pencilCfg = UIImage.SymbolConfiguration(pointSize: 28, weight: .semibold)
-        editButton.setImage(UIImage(systemName: "pencil.circle.fill", withConfiguration: pencilCfg), for: .normal)
-        editButton.tintColor = AppTheme.Color.primary
-        editButton.snp.makeConstraints { $0.width.height.equalTo(32) }
-
         avatarContainer.addSubview(avatarImageView)
-        avatarContainer.addSubview(editButton)
+        avatarContainer.addSubview(photoEditButton)
         avatarImageView.snp.makeConstraints { make in
             make.width.height.equalTo(112)
             make.top.leading.trailing.equalToSuperview()
         }
-        editButton.snp.makeConstraints { make in
+        photoEditButton.snp.makeConstraints { make in
             make.bottom.equalTo(avatarImageView.snp.bottom)
             make.trailing.equalTo(avatarImageView.snp.trailing)
         }
