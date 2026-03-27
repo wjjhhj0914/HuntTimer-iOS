@@ -158,17 +158,35 @@ final class LogViewController: BaseViewController {
         )
 
         return playSessions.enumerated().map { idx, s in
-            let mins = s.duration / 60
+            let mins    = s.duration / 60
+            let toyName = s.toys.first?.name
+            let title: String
+            if let name = toyName {
+                title = "\(name)\(Self.roPostposition(for: name)) 사냥했어요!"
+            } else {
+                title = "열정적으로 사냥했어요!"
+            }
             return HuntSession(
                 id:              idx + 1,
                 time:            formatter.string(from: s.startTime),
-                toy:             s.toys.first?.name ?? "장난감 없음",
+                title:           title,
+                toy:             toyName ?? "장난감 없음",
                 durationText:    mins > 0 ? "\(mins)분" : "1분 미만",
                 durationSeconds: s.duration,
                 calories:        Int(Double(s.duration) / 60.0 * 2.8),
                 imageURL:        ""
             )
         }
+    }
+
+    // MARK: - Korean postposition helper
+    private static func roPostposition(for name: String) -> String {
+        guard let lastChar = name.last,
+              let scalar   = lastChar.unicodeScalars.first else { return "으로" }
+        let code = scalar.value
+        guard code >= 0xAC00, code <= 0xD7A3 else { return "으로" }
+        let jongseong = (code - 0xAC00) % 28
+        return (jongseong == 0 || jongseong == 8) ? "로" : "으로"
     }
 
     // MARK: - Today helper

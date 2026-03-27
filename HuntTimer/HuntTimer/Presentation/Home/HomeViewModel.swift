@@ -210,11 +210,19 @@ final class HomeViewModel {
 
         let recent = all.sorted { $0.startTime > $1.startTime }.prefix(3)
         let huntSessions: [HuntSession] = recent.enumerated().map { idx, s in
-            let mins = s.duration / 60
+            let mins    = s.duration / 60
+            let toyName = s.toys.first?.name
+            let title: String
+            if let name = toyName {
+                title = "\(name)\(Self.roPostposition(for: name)) 사냥했어요!"
+            } else {
+                title = "열정적으로 사냥했어요!"
+            }
             return HuntSession(
                 id:              idx + 1,
                 time:            formatter.string(from: s.startTime),
-                toy:             s.toys.first?.name ?? "장난감 없음",
+                title:           title,
+                toy:             toyName ?? "",
                 durationText:    mins > 0 ? "\(mins)분" : "1분 미만",
                 durationSeconds: s.duration,
                 calories:        Int(Double(s.duration) / 60.0 * 2.8),
@@ -249,7 +257,17 @@ final class HomeViewModel {
         }
     }
 
-    // MARK: - Korean postposition helper
+    // MARK: - Korean postposition helpers
+
+    /// 끝 글자 받침 유무에 따라 '로' 또는 '으로' 반환 (ㄹ 받침도 '로')
+    private static func roPostposition(for name: String) -> String {
+        guard let lastChar = name.last,
+              let scalar   = lastChar.unicodeScalars.first else { return "으로" }
+        let code = scalar.value
+        guard code >= 0xAC00, code <= 0xD7A3 else { return "으로" }
+        let jongseong = (code - 0xAC00) % 28
+        return (jongseong == 0 || jongseong == 8) ? "로" : "으로"  // 0: 받침 없음, 8: ㄹ
+    }
 
     /// 이름 끝 글자의 받침 유무에 따라 '야' 또는 '아' 반환
     private static func callSuffix(for name: String) -> String {

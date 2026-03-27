@@ -280,8 +280,8 @@ final class HomeView: BaseView {
         let imgView = AsyncImageView(contentMode: .scaleAspectFill, cornerRadius: 14)
         imgView.loadImage(from: session.imageURL)
 
-        let toyLabel  = UILabel.make(text: session.toy,  size: 13, weight: .bold, color: AppTheme.Color.textDark)
-        let timeLabel = UILabel.make(text: session.time, size: 11, color: AppTheme.Color.textMuted)
+        let toyLabel  = UILabel.make(text: session.title, size: 13, weight: .bold, color: AppTheme.Color.textDark)
+        let timeLabel = UILabel.make(text: session.time,  size: 11, color: AppTheme.Color.textMuted)
         let textStack = UIStackView.make(axis: .vertical, spacing: 2)
         textStack.addArrangedSubview(toyLabel)
         textStack.addArrangedSubview(timeLabel)
