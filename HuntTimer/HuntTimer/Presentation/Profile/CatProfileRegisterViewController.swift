@@ -1,5 +1,4 @@
 import UIKit
-import PhotosUI
 import RealmSwift
 
 // MARK: - ProfileMode
@@ -248,11 +247,11 @@ final class CatProfileViewController: BaseViewController {
 
     // MARK: - Photo
     @objc private func photoTapped() {
-        var config = PHPickerConfiguration()
-        config.filter         = .images
-        config.selectionLimit = 1
-        let picker = PHPickerViewController(configuration: config)
-        picker.delegate = self
+        guard UIImagePickerController.isSourceTypeAvailable(.photoLibrary) else { return }
+        let picker = UIImagePickerController()
+        picker.sourceType    = .photoLibrary
+        picker.allowsEditing = true
+        picker.delegate      = self
         present(picker, animated: true)
     }
 
@@ -322,19 +321,20 @@ extension CatProfileViewController: UITextFieldDelegate {
     }
 }
 
-// MARK: - PHPickerViewControllerDelegate
-extension CatProfileViewController: PHPickerViewControllerDelegate {
+// MARK: - UIImagePickerControllerDelegate + UINavigationControllerDelegate
+extension CatProfileViewController: UIImagePickerControllerDelegate, UINavigationControllerDelegate {
 
-    func picker(_ picker: PHPickerViewController, didFinishPicking results: [PHPickerResult]) {
+    func imagePickerController(_ picker: UIImagePickerController,
+                               didFinishPickingMediaWithInfo info: [UIImagePickerController.InfoKey: Any]) {
         picker.dismiss(animated: true)
-        guard let result = results.first else { return }
+        // allowsEditing = true 이므로 크롭 완료 이미지는 .editedImage로 전달됨
+        let image = info[.editedImage] as? UIImage ?? info[.originalImage] as? UIImage
+        guard let image else { return }
+        contentView.photoImageView.image    = image
+        contentView.photoImageView.isHidden = false
+    }
 
-        result.itemProvider.loadObject(ofClass: UIImage.self) { [weak self] object, _ in
-            guard let self, let image = object as? UIImage else { return }
-            DispatchQueue.main.async {
-                self.contentView.photoImageView.image    = image
-                self.contentView.photoImageView.isHidden = false
-            }
-        }
+    func imagePickerControllerDidCancel(_ picker: UIImagePickerController) {
+        picker.dismiss(animated: true)
     }
 }
