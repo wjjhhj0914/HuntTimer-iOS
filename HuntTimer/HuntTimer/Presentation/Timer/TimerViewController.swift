@@ -96,7 +96,7 @@ final class TimerViewController: BaseViewController {
             return
         }
         pauseTimer()
-        showMemoAlert()
+        showSessionSaveModal(resumeOnCancel: true)
         UIImpactFeedbackGenerator(style: .light).impactOccurred()
     }
 
@@ -165,48 +165,42 @@ final class TimerViewController: BaseViewController {
     }
 
     private func huntFinished() {
-        endAndSaveSession()
         updateStatusUI()
         UINotificationFeedbackGenerator().notificationOccurred(.success)
-        showFinishedAlert()
+        showSessionSaveModal(resumeOnCancel: false)
     }
 
-    private func endAndSaveSession(memo: String? = nil) {
+    private func endAndSaveSession(memo: String? = nil, photo: UIImage? = nil) {
         guard let startTime = sessionStartTime else { return }
         viewModel.saveSession(
-            startTime: startTime,
-            endTime: Date(),
-            duration: elapsedSeconds,
+            startTime:      startTime,
+            endTime:        Date(),
+            duration:       elapsedSeconds,
             targetDuration: totalSeconds,
-            memo: memo
+            memo:           memo,
+            photo:          photo
         )
         sessionStartTime = nil
     }
 
-    private func showMemoAlert() {
-        let catName = fetchFirstCatName()
-        let alert = UIAlertController(
-            title: "오늘의 사냥은 어땠나요?",
-            message: "\(catName)와의 시간을 한 줄로 남겨주세요",
-            preferredStyle: .alert
-        )
-        alert.addTextField { tf in
-            tf.placeholder = "예: 오늘따라 특히 신나게 놀았어요 🐾"
-            tf.returnKeyType = .done
-        }
-        alert.addAction(UIAlertAction(title: "취소", style: .cancel) { [weak self] _ in
-            // 취소 시 타이머 재개
-            self?.startTimer()
-        })
-        alert.addAction(UIAlertAction(title: "완료", style: .default) { [weak self] _ in
+    // MARK: - Custom Modal
+
+    private func showSessionSaveModal(resumeOnCancel: Bool) {
+        let modal = SessionSaveModalViewController()
+        modal.duration  = elapsedSeconds
+        modal.onSave    = { [weak self] memo, photo in
             guard let self else { return }
-            let text = alert.textFields?.first?.text?.trimmingCharacters(in: .whitespacesAndNewlines)
-            let memo = (text?.isEmpty == false) ? text : nil
-            self.endAndSaveSession(memo: memo)
+            self.endAndSaveSession(memo: memo, photo: photo)
             self.stopTimer()
             self.tabBarController?.selectedIndex = 0
-        })
-        present(alert, animated: true)
+        }
+        modal.onCancel = { [weak self] in
+            if resumeOnCancel { self?.startTimer() }
+            else              { self?.stopTimer()  }
+        }
+        modal.modalPresentationStyle = .overFullScreen
+        modal.modalTransitionStyle   = .crossDissolve
+        present(modal, animated: true)
     }
 
     private func fetchFirstCatName() -> String {
@@ -215,15 +209,6 @@ final class TimerViewController: BaseViewController {
             return cat.name.isEmpty ? "냥이" : cat.name
         }
         return "냥이"
-    }
-
-    private func showFinishedAlert() {
-        let alert = UIAlertController(title: "🎉 사냥 완료!", message: "뮤기가 기뻐해요!\n오늘도 수고하셨어요 🐾",
-                                      preferredStyle: .alert)
-        alert.addAction(UIAlertAction(title: "확인", style: .default) { [weak self] _ in
-            self?.stopTimer()
-        })
-        present(alert, animated: true)
     }
 
     // MARK: - Display Updates
