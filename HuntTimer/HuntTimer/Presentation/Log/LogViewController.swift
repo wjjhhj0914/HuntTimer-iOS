@@ -258,6 +258,24 @@ extension LogViewController: UICollectionViewDataSource, UICollectionViewDelegat
         let cells = contentView.buildCalendarCells()
         guard let day = cells[indexPath.item] else { return }
 
+        let cal       = Calendar.current
+        let curComps  = cal.dateComponents([.year, .month], from: currentDate)
+        var dateComps = DateComponents()
+        dateComps.year  = curComps.year
+        dateComps.month = curComps.month
+        dateComps.day   = day
+        guard let date = cal.date(from: dateComps) else { return }
+
+        // ── 이미 선택된 날짜를 다시 탭: 모달 표시 ─────────────────
+        if day == selectedDay {
+            if activityDays.contains(day), let session = loadFirstPlaySession(for: date) {
+                presentDetailModal(for: session)
+            }
+            return
+        }
+
+        // ── 첫 번째 탭: 날짜 선택 + 세션 목록 갱신 ───────────────
+
         // 이전 선택 셀 해제
         if let prevDay = selectedDay,
            let prevIdx = cells.firstIndex(where: { $0 == prevDay }),
@@ -279,19 +297,6 @@ extension LogViewController: UICollectionViewDataSource, UICollectionViewDelegat
             cell.animateBounce()
         }
 
-        // 선택 날짜의 세션 불러오기
-        let cal       = Calendar.current
-        let curComps  = cal.dateComponents([.year, .month], from: currentDate)
-        var dateComps = DateComponents()
-        dateComps.year  = curComps.year
-        dateComps.month = curComps.month
-        dateComps.day   = day
-        if let date = cal.date(from: dateComps) {
-            reloadSessions(for: date)
-            // 활동이 있는 날짜: 상세 기록 모달 표시
-            if activityDays.contains(day), let session = loadFirstPlaySession(for: date) {
-                presentDetailModal(for: session)
-            }
-        }
+        reloadSessions(for: date)
     }
 }
