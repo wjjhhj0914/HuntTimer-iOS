@@ -1,7 +1,6 @@
 import UIKit
 import RxSwift
 import RxCocoa
-import RealmSwift
 
 /// 홈 화면 ViewController — RxSwift 바인딩만 담당
 final class HomeViewController: BaseViewController {
@@ -24,17 +23,6 @@ final class HomeViewController: BaseViewController {
 
     // MARK: - BaseViewController
     override func setupBind() {
-        // 우측 상단 프로필 버튼 → 수정 모드로 push
-        contentView.catProfileButton.rx.tap
-            .subscribe(onNext: { [weak self] in
-                guard let self else { return }
-                let vc      = CatProfileViewController()
-                vc.mode     = .edit
-                vc.catToEdit = (try? Realm())?.objects(Cat.self).first
-                self.navigationController?.pushViewController(vc, animated: true)
-            })
-            .disposed(by: disposeBag)
-
         let input = HomeViewModel.Input(
             viewDidLoad:        Observable.just(()),
             viewWillAppear:     viewWillAppearSubject.asObservable(),

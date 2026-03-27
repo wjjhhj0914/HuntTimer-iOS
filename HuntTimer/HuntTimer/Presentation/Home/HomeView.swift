@@ -17,19 +17,6 @@ final class HomeView: BaseView {
     // MARK: - Header
     let greetLabel  = UILabel.make(text: "", size: 13, color: AppTheme.Color.textMuted)
     let titleLabel  = UILabel.make(text: "", size: 22, weight: .black, color: AppTheme.Color.textDark)
-    let catProfileButton: UIButton = {
-        let btn = UIButton()
-        btn.backgroundColor = .white
-        btn.layer.cornerRadius = 20
-        AppTheme.applyCardShadow(to: btn, opacity: 0.12, radius: 8)
-        let cfg = UIImage.SymbolConfiguration(pointSize: 16, weight: .medium)
-        let iv  = UIImageView(image: UIImage(systemName: "pawprint.circle.fill", withConfiguration: cfg))
-        iv.tintColor = AppTheme.Color.primary
-        iv.isUserInteractionEnabled = false
-        btn.addSubview(iv)
-        iv.snp.makeConstraints { $0.center.equalToSuperview() }
-        return btn
-    }()
 
     // MARK: - Banner
     let bannerImageView = AsyncImageView(contentMode: .scaleAspectFill)
@@ -65,7 +52,7 @@ final class HomeView: BaseView {
     // MARK: - CTA
     let startButton: UIButton = {
         let btn = UIButton(type: .system)
-        btn.setTitle("⭐ 새 사냥 시작하기! 🐾", for: .normal)
+        btn.setTitle("사냥 시작하기!", for: .normal)
         btn.setTitleColor(.white, for: .normal)
         btn.titleLabel?.font = .appFont(size: 17, weight: .black)
         btn.layer.cornerRadius = AppTheme.Radius.xxLarge
@@ -139,13 +126,7 @@ final class HomeView: BaseView {
         let textStack = UIStackView.make(axis: .vertical, spacing: 2)
         textStack.addArrangedSubview(greetLabel)
         textStack.addArrangedSubview(titleLabel)
-
-        catProfileButton.snp.makeConstraints { $0.width.height.equalTo(40) }
-
-        let row = UIStackView.make(axis: .horizontal, spacing: 8, alignment: .center)
-        row.addArrangedSubview(textStack)
-        row.addArrangedSubview(catProfileButton)
-        return row.wrapped(insets: UIEdgeInsets(top: 0, left: 20, bottom: 0, right: 20))
+        return textStack.wrapped(insets: UIEdgeInsets(top: 0, left: 20, bottom: 0, right: 20))
     }
 
     private func makeBannerSection() -> UIView {

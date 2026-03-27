@@ -152,7 +152,7 @@ final class HomeViewModel {
             heroCatName.accept("\(cat.name)의 오늘 🌿")
             heroStatus.accept("사냥 준비 완료!")
             goalMinutes.accept(cat.targetTime)
-            startBtnTitle.accept("⭐ 새 사냥 시작하기! 🐾")
+            startBtnTitle.accept("사냥 시작하기!")
         } else {
             catTitle.accept("아직 등록된 냥이가 없어요!")
             greeting.accept("냥이를 등록해주세요 🐾")
