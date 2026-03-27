@@ -4,7 +4,8 @@ import Foundation
 struct HuntSession {
     let id: Int
     let time: String
-    let toy: String
+    let title: String       // "[장난감]으로 사냥했어요!" 또는 "열정적으로 사냥했어요!"
+    let toy: String         // 원본 장난감 이름 (기록 화면 등에서 사용)
     let durationText: String
     let durationSeconds: Int
     let calories: Int
@@ -55,15 +56,15 @@ struct AdoptCat {
 enum SampleData {
 
     static let sessions: [HuntSession] = [
-        HuntSession(id: 1, time: "오전 10:00", toy: "깃털 낚싯대",   durationText: "15분", durationSeconds: 900,  calories: 42,
+        HuntSession(id: 1, time: "오전 10:00", title: "깃털 낚싯대로 사냥했어요!",   toy: "깃털 낚싯대",   durationText: "15분", durationSeconds: 900,  calories: 42,
                     imageURL: "https://images.unsplash.com/photo-1744710835733-936ab49ee0b4?w=200"),
-        HuntSession(id: 2, time: "오후 1:30",  toy: "방울 공",       durationText: "8분",  durationSeconds: 480,  calories: 18,
+        HuntSession(id: 2, time: "오후 1:30",  title: "방울 공으로 사냥했어요!",     toy: "방울 공",       durationText: "8분",  durationSeconds: 480,  calories: 18,
                     imageURL: "https://images.unsplash.com/photo-1691351943492-cfee023e9cbf?w=200"),
-        HuntSession(id: 3, time: "오후 3:00",  toy: "레이저 포인터", durationText: "12분", durationSeconds: 720,  calories: 30,
+        HuntSession(id: 3, time: "오후 3:00",  title: "레이저 포인터로 사냥했어요!", toy: "레이저 포인터", durationText: "12분", durationSeconds: 720,  calories: 30,
                     imageURL: "https://images.unsplash.com/photo-1716487621020-462aa91a6af6?w=200"),
-        HuntSession(id: 4, time: "오후 7:00",  toy: "낚싯대 (털)",   durationText: "20분", durationSeconds: 1200, calories: 56,
+        HuntSession(id: 4, time: "오후 7:00",  title: "낚싯대 (털)로 사냥했어요!",  toy: "낚싯대 (털)",   durationText: "20분", durationSeconds: 1200, calories: 56,
                     imageURL: "https://images.unsplash.com/photo-1702914954859-f037fc75b760?w=200"),
-        HuntSession(id: 5, time: "오후 9:30",  toy: "깃털 낚싯대",   durationText: "10분", durationSeconds: 600,  calories: 25,
+        HuntSession(id: 5, time: "오후 9:30",  title: "깃털 낚싯대로 사냥했어요!",  toy: "깃털 낚싯대",   durationText: "10분", durationSeconds: 600,  calories: 25,
                     imageURL: "https://images.unsplash.com/photo-1744710835733-936ab49ee0b4?w=200"),
     ]
 
