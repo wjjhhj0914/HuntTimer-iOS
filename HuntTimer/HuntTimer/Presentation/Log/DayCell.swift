@@ -20,8 +20,8 @@ final class DayCell: UICollectionViewCell {
         v.clipsToBounds = true
         v.layer.cornerRadius = 10   // 20pt / 2 = 완전한 원 (고정 사이즈)
         v.layer.borderWidth  = 1.5
-        v.layer.borderColor  = AppTheme.Color.primaryLight.cgColor
-        v.backgroundColor    = AppTheme.Color.primaryLight
+        v.layer.borderColor  = AppTheme.Color.yellowLight.cgColor
+        v.backgroundColor    = AppTheme.Color.yellowLight
         return v
     }()
 
