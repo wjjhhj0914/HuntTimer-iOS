@@ -23,6 +23,7 @@ final class ProfileViewController: BaseViewController {
         super.viewWillAppear(animated)
         navigationController?.setNavigationBarHidden(false, animated: animated)
         loadProfileImage()
+        reloadBadges()
     }
 
     private func loadProfileImage() {
@@ -30,6 +31,15 @@ final class ProfileViewController: BaseViewController {
               let data = cat.profileImageData,
               let image = UIImage(data: data) else { return }
         contentView.avatarImageView.image = image
+    }
+
+    private func reloadBadges() {
+        DispatchQueue.global(qos: .userInitiated).async { [weak self] in
+            let badges = BadgeManager.evaluateBadges()
+            DispatchQueue.main.async {
+                self?.contentView.reloadBadges(badges)
+            }
+        }
     }
 
     override func viewWillDisappear(_ animated: Bool) {

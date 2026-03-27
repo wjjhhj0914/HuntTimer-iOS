@@ -45,6 +45,11 @@ final class ProfileView: BaseView {
         return s
     }()
 
+    // MARK: - Badge Grid (동적 갱신)
+    private let badgeGridStack  = UIStackView.make(axis: .vertical, spacing: 8)
+    private let badgeCountLabel = UILabel.make(text: "0 / 8 달성", size: 12,
+                                               color: AppTheme.Color.textMuted)
+
     // MARK: - BaseView
     override func setupUI() {
         backgroundColor = AppTheme.Color.background
@@ -179,7 +184,7 @@ final class ProfileView: BaseView {
         let listStack = UIStackView.make(axis: .vertical, spacing: 8)
 
         // 고양이 설정 행 — ViewController에서 탭 이벤트를 연결할 수 있도록 참조 보존
-        let catRow = makeSettingRow("cat.fill", "고양이 설정", "뮤기 프로필 수정",
+        let catRow = makeSettingRow("cat.fill", "고양이 설정", "프로필 수정",
                                     bg: AppTheme.Color.primaryLight, fg: AppTheme.Color.primary, toggle: false)
         catSettingsCard = catRow
         listStack.addArrangedSubview(catRow)
@@ -255,24 +260,13 @@ final class ProfileView: BaseView {
     private func makeBadgesSection() -> UIView {
         let wrapper   = UIView()
         let titleL    = UILabel.make(text: "🏅 획득 배지", size: 15, weight: .bold, color: AppTheme.Color.textDark)
-        let subL      = UILabel.make(text: "4 / 8 달성", size: 12, color: AppTheme.Color.textMuted)
         let headerRow = UIStackView.make(axis: .horizontal, alignment: .center)
         headerRow.addArrangedSubview(titleL)
-        headerRow.addArrangedSubview(subL)
-
-        let gridStack = UIStackView.make(axis: .vertical, spacing: 8)
-        let chunks = stride(from: 0, to: SampleData.badges.count, by: 4).map {
-            Array(SampleData.badges[$0..<min($0 + 4, SampleData.badges.count)])
-        }
-        chunks.forEach { row in
-            let rowStack = UIStackView.make(axis: .horizontal, spacing: 8, distribution: .fillEqually)
-            row.forEach { badge in rowStack.addArrangedSubview(makeBadgeCell(badge)) }
-            gridStack.addArrangedSubview(rowStack)
-        }
+        headerRow.addArrangedSubview(badgeCountLabel)
 
         let mainStack = UIStackView.make(axis: .vertical, spacing: 12)
         mainStack.addArrangedSubview(headerRow)
-        mainStack.addArrangedSubview(gridStack)
+        mainStack.addArrangedSubview(badgeGridStack)
 
         wrapper.addSubview(mainStack)
         mainStack.snp.makeConstraints { make in
@@ -281,6 +275,21 @@ final class ProfileView: BaseView {
             make.trailing.equalToSuperview().offset(-20)
         }
         return wrapper
+    }
+
+    /// BadgeManager가 계산한 배지 배열로 그리드를 재구성
+    func reloadBadges(_ badges: [Badge]) {
+        badgeGridStack.arrangedSubviews.forEach { $0.removeFromSuperview() }
+
+        let unlockedCount = badges.filter { $0.unlocked }.count
+        badgeCountLabel.text = "\(unlockedCount) / \(badges.count) 달성"
+
+        stride(from: 0, to: badges.count, by: 4).forEach { start in
+            let chunk    = Array(badges[start..<min(start + 4, badges.count)])
+            let rowStack = UIStackView.make(axis: .horizontal, spacing: 8, distribution: .fillEqually)
+            chunk.forEach { rowStack.addArrangedSubview(makeBadgeCell($0)) }
+            badgeGridStack.addArrangedSubview(rowStack)
+        }
     }
 
     private func makeBadgeCell(_ badge: Badge) -> UIView {
@@ -317,7 +326,7 @@ final class ProfileView: BaseView {
         let rows: [AppInfoRow] = [
             AppInfoRow(symbol: "gearshape.fill",   label: "앱 설정",          desc: "알림, 테마 설정",
                        bg: UIColor(white: 0.92, alpha: 1), fg: AppTheme.Color.textMedium),
-            AppInfoRow(symbol: "info.circle.fill",  label: "버전 정보",        desc: "v1.2.3",
+            AppInfoRow(symbol: "info.circle.fill",  label: "버전 정보",        desc: "v1.1.0",
                        bg: AppTheme.Color.primaryLight,    fg: AppTheme.Color.primary),
             AppInfoRow(symbol: "star.fill",          label: "리뷰 남기기",      desc: "앱스토어에서 응원해주세요",
                        bg: AppTheme.Color.yellowLight,     fg: AppTheme.Color.yellowDark),
