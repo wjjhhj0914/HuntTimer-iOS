@@ -12,27 +12,29 @@ final class DayCell: UICollectionViewCell {
     private let selectionBg = UIView()
     private let dayLabel    = UILabel()
 
-    /// 원형 마스킹 컨테이너 — UIImageView 에 직접 cornerRadius를 적용하면
-    /// layoutSubviews 타이밍에 bounds가 0 으로 읽히는 문제가 발생하므로
-    /// UIView 래퍼가 clipsToBounds 를 담당하고 이미지는 그 안에서 edges를 채운다
+    /// 원형 마스킹 컨테이너 — clipsToBounds 를 담당, 내부 뷰들은 edges 또는 center 로 배치
     private let imageContainer: UIView = {
         let v = UIView()
-        v.clipsToBounds = true
-        v.layer.cornerRadius = 10   // 20pt / 2 = 완전한 원 (고정 사이즈)
+        v.clipsToBounds      = true
+        v.layer.cornerRadius = 10   // 20pt / 2 = 완전한 원
         v.layer.borderWidth  = 1.5
         v.layer.borderColor  = AppTheme.Color.primaryLight.cgColor
         v.backgroundColor    = AppTheme.Color.primaryLight
         return v
     }()
 
-    private let thumbImage = AsyncImageView(contentMode: .scaleAspectFill)
-
-    /// 사진 없을 때 기본 아이콘
-    private let catIconView: UIImageView = {
+    /// 실제 사진 이미지 — 비동기 로딩 완료 후 표시
+    private let thumbImage: UIImageView = {
         let iv = UIImageView()
-        let cfg = UIImage.SymbolConfiguration(pointSize: 9, weight: .medium)
-        iv.image = UIImage(systemName: "cat.fill", withConfiguration: cfg)
-        iv.tintColor = AppTheme.Color.primary
+        iv.contentMode    = .scaleAspectFill
+        iv.clipsToBounds  = true
+        iv.isHidden       = true
+        return iv
+    }()
+
+    /// 상태 심볼 아이콘 (photo = 로딩 중 / exclamationmark.triangle = 사진 없음 or 파일 오류)
+    private let symbolIconView: UIImageView = {
+        let iv = UIImageView()
         iv.contentMode = .scaleAspectFit
         return iv
     }()
@@ -40,20 +42,28 @@ final class DayCell: UICollectionViewCell {
     /// 활동 인디케이터 점
     private let dotView = UIView()
 
+    // MARK: - Cell Reuse State
+
+    /// 현재 셀에 요청된 날짜 — 비동기 로딩 완료 시 재사용 여부 판단
+    private var currentDay: Int?
+
     // MARK: - Init
 
     override init(frame: CGRect) {
         super.init(frame: frame)
 
         selectionBg.layer.cornerRadius = 14
-        dayLabel.textAlignment = .center
-        dotView.layer.cornerRadius = 3
+        dayLabel.textAlignment         = .center
+        dotView.layer.cornerRadius     = 3
 
-        // ── 이미지를 컨테이너에 넣기 (원형 클리핑은 컨테이너가 담당) ──
+        // ── imageContainer 내부 뷰 배치 ────────────────────────
         imageContainer.addSubview(thumbImage)
-        imageContainer.addSubview(catIconView)
+        imageContainer.addSubview(symbolIconView)
         thumbImage.snp.makeConstraints { $0.edges.equalToSuperview() }
-        catIconView.snp.makeConstraints { $0.center.equalToSuperview() }
+        symbolIconView.snp.makeConstraints { make in
+            make.center.equalToSuperview()
+            make.width.height.lessThanOrEqualToSuperview().multipliedBy(0.75)
+        }
 
         // ── Z-order: selectionBg → 나머지 ──────────────────────
         contentView.insertSubview(selectionBg, at: 0)
@@ -61,27 +71,27 @@ final class DayCell: UICollectionViewCell {
         contentView.addSubview(imageContainer)
         contentView.addSubview(dotView)
 
-        // ── 날짜: 셀 상단 고정 ────────────────────────────────
+        // ── 날짜: 셀 상단 ─────────────────────────────────────
         dayLabel.snp.makeConstraints { make in
             make.top.equalToSuperview().offset(3)
             make.centerX.equalToSuperview()
         }
 
-        // ── 이미지 컨테이너: 날짜 바로 아래 ─────────────────────
+        // ── 이미지 컨테이너: 날짜 바로 아래, 고정 크기 20×20 ────
         imageContainer.snp.makeConstraints { make in
             make.top.equalTo(dayLabel.snp.bottom).offset(3)
             make.centerX.equalToSuperview()
             make.width.height.equalTo(20)
         }
 
-        // ── 점: 이미지 아래 tight 간격 ───────────────────────
+        // ── 점: 이미지 아래 ───────────────────────────────────
         dotView.snp.makeConstraints { make in
             make.top.equalTo(imageContainer.snp.bottom).offset(2)
             make.centerX.equalToSuperview()
             make.width.height.equalTo(6)
         }
 
-        // ── 선택 배경: dayLabel.top ~ dotView.bottom 에 compact하게 ──
+        // ── 선택 배경: dayLabel.top ~ dotView.bottom ──────────
         selectionBg.snp.makeConstraints { make in
             make.top.equalTo(dayLabel.snp.top).offset(-3)
             make.bottom.equalTo(dotView.snp.bottom).offset(3)
@@ -92,9 +102,19 @@ final class DayCell: UICollectionViewCell {
 
     required init?(coder: NSCoder) { fatalError("init(coder:) has not been implemented") }
 
+    // MARK: - Reuse
+
+    override func prepareForReuse() {
+        super.prepareForReuse()
+        currentDay             = nil
+        thumbImage.image       = nil
+        thumbImage.isHidden    = true
+        symbolIconView.image   = nil
+        symbolIconView.isHidden = true
+    }
+
     // MARK: - Animations
 
-    /// 눌림: 빠르게 축소 / 뗌: 원래 크기로 복귀
     override var isHighlighted: Bool {
         didSet {
             UIView.animate(
@@ -109,7 +129,6 @@ final class DayCell: UICollectionViewCell {
         }
     }
 
-    /// 선택 확정 시 호출 — 현재 transform 위치(눌림 상태)에서 스프링으로 튕겨 돌아옴
     func animateBounce() {
         UIView.animate(
             withDuration: 0.5,
@@ -125,16 +144,21 @@ final class DayCell: UICollectionViewCell {
     // MARK: - Configure
 
     func configure(day: Int?, isSelected: Bool, isToday: Bool, hasActivity: Bool, imagePath: String?) {
+        currentDay = day
+
         guard let day else {
             dayLabel.text               = ""
             selectionBg.backgroundColor = .clear
             imageContainer.isHidden     = true
             dotView.isHidden            = true
+            thumbImage.image            = nil
+            thumbImage.isHidden         = true
+            symbolIconView.isHidden     = true
             return
         }
 
-        dayLabel.text = "\(day)"
-        dayLabel.font = .appFont(size: 12, weight: isSelected || isToday ? .bold : .regular)
+        dayLabel.text      = "\(day)"
+        dayLabel.font      = .appFont(size: 12, weight: isSelected || isToday ? .bold : .regular)
         dayLabel.textColor = isSelected ? .white
                            : isToday    ? AppTheme.Color.primary
                            :              AppTheme.Color.textDark
@@ -146,19 +170,52 @@ final class DayCell: UICollectionViewCell {
         imageContainer.isHidden = !hasActivity
         dotView.isHidden        = !hasActivity
 
+        // 이전 이미지 초기화
+        thumbImage.image    = nil
+        thumbImage.isHidden = true
+
         if hasActivity {
-            if let path = imagePath, let img = UIImage(contentsOfFile: path) {
-                thumbImage.image    = img
-                thumbImage.isHidden = false
-                catIconView.isHidden = true
+            let symCfg = UIImage.SymbolConfiguration(pointSize: 9, weight: .medium)
+
+            if let path = imagePath {
+                // ── 로딩 중: photo 심볼 먼저 표시 ──────────────────
+                symbolIconView.image    = UIImage(systemName: "photo", withConfiguration: symCfg)
+                symbolIconView.tintColor = AppTheme.Color.primary.withAlphaComponent(0.55)
+                symbolIconView.isHidden = false
+
+                // ── 비동기 로드 ──────────────────────────────────
+                let targetDay = day
+                DispatchQueue.global(qos: .userInitiated).async { [weak self] in
+                    let loadedImage = UIImage(contentsOfFile: path)
+                    DispatchQueue.main.async {
+                        // 셀이 재사용된 경우 폐기
+                        guard let self, self.currentDay == targetDay else { return }
+                        if let img = loadedImage {
+                            self.thumbImage.image        = img
+                            self.thumbImage.contentMode  = .scaleAspectFill
+                            self.thumbImage.clipsToBounds = true
+                            self.thumbImage.isHidden     = false
+                            self.symbolIconView.isHidden = true
+                        } else {
+                            // 파일 없음 or 손상 — 경고 심볼로 교체
+                            self.symbolIconView.image    = UIImage(systemName: "exclamationmark.triangle",
+                                                                   withConfiguration: symCfg)
+                            self.symbolIconView.tintColor = UIColor(hex: "#E8A0B8")
+                        }
+                    }
+                }
             } else {
-                thumbImage.image    = nil
-                thumbImage.isHidden = true
-                catIconView.isHidden = false
+                // ── imagePath 없음: 경고 심볼 ────────────────────
+                symbolIconView.image    = UIImage(systemName: "exclamationmark.triangle",
+                                                  withConfiguration: symCfg)
+                symbolIconView.tintColor = UIColor(hex: "#E8A0B8")
+                symbolIconView.isHidden = false
             }
+        } else {
+            symbolIconView.isHidden = true
         }
 
-        dotView.backgroundColor        = isSelected ? .white : AppTheme.Color.primary
+        dotView.backgroundColor          = isSelected ? .white : AppTheme.Color.primary
         imageContainer.layer.borderColor = isSelected
             ? UIColor.white.cgColor
             : AppTheme.Color.primaryLight.cgColor
