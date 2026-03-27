@@ -367,7 +367,7 @@ final class LogView: BaseView {
         let card = UIView()
         card.applyCardStyle(cornerRadius: AppTheme.Radius.medium)
 
-        let toyL  = UILabel.make(text: session.toy,  size: 13, weight: .bold, color: AppTheme.Color.textDark)
+        let toyL  = UILabel.make(text: session.title, size: 13, weight: .bold, color: AppTheme.Color.textDark)
         let timeL = UILabel.make(text: session.time, size: 11, color: AppTheme.Color.textMuted)
         let textS = UIStackView.make(axis: .vertical, spacing: 2)
         textS.addArrangedSubview(toyL)
