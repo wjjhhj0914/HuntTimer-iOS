@@ -10,6 +10,7 @@ final class CircularTimerView: UIView {
     private let innerCircle  = CAShapeLayer()
 
     private var currentProgress: Float = 0
+    private var currentElapsed: Int    = 0
 
     override init(frame: CGRect) {
         super.init(frame: frame)
@@ -82,6 +83,7 @@ final class CircularTimerView: UIView {
         layer.addSublayer(pawLayer)
 
         setProgress(currentProgress, animated: false)
+        setSecondHand(currentElapsed)   // layoutSubviews 이후에도 올바른 위치 복원
     }
 
     func setProgress(_ progress: Float, animated: Bool) {
@@ -97,6 +99,7 @@ final class CircularTimerView: UIView {
     }
 
     func setSecondHand(_ totalElapsed: Int) {
+        currentElapsed = totalElapsed
         guard !bounds.isEmpty else { return }
         let center   = CGPoint(x: bounds.midX, y: bounds.midY)
         let radius: CGFloat = bounds.width / 2 - 20
