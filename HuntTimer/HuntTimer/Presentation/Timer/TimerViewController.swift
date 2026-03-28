@@ -23,7 +23,7 @@ final class TimerViewController: BaseViewController {
     private(set) var selectedToy: String? = nil
     /// 선택된 칩 인덱스 (-1 = 아무것도 선택 안 됨)
     private var selectedToyIndex: Int = -1
-    private let toyNames: [String?] = ["깃털 낚싯대", "벌레 낚싯대", "레이저", "방울 공", "인형", nil]
+    private let toyNames: [String?] = ["깃털", "벌레", "레이저", "카샤카샤", "오뎅꼬치", nil]
 
     // MARK: - loadView
     override func loadView() {
@@ -177,6 +177,7 @@ final class TimerViewController: BaseViewController {
             endTime:        Date(),
             duration:       elapsedSeconds,
             targetDuration: totalSeconds,
+            toyName:        selectedToy,
             memo:           memo,
             photo:          photo
         )

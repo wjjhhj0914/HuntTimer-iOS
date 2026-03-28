@@ -37,7 +37,7 @@ final class TimerViewModel {
     // MARK: - Session Save
 
     func saveSession(startTime: Date, endTime: Date, duration: Int, targetDuration: Int,
-                     memo: String? = nil, photo: UIImage? = nil) {
+                     toyName: String? = nil, memo: String? = nil, photo: UIImage? = nil) {
         let session = PlaySession()
         session.startTime      = startTime
         session.endTime        = endTime
@@ -49,6 +49,17 @@ final class TimerViewModel {
             let realm = try Realm()
             try realm.write {
                 realm.add(session)
+
+                // 장난감 저장
+                if let name = toyName, !name.isEmpty {
+                    let toy = Toy()
+                    toy.name     = name
+                    toy.category = name
+                    realm.add(toy)
+                    session.toys.append(toy)
+                }
+
+                // 사진 저장
                 if let image = photo, let path = Self.saveImageToDocuments(image) {
                     let log = PhotoLog()
                     log.session   = session
@@ -57,7 +68,7 @@ final class TimerViewModel {
                     realm.add(log)
                 }
             }
-            print("[HuntTimer] 세션 저장 완료 — duration: \(duration)초 / target: \(targetDuration)초")
+            print("[HuntTimer] 세션 저장 완료 — duration: \(duration)초 / toy: \(toyName ?? "없음")")
         } catch {
             print("[HuntTimer] 세션 저장 실패:", error)
         }

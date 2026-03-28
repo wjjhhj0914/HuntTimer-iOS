@@ -286,7 +286,7 @@ final class HomeView: BaseView {
         textStack.addArrangedSubview(toyLabel)
         textStack.addArrangedSubview(timeLabel)
 
-        let durationLabel = UILabel.make(text: "⏱ \(session.durationText)", size: 11,
+        let durationLabel = UILabel.make(text: "\(session.durationText)", size: 11,
                                          weight: .semibold, color: AppTheme.Color.yellowDark)
         durationLabel.setContentHuggingPriority(.required, for: .horizontal)
         durationLabel.setContentCompressionResistancePriority(.required, for: .horizontal)

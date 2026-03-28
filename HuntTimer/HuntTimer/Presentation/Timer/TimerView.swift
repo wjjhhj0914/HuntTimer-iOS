@@ -215,7 +215,7 @@ final class TimerView: BaseView {
             ("ant.fill",    "벌레", false),
             ("bolt.fill",   "레이저",      false),
             ("timelapse", "카샤카샤",     false),
-            ("teddybear",   "인형",        false),
+            ("oar.2.crossed",   "오뎅꼬치",        false),
             ("xmark",       "선택 안 함",  true),
         ]
         toyChipButtons.removeAll()
