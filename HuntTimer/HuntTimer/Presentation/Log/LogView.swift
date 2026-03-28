@@ -339,6 +339,9 @@ final class LogView: BaseView {
         return wrapper
     }
 
+    /// 행 탭 콜백 — LogViewController에서 주입 (index: 탭된 세션의 순서)
+    var onSessionRowTap: ((Int) -> Void)?
+
     /// 세션 목록을 갱신 — 빈 배열이면 empty state 표시
     func reloadSessionRows(_ sessions: [HuntSession]) {
         rowsStack.arrangedSubviews.forEach { $0.removeFromSuperview() }
@@ -350,12 +353,14 @@ final class LogView: BaseView {
         } else {
             rowsStack.isHidden      = false
             emptyStateView.isHidden = true
-            sessions.forEach { rowsStack.addArrangedSubview(makeTimelineRow($0)) }
+            sessions.enumerated().forEach { idx, session in
+                rowsStack.addArrangedSubview(makeTimelineRow(session, index: idx))
+            }
         }
     }
 
     // MARK: - Timeline Row
-    private func makeTimelineRow(_ session: HuntSession) -> UIView {
+    private func makeTimelineRow(_ session: HuntSession, index: Int) -> UIView {
         // UIStackView를 직접 반환 — plain UIView wrapper는 rowsStack 내에서
         // intrinsic height를 제공하지 못해 셀이 겹치는 원인이 됨
         let imgView = AsyncImageView(contentMode: .scaleAspectFill, cornerRadius: 14)
@@ -385,10 +390,22 @@ final class LogView: BaseView {
         card.addSubview(innerRow)
         innerRow.snp.makeConstraints { $0.edges.equalToSuperview().inset(12) }
 
+        // 투명 탭 버튼 오버레이 — 카드 전체를 탭 가능하게 만듦
+        let tapBtn = UIButton(type: .system)
+        tapBtn.tag             = index
+        tapBtn.backgroundColor = .clear
+        tapBtn.addTarget(self, action: #selector(sessionRowTapped(_:)), for: .touchUpInside)
+        card.addSubview(tapBtn)
+        tapBtn.snp.makeConstraints { $0.edges.equalToSuperview() }
+
         let outerRow = UIStackView.make(axis: .horizontal, spacing: 8, alignment: .center)
         outerRow.addArrangedSubview(imgView)
         outerRow.addArrangedSubview(card)
         return outerRow
+    }
+
+    @objc private func sessionRowTapped(_ sender: UIButton) {
+        onSessionRowTap?(sender.tag)
     }
 
     private func makePillLabel(_ text: String, bg: UIColor, fg: UIColor) -> UIView {

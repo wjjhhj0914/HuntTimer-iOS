@@ -17,6 +17,8 @@ final class LogViewController: BaseViewController {
     /// 날짜별 첫 번째 사진 경로 (사진이 없는 날짜는 포함하지 않음)
     private var activityPhotos: [Int: String] = [:]
     private var selectedDay: Int?
+    /// 현재 선택된 날짜의 PlaySession 목록 — 행 탭 시 상세 모달에 전달
+    private var currentPlaySessions: [PlaySession] = []
 
     // MARK: - loadView
     override func loadView() {
@@ -34,12 +36,33 @@ final class LogViewController: BaseViewController {
 
         contentView.profileButton.addTarget(self, action: #selector(profileTapped), for: .touchUpInside)
 
+        // 타임라인 행 탭 → 탭한 세션 하나만 상세 모달에 표시
+        contentView.onSessionRowTap = { [weak self] index in
+            guard let self,
+                  index < self.currentPlaySessions.count else { return }
+            self.presentDetailModal(sessions: [self.currentPlaySessions[index]])
+        }
+
         reloadCalendar()
 
         // 오늘 날짜로 초기 선택
         let todayDay = Calendar.current.component(.day, from: Date())
         selectedDay = todayDay
         reloadSessions(for: Date())
+    }
+
+    override func viewWillAppear(_ animated: Bool) {
+        super.viewWillAppear(animated)
+        // 타이머 저장 후 탭 전환 시 최신 데이터 반영
+        reloadCalendar()
+        if let day = selectedDay {
+            let cal      = Calendar.current
+            var comps    = cal.dateComponents([.year, .month], from: currentDate)
+            comps.day    = day
+            if let date  = cal.date(from: comps) {
+                reloadSessions(for: date)
+            }
+        }
     }
 
     // MARK: - Navigation
@@ -112,22 +135,49 @@ final class LogViewController: BaseViewController {
     }
 
     private func reloadSessions(for date: Date) {
-        let sessions = loadSessions(for: date)
-        let cal      = Calendar.current
-        let month    = cal.component(.month, from: date)
-        let day      = cal.component(.day,   from: date)
+        // Realm 단일 쿼리 — currentPlaySessions와 HuntSession 목록을 동시에 갱신
+        currentPlaySessions = loadAllPlaySessions(for: date)
 
+        let cal   = Calendar.current
+        let month = cal.component(.month, from: date)
+        let day   = cal.component(.day,   from: date)
         contentView.sessionTitleLabel.text = "\(month)월 \(day)일 기록"
 
-        if sessions.isEmpty {
+        if currentPlaySessions.isEmpty {
             contentView.sessionSummaryLabel.text = ""
         } else {
-            let totalSecs = sessions.reduce(0) { $0 + $1.durationSeconds }
-            let totalMins = totalSecs / 60
-            contentView.sessionSummaryLabel.text = "총 \(sessions.count)회 · \(totalMins)분"
+            let totalMins = currentPlaySessions.reduce(0) { $0 + $1.duration } / 60
+            contentView.sessionSummaryLabel.text = "총 \(currentPlaySessions.count)회 · \(totalMins)분"
         }
 
-        contentView.reloadSessionRows(sessions)
+        contentView.reloadSessionRows(buildHuntSessions(from: currentPlaySessions))
+    }
+
+    private func buildHuntSessions(from playSessions: [PlaySession]) -> [HuntSession] {
+        let formatter        = DateFormatter()
+        formatter.locale     = Locale(identifier: "ko_KR")
+        formatter.dateFormat = "a h:mm"
+
+        return playSessions.enumerated().map { idx, s in
+            let mins    = s.duration / 60
+            let toyName = s.toys.first?.name
+            let title: String
+            if let name = toyName {
+                title = "\(name)\(Self.roPostposition(for: name)) 사냥했어요!"
+            } else {
+                title = "열정적으로 사냥했어요!"
+            }
+            return HuntSession(
+                id:              idx + 1,
+                time:            formatter.string(from: s.startTime),
+                title:           title,
+                toy:             toyName ?? "장난감 없음",
+                durationText:    mins > 0 ? "\(mins)분" : "1분 미만",
+                durationSeconds: s.duration,
+                calories:        Int(Double(s.duration) / 60.0 * 2.8),
+                imageURL:        ""
+            )
+        }
     }
 
     // MARK: - Realm Queries
@@ -165,52 +215,20 @@ final class LogViewController: BaseViewController {
         )
     }
 
+    /// 캘린더 날짜 2번째 탭 — 해당 날의 모든 세션을 페이징으로 표시
     private func presentDetailModal(for date: Date) {
         let sessions = loadAllPlaySessions(for: date)
+        presentDetailModal(sessions: sessions)
+    }
+
+    /// 공통 표시 — sessions 배열을 그대로 모달에 전달
+    private func presentDetailModal(sessions: [PlaySession]) {
         guard !sessions.isEmpty else { return }
         let vc = HuntDetailViewController()
         vc.sessions               = sessions
         vc.modalPresentationStyle = .overFullScreen
         vc.modalTransitionStyle   = .crossDissolve
         present(vc, animated: true)
-    }
-
-    private func loadSessions(for date: Date) -> [HuntSession] {
-        guard let realm = try? Realm() else { return [] }
-        let cal      = Calendar.current
-        let dayStart = cal.startOfDay(for: date)
-        let dayEnd   = cal.date(byAdding: .day, value: 1, to: dayStart) ?? dayStart
-
-        let formatter        = DateFormatter()
-        formatter.locale     = Locale(identifier: "ko_KR")
-        formatter.dateFormat = "a h:mm"
-
-        let playSessions = Array(
-            realm.objects(PlaySession.self)
-                .filter("startTime >= %@ AND startTime < %@", dayStart, dayEnd)
-                .sorted(byKeyPath: "startTime", ascending: true)
-        )
-
-        return playSessions.enumerated().map { idx, s in
-            let mins    = s.duration / 60
-            let toyName = s.toys.first?.name
-            let title: String
-            if let name = toyName {
-                title = "\(name)\(Self.roPostposition(for: name)) 사냥했어요!"
-            } else {
-                title = "열정적으로 사냥했어요!"
-            }
-            return HuntSession(
-                id:              idx + 1,
-                time:            formatter.string(from: s.startTime),
-                title:           title,
-                toy:             toyName ?? "장난감 없음",
-                durationText:    mins > 0 ? "\(mins)분" : "1분 미만",
-                durationSeconds: s.duration,
-                calories:        Int(Double(s.duration) / 60.0 * 2.8),
-                imageURL:        ""
-            )
-        }
     }
 
     // MARK: - Korean postposition helper
