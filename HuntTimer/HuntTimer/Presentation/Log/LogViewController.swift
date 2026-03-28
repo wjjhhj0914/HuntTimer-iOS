@@ -153,23 +153,23 @@ final class LogViewController: BaseViewController {
         return (days, photos)
     }
 
-    private func loadFirstPlaySession(for date: Date) -> PlaySession? {
-        guard let realm = try? Realm() else { return nil }
+    private func loadAllPlaySessions(for date: Date) -> [PlaySession] {
+        guard let realm = try? Realm() else { return [] }
         let cal      = Calendar.current
         let dayStart = cal.startOfDay(for: date)
         let dayEnd   = cal.date(byAdding: .day, value: 1, to: dayStart) ?? dayStart
-        return realm.objects(PlaySession.self)
-            .filter("startTime >= %@ AND startTime < %@", dayStart, dayEnd)
-            .sorted(byKeyPath: "startTime", ascending: true)
-            .first
+        return Array(
+            realm.objects(PlaySession.self)
+                .filter("startTime >= %@ AND startTime < %@", dayStart, dayEnd)
+                .sorted(byKeyPath: "startTime", ascending: true)
+        )
     }
 
-    private func presentDetailModal(for session: PlaySession) {
+    private func presentDetailModal(for date: Date) {
+        let sessions = loadAllPlaySessions(for: date)
+        guard !sessions.isEmpty else { return }
         let vc = HuntDetailViewController()
-        vc.durationSeconds = session.duration
-        vc.toyName         = session.toys.first?.name
-        vc.imagePath       = session.photos.first?.imagePath
-        vc.memo            = session.memo
+        vc.sessions               = sessions
         vc.modalPresentationStyle = .overFullScreen
         vc.modalTransitionStyle   = .crossDissolve
         present(vc, animated: true)
@@ -268,8 +268,8 @@ extension LogViewController: UICollectionViewDataSource, UICollectionViewDelegat
 
         // ── 이미 선택된 날짜를 다시 탭: 모달 표시 ─────────────────
         if day == selectedDay {
-            if activityDays.contains(day), let session = loadFirstPlaySession(for: date) {
-                presentDetailModal(for: session)
+            if activityDays.contains(day) {
+                presentDetailModal(for: date)
             }
             return
         }

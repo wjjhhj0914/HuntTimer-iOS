@@ -1,13 +1,11 @@
 import UIKit
+import RealmSwift
 
-/// 사냥 기록 상세 모달 ViewController — 디자인 Node ID: v2cvH 기반
+/// 사냥 기록 상세 모달 ViewController — 하루치 모든 세션을 좌우 스와이프로 탐색
 final class HuntDetailViewController: UIViewController {
 
     // MARK: - Configuration (호출 전 설정)
-    var durationSeconds: Int = 0
-    var toyName:   String?   = nil
-    var imagePath: String?   = nil
-    var memo:      String?   = nil
+    var sessions: [PlaySession] = []
 
     // MARK: - View
     private let contentView = HuntDetailView()
@@ -26,18 +24,11 @@ final class HuntDetailViewController: UIViewController {
 
     // MARK: - Configure
     private func configure() {
-        let image: UIImage?
-        if let path = imagePath {
-            image = UIImage(contentsOfFile: path)
-        } else {
-            image = nil
+        let data = sessions.map { s -> (durationSeconds: Int, toyName: String?, image: UIImage?, memo: String?) in
+            let image: UIImage? = s.photos.first.flatMap { UIImage(contentsOfFile: $0.imagePath) }
+            return (s.duration, s.toys.first?.name, image, s.memo)
         }
-        contentView.configure(
-            durationSeconds: durationSeconds,
-            toyName:         toyName,
-            image:           image,
-            memo:            memo
-        )
+        contentView.configure(sessions: data)
     }
 
     // MARK: - Bind
