@@ -193,7 +193,7 @@ final class TimerViewController: BaseViewController {
             guard let self else { return }
             self.endAndSaveSession(memo: memo, photo: photo)
             self.stopTimer()
-            self.tabBarController?.selectedIndex = 0
+            self.tabBarController?.selectedIndex = 2
         }
         modal.onCancel = { [weak self] in
             if resumeOnCancel { self?.startTimer() }

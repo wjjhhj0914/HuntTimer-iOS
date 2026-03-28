@@ -15,8 +15,8 @@ final class MainTabBarController: UITabBarController {
     private func setupTabs() {
         let tabs: [(UIViewController, String, String)] = [
             (HomeViewController(),  "홈",   "house.fill"),
-            (TimerViewController(), "플레이", "pawprint.fill"),
-            (LogViewController(),   "기록",  "calendar"),
+            (TimerViewController(), "사냥", "pawprint.fill"),
+            (LogViewController(),   "캘린더",  "calendar"),
 //            (ShopViewController(),  "쇼핑",  "cart.fill"),
 //            (AdoptViewController(), "입양",  "heart.fill"),
         ]
