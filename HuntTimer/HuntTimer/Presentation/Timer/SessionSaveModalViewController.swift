@@ -1,5 +1,4 @@
 import UIKit
-import PhotosUI
 
 /// 사냥 기록 저장 커스텀 모달 ViewController
 final class SessionSaveModalViewController: UIViewController {
@@ -39,10 +38,6 @@ final class SessionSaveModalViewController: UIViewController {
         contentView.photoSlotView.isUserInteractionEnabled = true
         contentView.photoSlotView.addGestureRecognizer(photoTap)
 
-        // 카드 밖 백드롭 탭 → 취소
-        let backdropTap = UITapGestureRecognizer(target: self, action: #selector(closeTapped))
-        contentView.backdropView.addGestureRecognizer(backdropTap)
-
         contentView.memoTextView.delegate = self
     }
 
@@ -69,11 +64,11 @@ final class SessionSaveModalViewController: UIViewController {
     }
 
     @objc private func photoSlotTapped() {
-        var config = PHPickerConfiguration()
-        config.filter         = .images
-        config.selectionLimit = 1
-        let picker = PHPickerViewController(configuration: config)
-        picker.delegate = self
+        guard UIImagePickerController.isSourceTypeAvailable(.photoLibrary) else { return }
+        let picker = UIImagePickerController()
+        picker.sourceType    = .photoLibrary
+        picker.allowsEditing = true
+        picker.delegate      = self
         present(picker, animated: true)
     }
 
@@ -100,28 +95,29 @@ extension SessionSaveModalViewController: UITextViewDelegate {
 
     func textViewDidEndEditing(_ textView: UITextView) {
         if textView.text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
-            textView.text      = "냥이의 반응이나 특이사항을 적어주세요..."
+            textView.text      = "즐거웠던 순간을 기록해 주세요..."
             textView.textColor = UIColor(hex: "#C8B4BC")
             contentView.isShowingPlaceholder = true
         }
     }
 }
 
-// MARK: - PHPickerViewControllerDelegate (사진 선택)
+// MARK: - UIImagePickerControllerDelegate (사진 선택 + 크롭)
 
-extension SessionSaveModalViewController: PHPickerViewControllerDelegate {
+extension SessionSaveModalViewController: UIImagePickerControllerDelegate, UINavigationControllerDelegate {
 
-    func picker(_ picker: PHPickerViewController, didFinishPicking results: [PHPickerResult]) {
+    func imagePickerController(_ picker: UIImagePickerController,
+                               didFinishPickingMediaWithInfo info: [UIImagePickerController.InfoKey: Any]) {
         picker.dismiss(animated: true)
-        guard let result = results.first else { return }
-        result.itemProvider.loadObject(ofClass: UIImage.self) { [weak self] object, _ in
-            guard let image = object as? UIImage else { return }
-            DispatchQueue.main.async {
-                self?.selectedPhoto = image
-                self?.contentView.photoImageView.image    = image
-                self?.contentView.photoImageView.isHidden = false
-                self?.contentView.cameraPlaceholderStack.isHidden = true
-            }
-        }
+        let image = info[.editedImage] as? UIImage ?? info[.originalImage] as? UIImage
+        guard let image else { return }
+        selectedPhoto = image
+        contentView.photoImageView.image    = image
+        contentView.photoImageView.isHidden = false
+        contentView.cameraPlaceholderStack.isHidden = true
+    }
+
+    func imagePickerControllerDidCancel(_ picker: UIImagePickerController) {
+        picker.dismiss(animated: true)
     }
 }
