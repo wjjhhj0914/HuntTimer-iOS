@@ -61,8 +61,17 @@ private final class SessionPageView: UIView {
     // MARK: - Build
 
     private func buildUI() {
+        // 세로 스크롤 뷰 — 사진이 크거나 메모가 길어도 잘림 없이 전체 열람 가능
+        let vScroll = UIScrollView()
+        vScroll.alwaysBounceVertical        = true
+        vScroll.showsVerticalScrollIndicator = false
+        vScroll.clipsToBounds               = true
+
+        addSubview(vScroll)
+        vScroll.snp.makeConstraints { $0.edges.equalToSuperview() }
+
         let stack = UIStackView.make(axis: .vertical, spacing: 0)
-        stack.layoutMargins = UIEdgeInsets(top: 20, left: 22, bottom: 20, right: 22)
+        stack.layoutMargins = UIEdgeInsets(top: 20, left: 22, bottom: 24, right: 22)
         stack.isLayoutMarginsRelativeArrangement = true
 
         let timeStack  = makeTimeSection()
@@ -81,10 +90,12 @@ private final class SessionPageView: UIView {
         stack.setCustomSpacing(16, after: divider2)
         stack.setCustomSpacing(16, after: photoStack)
 
-        addSubview(stack)
-        // 상단/좌우만 고정 — 콘텐츠 높이가 자연스럽게 결정되도록 bottom은 고정하지 않음
+        vScroll.addSubview(stack)
+        // contentLayoutGuide: 스크롤 콘텐츠 영역 전체에 stack을 채움
+        // frameLayoutGuide.width: 가로 크기를 스크롤 뷰 뷰포트에 고정 → 세로 스크롤만 발생
         stack.snp.makeConstraints { make in
-            make.top.leading.trailing.equalToSuperview()
+            make.edges.equalTo(vScroll.contentLayoutGuide)
+            make.width.equalTo(vScroll.frameLayoutGuide)
         }
     }
 
@@ -143,11 +154,13 @@ private final class SessionPageView: UIView {
         memoBox.layer.borderWidth  = 1
         memoBox.layer.borderColor  = UIColor(hex: "#F0D8E0").cgColor
         memoBox.addSubview(memoLabel)
+        // memoLabel.numberOfLines = 0 이므로 텍스트 길이에 따라 자동 확장
         memoLabel.snp.makeConstraints { make in
             make.top.bottom.equalToSuperview().inset(12)
             make.leading.trailing.equalToSuperview().inset(14)
         }
-        memoBox.snp.makeConstraints { $0.height.equalTo(68) }
+        // 고정 높이 제거 → 최소 높이만 지정, 긴 메모는 자연스럽게 늘어남
+        memoBox.snp.makeConstraints { $0.height.greaterThanOrEqualTo(52) }
 
         let s = UIStackView.make(axis: .vertical, spacing: 10)
         s.addArrangedSubview(makeSectionHeader(icon: "pencil", title: "메모"))
