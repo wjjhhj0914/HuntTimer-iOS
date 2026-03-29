@@ -37,19 +37,22 @@ final class HomeViewController: BaseViewController {
         output.greeting.drive(contentView.greetLabel.rx.text).disposed(by: disposeBag)
         output.catTitle.drive(contentView.titleLabel.rx.text).disposed(by: disposeBag)
 
-        // Banner — 로컬 파일 경로 기반 로딩 (없으면 cardBG 플레이스홀더)
+        // Banner — 원형 아바타: 사진 있으면 로컬 파일 로딩, 없으면 발바닥 플레이스홀더
         output.bannerImagePath
             .drive(onNext: { [weak self] path in
                 guard let self else { return }
+                let iv = self.contentView.bannerImageView
                 if let path, let image = UIImage(contentsOfFile: path) {
-                    UIView.transition(with: self.contentView.bannerImageView,
-                                      duration: 0.25, options: .transitionCrossDissolve) {
-                        self.contentView.bannerImageView.image = image
-                        self.contentView.bannerImageView.backgroundColor = .clear
+                    UIView.transition(with: iv, duration: 0.25, options: .transitionCrossDissolve) {
+                        iv.image           = image
+                        iv.contentMode     = .scaleAspectFill
+                        iv.backgroundColor = .clear
                     }
                 } else {
-                    self.contentView.bannerImageView.image = nil
-                    self.contentView.bannerImageView.backgroundColor = AppTheme.Color.cardBG
+                    iv.contentMode     = .center
+                    iv.image           = UIImage(systemName: "pawprint.circle.fill")
+                    iv.tintColor       = AppTheme.Color.textMuted.withAlphaComponent(0.45)
+                    iv.backgroundColor = AppTheme.Color.primaryLight
                 }
             })
             .disposed(by: disposeBag)
@@ -186,10 +189,11 @@ extension HomeViewController: PHPickerViewControllerDelegate {
                 return
             }
             DispatchQueue.main.async {
-                UIView.transition(with: self.contentView.bannerImageView,
-                                  duration: 0.25, options: .transitionCrossDissolve) {
-                    self.contentView.bannerImageView.image = image
-                    self.contentView.bannerImageView.backgroundColor = .clear
+                let iv = self.contentView.bannerImageView
+                UIView.transition(with: iv, duration: 0.25, options: .transitionCrossDissolve) {
+                    iv.image           = image
+                    iv.contentMode     = .scaleAspectFill
+                    iv.backgroundColor = .clear
                 }
                 self.saveBannerImage(image)
             }

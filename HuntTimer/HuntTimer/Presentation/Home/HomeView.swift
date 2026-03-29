@@ -26,16 +26,16 @@ final class HomeView: BaseView {
     }()
     let editBannerButton: UIButton = {
         let btn = UIButton(type: .system)
-        btn.setImage(UIImage(systemName: "photo"), for: .normal)
-        btn.tintColor = AppTheme.Color.primary
-        btn.backgroundColor = UIColor.white.withAlphaComponent(0.92)
-        btn.layer.cornerRadius = 16
+        btn.setImage(UIImage(systemName: "square.and.pencil"), for: .normal)
+        btn.tintColor = AppTheme.Color.textMuted
+        btn.backgroundColor = AppTheme.Color.cardBG
+        btn.layer.cornerRadius = 20
         btn.clipsToBounds = true
         return btn
     }()
-    let streakLabel     = UILabel.make(text: "", size: 12, weight: .bold, color: .white)
-    let heroCatLabel    = UILabel.make(text: "", size: 13, weight: .medium, color: UIColor(white: 1, alpha: 0.85))
-    let heroStatusLabel = UILabel.make(text: "", size: 18, weight: .black, color: .white)
+    let streakLabel     = UILabel.make(text: "", size: 12, weight: .bold, color: AppTheme.Color.primary)
+    let heroCatLabel    = UILabel.make(text: "", size: 18, weight: .black, color: AppTheme.Color.textDark)
+    let heroStatusLabel = UILabel.make(text: "", size: 13, color: AppTheme.Color.textMuted)
 
     // MARK: - Progress
     let gaugeView          = CircularProgressView(size: 130)
@@ -144,57 +144,53 @@ final class HomeView: BaseView {
 
     private func makeBannerSection() -> UIView {
         let container = UIView()
-        container.snp.makeConstraints { $0.height.equalTo(180) }
-        container.layer.cornerRadius = AppTheme.Radius.xxLarge
-        container.clipsToBounds = true
+        container.applyCardStyle(cornerRadius: AppTheme.Radius.xxLarge)
 
+        // ── 원형 아바타 (좌상단) ──────────────────────────────────────────
+        bannerImageView.layer.cornerRadius = 32
+        bannerImageView.clipsToBounds = true
         container.addSubview(bannerImageView)
-        bannerImageView.snp.makeConstraints { $0.edges.equalToSuperview() }
-
-        let gradLayer = CAGradientLayer()
-        gradLayer.colors     = [UIColor.clear.cgColor, UIColor(white: 0, alpha: 0.55).cgColor]
-        gradLayer.startPoint = CGPoint(x: 0.5, y: 0.3)
-        gradLayer.endPoint   = CGPoint(x: 0.5, y: 1.0)
-        let gradView = UIView()
-        gradView.isUserInteractionEnabled = false
-        container.addSubview(gradView)
-        gradView.snp.makeConstraints { $0.edges.equalToSuperview() }
-        DispatchQueue.main.async {
-            gradLayer.frame = gradView.bounds.isEmpty
-                ? CGRect(x: 0, y: 0, width: UIScreen.main.bounds.width - 40, height: 180)
-                : gradView.bounds
-            gradView.layer.addSublayer(gradLayer)
+        bannerImageView.snp.makeConstraints { make in
+            make.top.leading.equalToSuperview().inset(16)
+            make.width.height.equalTo(64)
         }
 
+        // ── 고양이 이름 ──────────────────────────────────────────────────
+        container.addSubview(heroCatLabel)
+        heroCatLabel.snp.makeConstraints { make in
+            make.top.equalTo(bannerImageView.snp.bottom).offset(10)
+            make.leading.equalToSuperview().inset(16)
+            make.trailing.lessThanOrEqualTo(editBannerButton.snp.leading).offset(-8)
+        }
+
+        // ── 품종 / 상태 텍스트 ───────────────────────────────────────────
+        container.addSubview(heroStatusLabel)
+        heroStatusLabel.snp.makeConstraints { make in
+            make.top.equalTo(heroCatLabel.snp.bottom).offset(3)
+            make.leading.equalToSuperview().inset(16)
+        }
+
+        // ── 스트릭 뱃지 (좌하단) ─────────────────────────────────────────
         let streakBG = UIView()
-        streakBG.backgroundColor   = UIColor(white: 1, alpha: 0.22)
+        streakBG.backgroundColor    = AppTheme.Color.primaryLight
         streakBG.layer.cornerRadius = 14
+        streakBG.clipsToBounds      = true
         streakBG.addSubview(streakLabel)
         streakLabel.snp.makeConstraints { make in
-            make.top.bottom.equalToSuperview().inset(5)
-            make.leading.trailing.equalToSuperview().inset(10)
+            make.edges.equalToSuperview().inset(UIEdgeInsets(top: 6, left: 12, bottom: 6, right: 12))
         }
         container.addSubview(streakBG)
         streakBG.snp.makeConstraints { make in
-            make.top.equalToSuperview().offset(12)
-            make.leading.equalToSuperview().offset(16)
+            make.top.equalTo(heroStatusLabel.snp.bottom).offset(12)
+            make.leading.equalToSuperview().inset(16)
+            make.bottom.equalToSuperview().inset(16)  // 컨테이너 높이 결정
         }
 
-        let textStack = UIStackView.make(axis: .vertical, spacing: 2)
-        textStack.addArrangedSubview(heroCatLabel)
-        textStack.addArrangedSubview(heroStatusLabel)
-        container.addSubview(textStack)
-        textStack.snp.makeConstraints { make in
-            make.bottom.equalToSuperview().offset(-16)
-            make.leading.equalToSuperview().offset(16)
-        }
-
-        // 편집 버튼 — 우측 하단 고정
+        // ── 편집 버튼 (우하단) ───────────────────────────────────────────
         container.addSubview(editBannerButton)
         editBannerButton.snp.makeConstraints { make in
-            make.bottom.equalToSuperview().offset(-12)
-            make.trailing.equalToSuperview().offset(-12)
-            make.width.height.equalTo(32)
+            make.bottom.trailing.equalToSuperview().inset(16)
+            make.width.height.equalTo(40)
         }
 
         return container.wrapped(insets: UIEdgeInsets(top: 0, left: 20, bottom: 0, right: 20))
