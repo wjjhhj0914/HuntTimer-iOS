@@ -162,17 +162,7 @@ final class HomeView: BaseView {
         streakBG.addSubview(streakLabel)
         container.addSubview(streakBG)
 
-        let textStack = UIStackView.make(axis: .vertical, spacing: 2)
-        [heroCatLabel, heroStatusLabel].forEach { label in
-            label.layer.shadowColor   = UIColor.black.cgColor
-            label.layer.shadowOpacity = 0.45
-            label.layer.shadowOffset  = CGSize(width: 0, height: 1)
-            label.layer.shadowRadius  = 3
-            textStack.addArrangedSubview(label)
-        }
-        container.addSubview(textStack)
-
-        container.addSubview(editBannerButton)   // textStack 제약이 참조하기 전에 추가
+        container.addSubview(editBannerButton)
 
         // ── 2단계: 제약 설정 ──────────────────────────────────────────────
         bannerImageView.snp.makeConstraints { $0.edges.equalToSuperview() }
@@ -193,12 +183,9 @@ final class HomeView: BaseView {
         streakLabel.snp.makeConstraints { make in
             make.edges.equalToSuperview().inset(UIEdgeInsets(top: 5, left: 10, bottom: 5, right: 10))
         }
+        // 스트릭 배지: 좌하단으로 이동
         streakBG.snp.makeConstraints { make in
-            make.top.leading.equalToSuperview().inset(12)
-        }
-        textStack.snp.makeConstraints { make in
             make.bottom.leading.equalToSuperview().inset(16)
-            make.trailing.lessThanOrEqualTo(editBannerButton.snp.leading).offset(-8)
         }
         editBannerButton.snp.makeConstraints { make in
             make.bottom.trailing.equalToSuperview().inset(12)
