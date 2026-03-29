@@ -259,7 +259,7 @@ final class ProfileView: BaseView {
     // MARK: - Badges Section
     private func makeBadgesSection() -> UIView {
         let wrapper   = UIView()
-        let titleL    = UILabel.make(text: "🏅 획득 배지", size: 15, weight: .bold, color: AppTheme.Color.textDark)
+        let titleL    = UILabel.make(text: "획득 배지", size: 15, weight: .bold, color: AppTheme.Color.textDark)
         let headerRow = UIStackView.make(axis: .horizontal, alignment: .center)
         headerRow.addArrangedSubview(titleL)
         headerRow.addArrangedSubview(badgeCountLabel)
@@ -328,7 +328,7 @@ final class ProfileView: BaseView {
                        bg: UIColor(white: 0.92, alpha: 1), fg: AppTheme.Color.textMedium),
             AppInfoRow(symbol: "info.circle.fill",  label: "버전 정보",        desc: "v1.1.0",
                        bg: AppTheme.Color.primaryLight,    fg: AppTheme.Color.primary),
-            AppInfoRow(symbol: "star.fill",          label: "리뷰 남기기",      desc: "앱스토어에서 응원해주세요",
+            AppInfoRow(symbol: "star.fill",          label: "리뷰 남기기",      desc: "개발자한테 리뷰를 남겨 주세요!",
                        bg: AppTheme.Color.yellowLight,     fg: AppTheme.Color.yellowDark),
         ]
 
