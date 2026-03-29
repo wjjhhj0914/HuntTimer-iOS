@@ -96,7 +96,7 @@ final class TimerViewController: BaseViewController {
             return
         }
         pauseTimer()
-        showSessionSaveModal(resumeOnCancel: true)
+        showSessionSaveModal()
         UIImpactFeedbackGenerator(style: .light).impactOccurred()
     }
 
@@ -154,6 +154,15 @@ final class TimerViewController: BaseViewController {
         updateStatusUI()
     }
 
+    /// 기록 삭제 — 세션 데이터와 타이머 상태를 모두 초기 상태로 되돌림
+    private func resetSession() {
+        sessionStartTime = nil
+        selectedToy      = nil
+        selectedToyIndex = -1
+        stopTimer()
+        updateToyUI()
+    }
+
     private func stopTimer() {
         timer?.invalidate()
         timer          = nil
@@ -167,7 +176,7 @@ final class TimerViewController: BaseViewController {
     private func huntFinished() {
         updateStatusUI()
         UINotificationFeedbackGenerator().notificationOccurred(.success)
-        showSessionSaveModal(resumeOnCancel: false)
+        showSessionSaveModal()
     }
 
     private func endAndSaveSession(memo: String? = nil, photo: UIImage? = nil) {
@@ -186,7 +195,7 @@ final class TimerViewController: BaseViewController {
 
     // MARK: - Custom Modal
 
-    private func showSessionSaveModal(resumeOnCancel: Bool) {
+    private func showSessionSaveModal() {
         let modal = SessionSaveModalViewController()
         modal.duration  = elapsedSeconds
         modal.onSave    = { [weak self] memo, photo in
@@ -196,8 +205,7 @@ final class TimerViewController: BaseViewController {
             self.tabBarController?.selectedIndex = 2
         }
         modal.onCancel = { [weak self] in
-            if resumeOnCancel { self?.startTimer() }
-            else              { self?.stopTimer()  }
+            self?.resetSession()
         }
         modal.modalPresentationStyle = .overFullScreen
         modal.modalTransitionStyle   = .crossDissolve
