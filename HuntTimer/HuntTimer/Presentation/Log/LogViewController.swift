@@ -127,8 +127,13 @@ final class LogViewController: BaseViewController {
         contentView.year  = year
         contentView.month = month - 1   // 0-indexed
 
-        // Realm에서 해당 월의 활동 일자 및 사진 경로 조회
-        (activityDays, activityPhotos) = loadActivityData(year: year, month: month)
+        // Realm에서 해당 월의 활동 일자·사진·통계 조회 (단일 쿼리)
+        let monthly = loadMonthlyData(year: year, month: month)
+        activityDays   = monthly.activityDays
+        activityPhotos = monthly.activityPhotos
+        contentView.updateSummaryCard(count: monthly.sessionCount,
+                                      totalSeconds: monthly.totalSeconds,
+                                      activeDays: monthly.activityDays.count)
 
         contentView.updateCalendarHeight()
         contentView.calendarCollectionView.reloadData()
@@ -182,8 +187,9 @@ final class LogViewController: BaseViewController {
 
     // MARK: - Realm Queries
 
-    private func loadActivityData(year: Int, month: Int) -> (Set<Int>, [Int: String]) {
-        guard let realm = try? Realm() else { return ([], [:]) }
+    private func loadMonthlyData(year: Int, month: Int)
+        -> (activityDays: Set<Int>, activityPhotos: [Int: String], sessionCount: Int, totalSeconds: Int) {
+        guard let realm = try? Realm() else { return ([], [:], 0, 0) }
         let cal        = Calendar.current
         let monthStart = cal.date(from: DateComponents(year: year, month: month, day: 1)) ?? Date()
         let monthEnd   = cal.date(byAdding: .month, value: 1, to: monthStart) ?? Date()
@@ -191,16 +197,18 @@ final class LogViewController: BaseViewController {
         let sessions = realm.objects(PlaySession.self)
             .filter("startTime >= %@ AND startTime < %@", monthStart, monthEnd)
 
-        var days: Set<Int>       = []
+        var days: Set<Int>        = []
         var photos: [Int: String] = [:]
+        var totalDuration         = 0
         for session in sessions {
             let day = cal.component(.day, from: session.startTime)
             days.insert(day)
             if photos[day] == nil, let path = session.photos.first?.imagePath, !path.isEmpty {
                 photos[day] = path
             }
+            totalDuration += session.duration
         }
-        return (days, photos)
+        return (days, photos, sessions.count, totalDuration)
     }
 
     private func loadAllPlaySessions(for date: Date) -> [PlaySession] {

@@ -120,6 +120,14 @@ final class LogView: BaseView {
     let rowsStack           = UIStackView.make(axis: .vertical, spacing: 8)
     let emptyStateView      = UIView()
 
+    // MARK: - Summary Card stored labels (VC가 월 변경 시 갱신)
+    private let summaryCountLabel = UILabel.make(text: "—", size: 14, weight: .bold,
+                                                  color: AppTheme.Color.textDark, alignment: .center)
+    private let summaryHoursLabel = UILabel.make(text: "—", size: 14, weight: .bold,
+                                                  color: AppTheme.Color.textDark, alignment: .center)
+    private let summaryDaysLabel  = UILabel.make(text: "—", size: 14, weight: .bold,
+                                                  color: AppTheme.Color.textDark, alignment: .center)
+
     private var calendarHeightConstraint: Constraint?
 
     // MARK: - BaseView
@@ -259,18 +267,17 @@ final class LogView: BaseView {
         card.backgroundColor   = AppTheme.Color.yellowLight
         card.layer.cornerRadius = AppTheme.Radius.large
 
-        let stats: [(String, String, String)] = [
-            ("🎯", "42회",    "총 사냥 횟수"),
-            ("⏱️", "8.5시간", "총 시간"),
-            ("📅", "18일",    "활동 일수"),
+        let statDefs: [(String, UILabel, String)] = [
+            ("🎯", summaryCountLabel, "총 사냥 횟수"),
+            ("⏱️", summaryHoursLabel, "총 시간"),
+            ("📅", summaryDaysLabel,  "활동 일수"),
         ]
         let row = UIStackView.make(axis: .horizontal, distribution: .fillEqually)
-        stats.forEach { emoji, value, label in
+        statDefs.forEach { emoji, valueLabel, desc in
             let col = UIStackView.make(axis: .vertical, spacing: 2, alignment: .center)
             col.addArrangedSubview(UILabel.make(text: emoji, size: 18, alignment: .center))
-            col.addArrangedSubview(UILabel.make(text: value, size: 14, weight: .bold,
-                                                color: AppTheme.Color.textDark, alignment: .center))
-            col.addArrangedSubview(UILabel.make(text: label, size: 10, color: UIColor(hex: "#9B7A00"), alignment: .center))
+            col.addArrangedSubview(valueLabel)
+            col.addArrangedSubview(UILabel.make(text: desc, size: 10, color: UIColor(hex: "#9B7A00"), alignment: .center))
             row.addArrangedSubview(col)
         }
         card.addSubview(row)
@@ -284,6 +291,19 @@ final class LogView: BaseView {
             make.trailing.equalToSuperview().offset(-20)
         }
         return wrapper
+    }
+
+    func updateSummaryCard(count: Int, totalSeconds: Int, activeDays: Int) {
+        summaryCountLabel.text = "\(count)회"
+        summaryHoursLabel.text = formatSummaryTime(totalSeconds)
+        summaryDaysLabel.text  = "\(activeDays)일"
+    }
+
+    private func formatSummaryTime(_ seconds: Int) -> String {
+        let hours = seconds / 3600
+        let mins  = (seconds % 3600) / 60
+        if hours > 0 { return mins > 0 ? "\(hours)시간 \(mins)분" : "\(hours)시간" }
+        return mins > 0 ? "\(mins)분" : "0분"
     }
 
     private func makeSessionList() -> UIView {
