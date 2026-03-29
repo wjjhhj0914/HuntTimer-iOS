@@ -146,48 +146,44 @@ final class HomeView: BaseView {
         let container = UIView()
         container.applyCardStyle(cornerRadius: AppTheme.Radius.xxLarge)
 
-        // ── 원형 아바타 (좌상단) ──────────────────────────────────────────
+        // ── 1단계: 모든 서브뷰를 먼저 addSubview ─────────────────────────
+        // (다른 뷰를 참조하는 제약 설정 전에 반드시 같은 계층에 있어야 함)
         bannerImageView.layer.cornerRadius = 32
         bannerImageView.clipsToBounds = true
         container.addSubview(bannerImageView)
-        bannerImageView.snp.makeConstraints { make in
-            make.top.leading.equalToSuperview().inset(16)
-            make.width.height.equalTo(64)
-        }
-
-        // ── 고양이 이름 ──────────────────────────────────────────────────
         container.addSubview(heroCatLabel)
-        heroCatLabel.snp.makeConstraints { make in
-            make.top.equalTo(bannerImageView.snp.bottom).offset(10)
-            make.leading.equalToSuperview().inset(16)
-            make.trailing.lessThanOrEqualTo(editBannerButton.snp.leading).offset(-8)
-        }
-
-        // ── 품종 / 상태 텍스트 ───────────────────────────────────────────
         container.addSubview(heroStatusLabel)
-        heroStatusLabel.snp.makeConstraints { make in
-            make.top.equalTo(heroCatLabel.snp.bottom).offset(3)
-            make.leading.equalToSuperview().inset(16)
-        }
+        container.addSubview(editBannerButton)   // heroCatLabel 제약이 참조하기 전에 추가
 
-        // ── 스트릭 뱃지 (좌하단) ─────────────────────────────────────────
         let streakBG = UIView()
         streakBG.backgroundColor    = AppTheme.Color.primaryLight
         streakBG.layer.cornerRadius = 14
         streakBG.clipsToBounds      = true
         streakBG.addSubview(streakLabel)
+        container.addSubview(streakBG)
+
+        // ── 2단계: 제약 설정 ──────────────────────────────────────────────
+        bannerImageView.snp.makeConstraints { make in
+            make.top.leading.equalToSuperview().inset(16)
+            make.width.height.equalTo(64)
+        }
+        heroCatLabel.snp.makeConstraints { make in
+            make.top.equalTo(bannerImageView.snp.bottom).offset(10)
+            make.leading.equalToSuperview().inset(16)
+            make.trailing.lessThanOrEqualTo(editBannerButton.snp.leading).offset(-8)
+        }
+        heroStatusLabel.snp.makeConstraints { make in
+            make.top.equalTo(heroCatLabel.snp.bottom).offset(3)
+            make.leading.equalToSuperview().inset(16)
+        }
         streakLabel.snp.makeConstraints { make in
             make.edges.equalToSuperview().inset(UIEdgeInsets(top: 6, left: 12, bottom: 6, right: 12))
         }
-        container.addSubview(streakBG)
         streakBG.snp.makeConstraints { make in
             make.top.equalTo(heroStatusLabel.snp.bottom).offset(12)
             make.leading.equalToSuperview().inset(16)
             make.bottom.equalToSuperview().inset(16)  // 컨테이너 높이 결정
         }
-
-        // ── 편집 버튼 (우하단) ───────────────────────────────────────────
-        container.addSubview(editBannerButton)
         editBannerButton.snp.makeConstraints { make in
             make.bottom.trailing.equalToSuperview().inset(16)
             make.width.height.equalTo(40)
