@@ -106,10 +106,6 @@ final class HomeViewModel {
             .subscribe(onNext: { print("[HuntTimer] 새 사냥 시작 탭") })
             .disposed(by: disposeBag)
 
-        input.seeAllTapped
-            .subscribe(onNext: { print("[HuntTimer] 전체보기 탭") })
-            .disposed(by: disposeBag)
-
         // ── Output ──────────────────────────────────────────────────────────
         return Output(
             greeting:         greetingRelay.asDriver(),

@@ -100,6 +100,13 @@ final class HomeViewController: BaseViewController {
             .withLatestFrom(output.hasCat)
             .filter { $0 }
             .subscribe(onNext: { [weak self] _ in
+                self?.tabBarController?.selectedIndex = 1
+            })
+            .disposed(by: disposeBag)
+
+        // 전체 보기 → 캘린더(Log) 탭으로 전환
+        contentView.seeAllButton.rx.tap
+            .subscribe(onNext: { [weak self] in
                 self?.tabBarController?.selectedIndex = 2
             })
             .disposed(by: disposeBag)
