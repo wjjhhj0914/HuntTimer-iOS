@@ -9,6 +9,7 @@ final class Cat: Object {
     @Persisted var breed: String = ""           // CatBreed.rawValue
     @Persisted var targetTime: Int = 30         // 일일 목표 시간 (분)
     @Persisted var profileImageData: Data?      // JPEG 압축 이미지 데이터
+    @Persisted var bannerImagePath: String = "" // 홈 배너 이미지 경로 (Documents 디렉토리 내)
     @Persisted var createdAt: Date = Date()
 
     // PlaySession.cats의 역방향 참조

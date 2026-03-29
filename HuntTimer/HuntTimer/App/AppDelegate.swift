@@ -19,7 +19,7 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
     /// 현재 Realm 스키마 버전.
     /// 모델 프로퍼티를 추가·삭제·변경할 때마다 이 값을 1씩 올리고
     /// `migrate(migration:oldSchemaVersion:)` 에 해당 버전 블록을 추가해야 합니다.
-    private static let currentSchemaVersion: UInt64 = 2
+    private static let currentSchemaVersion: UInt64 = 3
 
     private func configureRealm() {
         let config = Realm.Configuration(
@@ -54,6 +54,10 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
         // • PlaySession.endTime (Date?) 추가 → nil 기본값 자동 적용
         // • Toy.colour (Int)             추가 → 0 (ToyColour.unknown) 자동 적용
         if oldSchemaVersion < 2 { }
+
+        // ── v2 → v3 ─────────────────────────────────────────────────
+        // • Cat.bannerImagePath (String) 추가 → "" 기본값 자동 적용
+        if oldSchemaVersion < 3 { }
     }
 
     func application(

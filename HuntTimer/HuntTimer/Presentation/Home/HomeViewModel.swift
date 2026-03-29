@@ -21,7 +21,7 @@ final class HomeViewModel {
         let greeting: Driver<String>
         let catTitle: Driver<String>
         // Banner
-        let bannerImageURL: Driver<String>
+        let bannerImagePath: Driver<String?>
         let streakText: Driver<String>
         let heroCatName: Driver<String>
         let heroStatus: Driver<String>
@@ -50,13 +50,14 @@ final class HomeViewModel {
     func transform(input: Input) -> Output {
 
         // ── Cat 파생 값 (viewDidLoad + viewWillAppear 때마다 Realm 재쿼리) ──
-        let greetingRelay      = BehaviorRelay<String>(value: "")
-        let catTitleRelay      = BehaviorRelay<String>(value: "")
-        let heroCatNameRelay   = BehaviorRelay<String>(value: "")
-        let heroStatusRelay    = BehaviorRelay<String>(value: "")
-        let goalMinutesRelay   = BehaviorRelay<Int>(value: 30)
-        let hasCatRelay        = BehaviorRelay<Bool>(value: false)
-        let startBtnTitleRelay = BehaviorRelay<String>(value: "")
+        let greetingRelay        = BehaviorRelay<String>(value: "")
+        let catTitleRelay        = BehaviorRelay<String>(value: "")
+        let heroCatNameRelay     = BehaviorRelay<String>(value: "")
+        let heroStatusRelay      = BehaviorRelay<String>(value: "")
+        let goalMinutesRelay     = BehaviorRelay<Int>(value: 30)
+        let hasCatRelay          = BehaviorRelay<Bool>(value: false)
+        let startBtnTitleRelay   = BehaviorRelay<String>(value: "")
+        let bannerImagePathRelay = BehaviorRelay<String?>(value: nil)
 
         // ── 세션 Relay ──────────────────────────────────────────────────────
         let todaySecondsRelay   = BehaviorRelay<Int>(value: 0)
@@ -71,13 +72,14 @@ final class HomeViewModel {
             .subscribe(onNext: { [weak self] in
                 guard let self else { return }
                 self.reloadCat(
-                    greeting:      greetingRelay,
-                    catTitle:      catTitleRelay,
-                    heroCatName:   heroCatNameRelay,
-                    heroStatus:    heroStatusRelay,
-                    goalMinutes:   goalMinutesRelay,
-                    hasCat:        hasCatRelay,
-                    startBtnTitle: startBtnTitleRelay
+                    greeting:        greetingRelay,
+                    catTitle:        catTitleRelay,
+                    heroCatName:     heroCatNameRelay,
+                    heroStatus:      heroStatusRelay,
+                    goalMinutes:     goalMinutesRelay,
+                    hasCat:          hasCatRelay,
+                    startBtnTitle:   startBtnTitleRelay,
+                    bannerImagePath: bannerImagePathRelay
                 )
                 self.reloadSessions(
                     todaySeconds:   todaySecondsRelay,
@@ -110,7 +112,7 @@ final class HomeViewModel {
         return Output(
             greeting:         greetingRelay.asDriver(),
             catTitle:         catTitleRelay.asDriver(),
-            bannerImageURL:   .just("https://images.unsplash.com/photo-1766267167775-c93d3b6f6f56?w=800"),
+            bannerImagePath:  bannerImagePathRelay.asDriver(),
             streakText:       streakText,
             heroCatName:      heroCatNameRelay.asDriver(),
             heroStatus:       heroStatusRelay.asDriver(),
@@ -130,13 +132,14 @@ final class HomeViewModel {
     // MARK: - Realm reload
 
     private func reloadCat(
-        greeting:      BehaviorRelay<String>,
-        catTitle:      BehaviorRelay<String>,
-        heroCatName:   BehaviorRelay<String>,
-        heroStatus:    BehaviorRelay<String>,
-        goalMinutes:   BehaviorRelay<Int>,
-        hasCat:        BehaviorRelay<Bool>,
-        startBtnTitle: BehaviorRelay<String>
+        greeting:        BehaviorRelay<String>,
+        catTitle:        BehaviorRelay<String>,
+        heroCatName:     BehaviorRelay<String>,
+        heroStatus:      BehaviorRelay<String>,
+        goalMinutes:     BehaviorRelay<Int>,
+        hasCat:          BehaviorRelay<Bool>,
+        startBtnTitle:   BehaviorRelay<String>,
+        bannerImagePath: BehaviorRelay<String?>
     ) {
         let cat   = (try? Realm())?.objects(Cat.self).first
         let hasIt = cat != nil
@@ -149,6 +152,9 @@ final class HomeViewModel {
             heroStatus.accept("사냥 준비 완료!")
             goalMinutes.accept(cat.targetTime)
             startBtnTitle.accept("사냥 시작하기!")
+            // 저장된 배너 이미지 경로 (없으면 nil → 플레이스홀더)
+            let path = cat.bannerImagePath.isEmpty ? nil : cat.bannerImagePath
+            bannerImagePath.accept(path)
         } else {
             catTitle.accept("아직 등록된 냥이가 없어요!")
             greeting.accept("냥이를 등록해주세요 🐾")
@@ -156,6 +162,7 @@ final class HomeViewModel {
             heroStatus.accept("")
             goalMinutes.accept(30)
             startBtnTitle.accept("냥이 프로필 등록하기 🐾")
+            bannerImagePath.accept(nil)
         }
         hasCat.accept(hasIt)
     }

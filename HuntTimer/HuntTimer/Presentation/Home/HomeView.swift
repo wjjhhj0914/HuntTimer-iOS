@@ -19,7 +19,20 @@ final class HomeView: BaseView {
     let titleLabel  = UILabel.make(text: "", size: 22, weight: .black, color: AppTheme.Color.textDark)
 
     // MARK: - Banner
-    let bannerImageView = AsyncImageView(contentMode: .scaleAspectFill)
+    let bannerImageView: AsyncImageView = {
+        let iv = AsyncImageView(contentMode: .scaleAspectFill)
+        iv.backgroundColor = AppTheme.Color.cardBG   // 이미지 없을 때 위젯 플레이스홀더
+        return iv
+    }()
+    let editBannerButton: UIButton = {
+        let btn = UIButton(type: .system)
+        btn.setImage(UIImage(systemName: "photo"), for: .normal)
+        btn.tintColor = AppTheme.Color.primary
+        btn.backgroundColor = UIColor.white.withAlphaComponent(0.92)
+        btn.layer.cornerRadius = 16
+        btn.clipsToBounds = true
+        return btn
+    }()
     let streakLabel     = UILabel.make(text: "", size: 12, weight: .bold, color: .white)
     let heroCatLabel    = UILabel.make(text: "", size: 13, weight: .medium, color: UIColor(white: 1, alpha: 0.85))
     let heroStatusLabel = UILabel.make(text: "", size: 18, weight: .black, color: .white)
@@ -174,6 +187,14 @@ final class HomeView: BaseView {
         textStack.snp.makeConstraints { make in
             make.bottom.equalToSuperview().offset(-16)
             make.leading.equalToSuperview().offset(16)
+        }
+
+        // 편집 버튼 — 우측 하단 고정
+        container.addSubview(editBannerButton)
+        editBannerButton.snp.makeConstraints { make in
+            make.bottom.equalToSuperview().offset(-12)
+            make.trailing.equalToSuperview().offset(-12)
+            make.width.height.equalTo(32)
         }
 
         return container.wrapped(insets: UIEdgeInsets(top: 0, left: 20, bottom: 0, right: 20))

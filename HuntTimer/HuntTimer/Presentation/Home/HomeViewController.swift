@@ -1,6 +1,8 @@
 import UIKit
+import PhotosUI
 import RxSwift
 import RxCocoa
+import RealmSwift
 
 /// 홈 화면 ViewController — RxSwift 바인딩만 담당
 final class HomeViewController: BaseViewController {
@@ -35,9 +37,26 @@ final class HomeViewController: BaseViewController {
         output.greeting.drive(contentView.greetLabel.rx.text).disposed(by: disposeBag)
         output.catTitle.drive(contentView.titleLabel.rx.text).disposed(by: disposeBag)
 
-        // Banner
-        output.bannerImageURL
-            .drive(onNext: { [weak self] url in self?.contentView.bannerImageView.loadImage(from: url) })
+        // Banner — 로컬 파일 경로 기반 로딩 (없으면 cardBG 플레이스홀더)
+        output.bannerImagePath
+            .drive(onNext: { [weak self] path in
+                guard let self else { return }
+                if let path, let image = UIImage(contentsOfFile: path) {
+                    UIView.transition(with: self.contentView.bannerImageView,
+                                      duration: 0.25, options: .transitionCrossDissolve) {
+                        self.contentView.bannerImageView.image = image
+                        self.contentView.bannerImageView.backgroundColor = .clear
+                    }
+                } else {
+                    self.contentView.bannerImageView.image = nil
+                    self.contentView.bannerImageView.backgroundColor = AppTheme.Color.cardBG
+                }
+            })
+            .disposed(by: disposeBag)
+
+        // 편집 버튼 → 사진 피커
+        contentView.editBannerButton.rx.tap
+            .subscribe(onNext: { [weak self] in self?.presentBannerImagePicker() })
             .disposed(by: disposeBag)
         output.streakText.drive(contentView.streakLabel.rx.text).disposed(by: disposeBag)
         output.heroCatName.drive(contentView.heroCatLabel.rx.text).disposed(by: disposeBag)
@@ -141,5 +160,60 @@ final class HomeViewController: BaseViewController {
     private func populateRecentSessions(_ sessions: [HuntSession]) {
         contentView.recentStack.arrangedSubviews.forEach { $0.removeFromSuperview() }
         sessions.forEach { contentView.recentStack.addArrangedSubview(contentView.makeSessionRow($0)) }
+    }
+
+    private func presentBannerImagePicker() {
+        var config = PHPickerConfiguration()
+        config.filter         = .images
+        config.selectionLimit = 1
+        let picker = PHPickerViewController(configuration: config)
+        picker.delegate = self
+        present(picker, animated: true)
+    }
+}
+
+// MARK: - PHPickerViewControllerDelegate
+
+extension HomeViewController: PHPickerViewControllerDelegate {
+
+    func picker(_ picker: PHPickerViewController, didFinishPicking results: [PHPickerResult]) {
+        picker.dismiss(animated: true)
+        guard let result = results.first else { return }
+
+        result.itemProvider.loadObject(ofClass: UIImage.self) { [weak self] object, error in
+            guard let self, let image = object as? UIImage else {
+                if let error { print("[HuntTimer] 배너 이미지 로드 실패:", error) }
+                return
+            }
+            DispatchQueue.main.async {
+                UIView.transition(with: self.contentView.bannerImageView,
+                                  duration: 0.25, options: .transitionCrossDissolve) {
+                    self.contentView.bannerImageView.image = image
+                    self.contentView.bannerImageView.backgroundColor = .clear
+                }
+                self.saveBannerImage(image)
+            }
+        }
+    }
+
+    private func saveBannerImage(_ image: UIImage) {
+        guard let data = image.jpegData(compressionQuality: 0.8) else { return }
+        let fileName = "cat_banner.jpg"
+        let dir      = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0]
+        let url      = dir.appendingPathComponent(fileName)
+        do {
+            try data.write(to: url)
+        } catch {
+            print("[HuntTimer] 배너 이미지 저장 실패:", error)
+            return
+        }
+        guard let realm = try? Realm(),
+              let cat   = realm.objects(Cat.self).first else { return }
+        do {
+            try realm.write { cat.bannerImagePath = url.path }
+            print("[HuntTimer] 배너 이미지 경로 저장 완료:", url.path)
+        } catch {
+            print("[HuntTimer] 배너 이미지 경로 Realm 저장 실패:", error)
+        }
     }
 }
