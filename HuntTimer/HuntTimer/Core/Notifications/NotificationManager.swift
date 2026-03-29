@@ -149,6 +149,47 @@ final class NotificationManager: NSObject {
         }
     }
 
+    // MARK: - Timer End Notification
+
+    private let timerEndID = "timerEnd"
+
+    /// 타이머 종료 시각에 맞춰 로컬 알림 예약
+    func scheduleTimerEndNotification(remainingSeconds: TimeInterval) {
+        guard isAllEnabled, remainingSeconds > 0 else { return }
+        center.removePendingNotificationRequests(withIdentifiers: [timerEndID])
+
+        let catName = fetchCatName()
+        let content = UNMutableNotificationContent()
+        content.title = "사냥 완료! 🎉"
+        content.body  = "\(catName)와의 사냥 시간이 끝났어요! 기록을 저장해보세요 😺"
+        content.sound = .default
+
+        let trigger = UNTimeIntervalNotificationTrigger(timeInterval: max(remainingSeconds, 1), repeats: false)
+        let request = UNNotificationRequest(identifier: timerEndID, content: content, trigger: trigger)
+        center.add(request) { error in
+            if let error { print("[Notification] 타이머 종료 알림 등록 실패:", error) }
+        }
+    }
+
+    /// 타이머 종료 알림 취소 (일시정지·정지 시 호출)
+    func cancelTimerEndNotification() {
+        center.removePendingNotificationRequests(withIdentifiers: [timerEndID])
+    }
+
+    /// 포그라운드 복귀 시 모든 알림 제거 후 일일 리마인더 재예약
+    func handleForegroundReturn() {
+        center.removeAllPendingNotificationRequests()
+        guard isAllEnabled else { return }
+        scheduleHuntReminder(hour: reminderHour, minute: reminderMinute)
+    }
+
+    private func fetchCatName() -> String {
+        guard let realm = try? Realm(),
+              let cat   = realm.objects(Cat.self).first,
+              !cat.name.isEmpty else { return "냥이" }
+        return cat.name
+    }
+
     // MARK: - Immediate Send
 
     private func send(id: String, title: String, body: String) {

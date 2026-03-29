@@ -18,6 +18,11 @@ final class TimerViewController: BaseViewController {
     private var timer: Timer?
     private var sessionStartTime: Date?   // 타이머 최초 시작 시각 (일시정지 후 재개 시 유지)
 
+    /// 타이머가 마지막으로 시작·재개된 시각 (백그라운드 시간차 계산 기준)
+    private var timerResumedAt: Date?
+    /// 마지막 일시정지 이전까지 누적된 경과 초
+    private var elapsedBeforePause: Int = 0
+
     // MARK: - Toy Selection
     /// 선택된 장난감 이름 (nil = 선택 안 함 or 미선택)
     private(set) var selectedToy: String? = nil
@@ -34,6 +39,7 @@ final class TimerViewController: BaseViewController {
         super.viewDidLoad()
         updateDisplay()
         updateStatusUI()
+        setupBackgroundHandlers()
     }
 
     override func viewWillAppear(_ animated: Bool) {
@@ -115,9 +121,11 @@ final class TimerViewController: BaseViewController {
 
     @objc private func presetTapped(_ sender: UIButton) {
         guard !isRunning else { return }
-        totalSeconds      = sender.tag * 60
-        elapsedSeconds    = 0
-        sessionStartTime  = nil
+        totalSeconds       = sender.tag * 60
+        elapsedSeconds     = 0
+        elapsedBeforePause = 0
+        timerResumedAt     = nil
+        sessionStartTime   = nil
         updateDisplay()
         updatePresetButtons()
     }
@@ -125,20 +133,29 @@ final class TimerViewController: BaseViewController {
     // MARK: - Timer Logic
     private func startTimer() {
         guard elapsedSeconds < totalSeconds else { return }
-        // 중복 타이머 방지: 혹시 살아있는 타이머가 있으면 먼저 정리
+        // 중복 타이머 방지
         timer?.invalidate()
         timer = nil
         if sessionStartTime == nil { sessionStartTime = Date() }  // 최초 시작 시각만 기록 (재개 시 유지)
+        timerResumedAt = Date()   // 이번 재개 시각 기록 (백그라운드 시간차 계산 기준)
         isRunning = true
         isPaused  = false
+
+        // 남은 시간에 맞춰 로컬 알림 예약 (백그라운드 중 타이머 종료 안내)
+        let remaining = totalSeconds - elapsedSeconds
+        NotificationManager.shared.scheduleTimerEndNotification(remainingSeconds: TimeInterval(remaining))
+
         timer = Timer.scheduledTimer(withTimeInterval: 1, repeats: true) { [weak self] _ in
-            guard let self else { return }
-            self.elapsedSeconds += 1
+            guard let self, let resumedAt = self.timerResumedAt else { return }
+            // 시간차 계산: 재개 시각 기준으로 경과 초를 계산 (화면 꺼짐·백그라운드에 강건)
+            self.elapsedSeconds = self.elapsedBeforePause + Int(Date().timeIntervalSince(resumedAt))
             if self.elapsedSeconds >= self.totalSeconds {
-                self.elapsedSeconds = self.totalSeconds
+                self.elapsedSeconds    = self.totalSeconds
                 self.timer?.invalidate()
-                self.timer = nil
-                self.isRunning = false
+                self.timer             = nil
+                self.isRunning         = false
+                self.timerResumedAt    = nil
+                self.elapsedBeforePause = 0
                 self.huntFinished()
             }
             self.updateDisplay()
@@ -147,10 +164,17 @@ final class TimerViewController: BaseViewController {
     }
 
     private func pauseTimer() {
+        // 일시정지 시점까지의 경과 초 누적
+        if let resumedAt = timerResumedAt {
+            elapsedBeforePause += Int(Date().timeIntervalSince(resumedAt))
+            elapsedSeconds = elapsedBeforePause
+        }
+        timerResumedAt = nil
         timer?.invalidate()
         timer    = nil
         isRunning = false
         isPaused  = true
+        NotificationManager.shared.cancelTimerEndNotification()
         updateStatusUI()
     }
 
@@ -165,12 +189,55 @@ final class TimerViewController: BaseViewController {
 
     private func stopTimer() {
         timer?.invalidate()
-        timer          = nil
-        isRunning      = false
-        isPaused       = false
-        elapsedSeconds = 0
+        timer              = nil
+        isRunning          = false
+        isPaused           = false
+        elapsedSeconds     = 0
+        elapsedBeforePause = 0
+        timerResumedAt     = nil
+        NotificationManager.shared.cancelTimerEndNotification()
         updateDisplay()
         updateStatusUI()
+    }
+
+    // MARK: - Background / Foreground Handling
+
+    private func setupBackgroundHandlers() {
+        NotificationCenter.default.addObserver(
+            self,
+            selector: #selector(handleForeground),
+            name: UIApplication.willEnterForegroundNotification,
+            object: nil
+        )
+    }
+
+    /// 포그라운드 복귀 시: 중복 알림 제거 → 경과 시간 재계산 → UI 즉시 동기화
+    @objc private func handleForeground() {
+        // 예약된 알림 전체 제거 후 일일 리마인더 재등록
+        NotificationManager.shared.handleForegroundReturn()
+
+        guard isRunning, let resumedAt = timerResumedAt else { return }
+
+        // 백그라운드 체류 시간 포함한 정확한 경과 초 계산
+        elapsedSeconds = elapsedBeforePause + Int(Date().timeIntervalSince(resumedAt))
+
+        if elapsedSeconds >= totalSeconds {
+            // 백그라운드 중 타이머가 이미 종료된 경우
+            elapsedSeconds     = totalSeconds
+            timer?.invalidate()
+            timer              = nil
+            isRunning          = false
+            timerResumedAt     = nil
+            elapsedBeforePause = 0
+            updateDisplay()
+            huntFinished()
+        } else {
+            // UI를 정확한 시점으로 즉시 갱신 (점프)
+            updateDisplay()
+            // 남은 시간으로 알림 재예약
+            let remaining = totalSeconds - elapsedSeconds
+            NotificationManager.shared.scheduleTimerEndNotification(remainingSeconds: TimeInterval(remaining))
+        }
     }
 
     private func huntFinished() {
