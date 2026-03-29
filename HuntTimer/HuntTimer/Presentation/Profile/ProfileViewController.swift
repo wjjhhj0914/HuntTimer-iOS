@@ -22,6 +22,10 @@ final class ProfileViewController: BaseViewController {
     override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
         navigationController?.setNavigationBarHidden(false, animated: animated)
+        // 네비게이션 바가 숨겨진 상태에서 push 된 경우 delegate가 초기화되어
+        // 좌→우 스와이프 뒤로가기가 동작하지 않으므로 직접 delegate를 지정
+        navigationController?.interactivePopGestureRecognizer?.isEnabled = true
+        navigationController?.interactivePopGestureRecognizer?.delegate  = self
         loadProfileImage()
         reloadBadges()
     }
@@ -45,6 +49,7 @@ final class ProfileViewController: BaseViewController {
     override func viewWillDisappear(_ animated: Bool) {
         super.viewWillDisappear(animated)
         navigationController?.setNavigationBarHidden(true, animated: animated)
+        navigationController?.interactivePopGestureRecognizer?.delegate = nil
     }
 
     // MARK: - BaseViewController
@@ -133,6 +138,13 @@ final class ProfileViewController: BaseViewController {
         )
         alert.addAction(UIAlertAction(title: "확인", style: .default))
         present(alert, animated: true)
+    }
+}
+
+// MARK: - UIGestureRecognizerDelegate (스와이프 뒤로가기)
+extension ProfileViewController: UIGestureRecognizerDelegate {
+    func gestureRecognizerShouldBegin(_ gestureRecognizer: UIGestureRecognizer) -> Bool {
+        (navigationController?.viewControllers.count ?? 0) > 1
     }
 }
 
