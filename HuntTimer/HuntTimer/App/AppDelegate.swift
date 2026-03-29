@@ -13,53 +13,46 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
     }
 
     // MARK: - Realm
+
+    /// 현재 Realm 스키마 버전.
+    /// 모델 프로퍼티를 추가·삭제·변경할 때마다 이 값을 1씩 올리고
+    /// `migrate(migration:oldSchemaVersion:)` 에 해당 버전 블록을 추가해야 합니다.
+    private static let currentSchemaVersion: UInt64 = 2
+
     private func configureRealm() {
-        #if DEBUG
         let config = Realm.Configuration(
-            schemaVersion: 2,
-            deleteRealmIfMigrationNeeded: true
+            schemaVersion: Self.currentSchemaVersion,
+            migrationBlock: migrate
         )
-        #else
-        let config = Realm.Configuration(
-            schemaVersion: 2,
-            migrationBlock: { _, _ in }
-        )
-        #endif
         Realm.Configuration.defaultConfiguration = config
 
-        // SceneDelegate보다 먼저 Realm을 열어 마이그레이션·파일 생성을 완료
         do {
             _ = try Realm()
-            print("Realm 초기화 완료: \(config.fileURL?.path ?? "")")
+            print("[Realm] 초기화 완료 — schema v\(Self.currentSchemaVersion)")
         } catch {
-            print("Realm 초기화 실패: \(error)")
-            #if DEBUG
-            forceResetRealm(config: config)
-            #endif
+            // 마이그레이션 로직 누락 등 치명적 오류가 발생하면 개발 단계에서 반드시 수정할 것
+            print("[Realm] 초기화 실패: \(error)")
         }
     }
 
-    #if DEBUG
-    /// 잔여 보조 파일(lock, management 등)을 정리하고 Realm을 재생성
-    private func forceResetRealm(config: Realm.Configuration) {
-        guard let url = config.fileURL else { return }
-        let fm = FileManager.default
-        let targets: [URL] = [
-            url,
-            URL(fileURLWithPath: url.path + ".lock"),
-            URL(fileURLWithPath: url.path + ".note"),
-            URL(fileURLWithPath: url.path + ".management")
-        ]
-        targets.forEach { try? fm.removeItem(at: $0) }
+    /// 버전별 마이그레이션 블록.
+    ///
+    /// 새 버전을 추가할 때의 절차:
+    ///   1. `currentSchemaVersion` 을 +1 올린다.
+    ///   2. 아래에 `if oldSchemaVersion < N { ... }` 블록을 추가한다.
+    ///   3. 새 프로퍼티에 기본값이 있으면 Realm이 자동 처리하므로 별도 enumerate 불필요.
+    ///      타입 변환·이름 변경·데이터 가공이 필요한 경우에만 enumerate 사용.
+    private func migrate(migration: Migration, oldSchemaVersion: UInt64) {
+        // ── v0 → v1 ─────────────────────────────────────────────────
+        // 초기 스키마 출시 (Cat, PlaySession, Toy, PhotoLog, Achievement)
+        // 모든 프로퍼티가 기본값을 가지므로 별도 처리 없음
+        if oldSchemaVersion < 1 { }
 
-        do {
-            _ = try Realm()
-            print("📦 Realm 강제 초기화 완료")
-        } catch {
-            print("❌ Realm 강제 초기화도 실패: \(error)")
-        }
+        // ── v1 → v2 ─────────────────────────────────────────────────
+        // • PlaySession.endTime (Date?) 추가 → nil 기본값 자동 적용
+        // • Toy.colour (Int)             추가 → 0 (ToyColour.unknown) 자동 적용
+        if oldSchemaVersion < 2 { }
     }
-    #endif
 
     func application(
         _ application: UIApplication,
