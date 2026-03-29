@@ -1,5 +1,4 @@
 import UIKit
-import PhotosUI
 import RxSwift
 import RxCocoa
 import RealmSwift
@@ -37,7 +36,7 @@ final class HomeViewController: BaseViewController {
         output.greeting.drive(contentView.greetLabel.rx.text).disposed(by: disposeBag)
         output.catTitle.drive(contentView.titleLabel.rx.text).disposed(by: disposeBag)
 
-        // Banner — 원형 아바타: 사진 있으면 로컬 파일 로딩, 없으면 발바닥 플레이스홀더
+        // Banner — 전체 배경 이미지: 경로 있으면 로컬 파일 로딩, 없으면 primaryLight 플레이스홀더
         output.bannerImagePath
             .drive(onNext: { [weak self] path in
                 guard let self else { return }
@@ -49,9 +48,8 @@ final class HomeViewController: BaseViewController {
                         iv.backgroundColor = .clear
                     }
                 } else {
-                    iv.contentMode     = .center
-                    iv.image           = UIImage(systemName: "pawprint.circle.fill")
-                    iv.tintColor       = AppTheme.Color.textMuted.withAlphaComponent(0.45)
+                    iv.image           = nil
+                    iv.contentMode     = .scaleAspectFill
                     iv.backgroundColor = AppTheme.Color.primaryLight
                 }
             })
@@ -166,38 +164,37 @@ final class HomeViewController: BaseViewController {
     }
 
     private func presentBannerImagePicker() {
-        var config = PHPickerConfiguration()
-        config.filter         = .images
-        config.selectionLimit = 1
-        let picker = PHPickerViewController(configuration: config)
-        picker.delegate = self
+        guard UIImagePickerController.isSourceTypeAvailable(.photoLibrary) else { return }
+        let picker              = UIImagePickerController()
+        picker.sourceType       = .photoLibrary
+        picker.allowsEditing    = true   // 크롭 영역 지정 활성화
+        picker.delegate         = self
         present(picker, animated: true)
     }
 }
 
-// MARK: - PHPickerViewControllerDelegate
+// MARK: - UIImagePickerControllerDelegate
 
-extension HomeViewController: PHPickerViewControllerDelegate {
+extension HomeViewController: UIImagePickerControllerDelegate, UINavigationControllerDelegate {
 
-    func picker(_ picker: PHPickerViewController, didFinishPicking results: [PHPickerResult]) {
+    func imagePickerController(_ picker: UIImagePickerController,
+                               didFinishPickingMediaWithInfo info: [UIImagePickerController.InfoKey: Any]) {
         picker.dismiss(animated: true)
-        guard let result = results.first else { return }
+        // allowsEditing = true 이므로 editedImage 우선, 없으면 originalImage 사용
+        guard let image = info[.editedImage] as? UIImage
+                       ?? info[.originalImage] as? UIImage else { return }
 
-        result.itemProvider.loadObject(ofClass: UIImage.self) { [weak self] object, error in
-            guard let self, let image = object as? UIImage else {
-                if let error { print("[HuntTimer] 배너 이미지 로드 실패:", error) }
-                return
-            }
-            DispatchQueue.main.async {
-                let iv = self.contentView.bannerImageView
-                UIView.transition(with: iv, duration: 0.25, options: .transitionCrossDissolve) {
-                    iv.image           = image
-                    iv.contentMode     = .scaleAspectFill
-                    iv.backgroundColor = .clear
-                }
-                self.saveBannerImage(image)
-            }
+        let iv = contentView.bannerImageView
+        UIView.transition(with: iv, duration: 0.25, options: .transitionCrossDissolve) {
+            iv.image           = image
+            iv.contentMode     = .scaleAspectFill
+            iv.backgroundColor = .clear
         }
+        saveBannerImage(image)
+    }
+
+    func imagePickerControllerDidCancel(_ picker: UIImagePickerController) {
+        picker.dismiss(animated: true)
     }
 
     private func saveBannerImage(_ image: UIImage) {

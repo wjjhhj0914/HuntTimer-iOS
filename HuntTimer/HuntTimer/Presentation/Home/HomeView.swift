@@ -26,16 +26,16 @@ final class HomeView: BaseView {
     }()
     let editBannerButton: UIButton = {
         let btn = UIButton(type: .system)
-        btn.setImage(UIImage(systemName: "square.and.pencil"), for: .normal)
-        btn.tintColor = AppTheme.Color.textMuted
-        btn.backgroundColor = AppTheme.Color.cardBG
-        btn.layer.cornerRadius = 20
+        btn.setImage(UIImage(systemName: "photo"), for: .normal)
+        btn.tintColor = .white
+        btn.backgroundColor = UIColor(white: 0, alpha: 0.28)
+        btn.layer.cornerRadius = 16
         btn.clipsToBounds = true
         return btn
     }()
-    let streakLabel     = UILabel.make(text: "", size: 12, weight: .bold, color: AppTheme.Color.primary)
-    let heroCatLabel    = UILabel.make(text: "", size: 18, weight: .black, color: AppTheme.Color.textDark)
-    let heroStatusLabel = UILabel.make(text: "", size: 13, color: AppTheme.Color.textMuted)
+    let streakLabel     = UILabel.make(text: "", size: 12, weight: .bold, color: .white)
+    let heroCatLabel    = UILabel.make(text: "", size: 18, weight: .black, color: .white)
+    let heroStatusLabel = UILabel.make(text: "", size: 13, color: UIColor(white: 1, alpha: 0.85))
 
     // MARK: - Progress
     let gaugeView          = CircularProgressView(size: 130)
@@ -144,49 +144,65 @@ final class HomeView: BaseView {
 
     private func makeBannerSection() -> UIView {
         let container = UIView()
-        container.applyCardStyle(cornerRadius: AppTheme.Radius.xxLarge)
+        container.snp.makeConstraints { $0.height.equalTo(180) }
+        container.layer.cornerRadius = AppTheme.Radius.xxLarge
+        container.clipsToBounds      = true
 
-        // ── 1단계: 모든 서브뷰를 먼저 addSubview ─────────────────────────
-        // (다른 뷰를 참조하는 제약 설정 전에 반드시 같은 계층에 있어야 함)
-        bannerImageView.layer.cornerRadius = 32
-        bannerImageView.clipsToBounds = true
+        // ── 1단계: 모든 서브뷰 addSubview (제약 참조 전 동일 계층 보장) ──
         container.addSubview(bannerImageView)
-        container.addSubview(heroCatLabel)
-        container.addSubview(heroStatusLabel)
-        container.addSubview(editBannerButton)   // heroCatLabel 제약이 참조하기 전에 추가
+
+        let gradView = UIView()
+        gradView.isUserInteractionEnabled = false
+        container.addSubview(gradView)
 
         let streakBG = UIView()
-        streakBG.backgroundColor    = AppTheme.Color.primaryLight
+        streakBG.backgroundColor    = UIColor(white: 1, alpha: 0.20)
         streakBG.layer.cornerRadius = 14
         streakBG.clipsToBounds      = true
         streakBG.addSubview(streakLabel)
         container.addSubview(streakBG)
 
+        let textStack = UIStackView.make(axis: .vertical, spacing: 2)
+        [heroCatLabel, heroStatusLabel].forEach { label in
+            label.layer.shadowColor   = UIColor.black.cgColor
+            label.layer.shadowOpacity = 0.45
+            label.layer.shadowOffset  = CGSize(width: 0, height: 1)
+            label.layer.shadowRadius  = 3
+            textStack.addArrangedSubview(label)
+        }
+        container.addSubview(textStack)
+
+        container.addSubview(editBannerButton)   // textStack 제약이 참조하기 전에 추가
+
         // ── 2단계: 제약 설정 ──────────────────────────────────────────────
-        bannerImageView.snp.makeConstraints { make in
-            make.top.leading.equalToSuperview().inset(16)
-            make.width.height.equalTo(64)
+        bannerImageView.snp.makeConstraints { $0.edges.equalToSuperview() }
+        gradView.snp.makeConstraints { $0.edges.equalToSuperview() }
+
+        // 그라디언트는 레이아웃 후 프레임 확정 시점에 추가
+        DispatchQueue.main.async {
+            let grad         = CAGradientLayer()
+            grad.colors      = [UIColor.clear.cgColor, UIColor(white: 0, alpha: 0.50).cgColor]
+            grad.startPoint  = CGPoint(x: 0.5, y: 0.25)
+            grad.endPoint    = CGPoint(x: 0.5, y: 1.0)
+            grad.frame       = gradView.bounds.isEmpty
+                ? CGRect(x: 0, y: 0, width: UIScreen.main.bounds.width - 40, height: 180)
+                : gradView.bounds
+            gradView.layer.addSublayer(grad)
         }
-        heroCatLabel.snp.makeConstraints { make in
-            make.top.equalTo(bannerImageView.snp.bottom).offset(10)
-            make.leading.equalToSuperview().inset(16)
-            make.trailing.lessThanOrEqualTo(editBannerButton.snp.leading).offset(-8)
-        }
-        heroStatusLabel.snp.makeConstraints { make in
-            make.top.equalTo(heroCatLabel.snp.bottom).offset(3)
-            make.leading.equalToSuperview().inset(16)
-        }
+
         streakLabel.snp.makeConstraints { make in
-            make.edges.equalToSuperview().inset(UIEdgeInsets(top: 6, left: 12, bottom: 6, right: 12))
+            make.edges.equalToSuperview().inset(UIEdgeInsets(top: 5, left: 10, bottom: 5, right: 10))
         }
         streakBG.snp.makeConstraints { make in
-            make.top.equalTo(heroStatusLabel.snp.bottom).offset(12)
-            make.leading.equalToSuperview().inset(16)
-            make.bottom.equalToSuperview().inset(16)  // 컨테이너 높이 결정
+            make.top.leading.equalToSuperview().inset(12)
+        }
+        textStack.snp.makeConstraints { make in
+            make.bottom.leading.equalToSuperview().inset(16)
+            make.trailing.lessThanOrEqualTo(editBannerButton.snp.leading).offset(-8)
         }
         editBannerButton.snp.makeConstraints { make in
-            make.bottom.trailing.equalToSuperview().inset(16)
-            make.width.height.equalTo(40)
+            make.bottom.trailing.equalToSuperview().inset(12)
+            make.width.height.equalTo(32)
         }
 
         return container.wrapped(insets: UIEdgeInsets(top: 0, left: 20, bottom: 0, right: 20))
