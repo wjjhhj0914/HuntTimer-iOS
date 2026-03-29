@@ -45,6 +45,12 @@ final class ProfileView: BaseView {
         return s
     }()
 
+    // MARK: - Cat Info (VC가 Realm 데이터 로드 후 갱신)
+    let catNameLabel = UILabel.make(text: "", size: 24, weight: .black,
+                                    color: AppTheme.Color.textDark, alignment: .center)
+    let catInfoLabel = UILabel.make(text: "", size: 13,
+                                    color: AppTheme.Color.textMedium, alignment: .center)
+
     // MARK: - Badge Grid (동적 갱신)
     private let badgeGridStack  = UIStackView.make(axis: .vertical, spacing: 8)
     private let badgeCountLabel = UILabel.make(text: "0 / 8 달성", size: 12,
@@ -115,11 +121,6 @@ final class ProfileView: BaseView {
             make.width.height.equalTo(112)
         }
 
-        let nameLabel = UILabel.make(text: "뮤기 🐱", size: 24, weight: .black,
-                                     color: AppTheme.Color.textDark, alignment: .center)
-        let infoLabel = UILabel.make(text: "코숏 · 암컷 · 3살", size: 13,
-                                     color: AppTheme.Color.textMedium, alignment: .center)
-
         let statsData: [(String, String, String)] = [
             ("🎯", "247회", "총 사냥"),
             ("⏱️", "41.5h", "총 시간"),
@@ -148,8 +149,8 @@ final class ProfileView: BaseView {
 
         let mainStack = UIStackView.make(axis: .vertical, spacing: 10, alignment: .center)
         mainStack.addArrangedSubview(avatarContainer)
-        mainStack.addArrangedSubview(nameLabel)
-        mainStack.addArrangedSubview(infoLabel)
+        mainStack.addArrangedSubview(catNameLabel)
+        mainStack.addArrangedSubview(catInfoLabel)
         mainStack.addArrangedSubview(statsRow)
         // statsRow는 mainStack과 동일한 너비로 고정 → fillEqually 분배가 카드 너비를 정확히 계산
         statsRow.snp.makeConstraints { $0.width.equalToSuperview() }
@@ -275,6 +276,12 @@ final class ProfileView: BaseView {
             make.trailing.equalToSuperview().offset(-20)
         }
         return wrapper
+    }
+
+    /// Realm에서 로드한 고양이 정보로 이름/정보 레이블 갱신
+    func updateCatInfo(name: String, info: String) {
+        catNameLabel.text = name
+        catInfoLabel.text = info
     }
 
     /// BadgeManager가 계산한 배지 배열로 그리드를 재구성

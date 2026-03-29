@@ -27,7 +27,20 @@ final class ProfileViewController: BaseViewController {
         navigationController?.interactivePopGestureRecognizer?.isEnabled = true
         navigationController?.interactivePopGestureRecognizer?.delegate  = self
         loadProfileImage()
+        loadCatInfo()
         reloadBadges()
+    }
+
+    private func loadCatInfo() {
+        guard let cat = (try? Realm())?.objects(Cat.self).first else { return }
+        let breedName = CatBreed(rawValue: cat.breed)?.displayName ?? cat.breed
+        let gender    = cat.isMale ? "수컷" : "암컷"
+        let agePart: String = {
+            guard let birthday = cat.birthday else { return "" }
+            let years = Calendar.current.dateComponents([.year], from: birthday, to: Date()).year ?? 0
+            return years > 0 ? " · \(years)살" : " · 1살 미만"
+        }()
+        contentView.updateCatInfo(name: cat.name, info: "\(breedName) · \(gender)\(agePart)")
     }
 
     private func loadProfileImage() {
