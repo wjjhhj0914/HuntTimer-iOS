@@ -71,7 +71,9 @@ final class TimerViewModel {
             print("[HuntTimer] 세션 저장 완료 — duration: \(duration)초 / toy: \(toyName ?? "없음")")
         } catch {
             print("[HuntTimer] 세션 저장 실패:", error)
+            return
         }
+        NotificationManager.shared.checkGoalProgressAndNotify()
     }
 
     // MARK: - Image Storage
