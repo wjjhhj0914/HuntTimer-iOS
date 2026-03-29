@@ -101,7 +101,7 @@ final class HomeViewModel {
                 return min(1.0, Float(todaySecs) / Float(goalSecs))
             }
 
-        let streakText = streakDaysRelay.asDriver().map { "\($0)일 연속 🔥" }
+        let streakText = streakDaysRelay.asDriver().map { "\($0)일 연속" }
 
         // ── Side effects ────────────────────────────────────────────────────
         input.startHuntingTapped
@@ -149,7 +149,8 @@ final class HomeViewModel {
             catTitle.accept("\(cat.name)\(suffix), 사냥하러 가자!")
             greeting.accept("안녕하세요 😸")
             heroCatName.accept(cat.name)
-            heroStatus.accept(cat.breed.isEmpty ? "사냥 준비 완료! 🐾" : cat.breed)
+            let breedDisplay = CatBreed(rawValue: cat.breed)?.displayName ?? cat.breed
+            heroStatus.accept(breedDisplay.isEmpty ? "사냥 준비 완료! 🐾" : breedDisplay)
             goalMinutes.accept(cat.targetTime)
             startBtnTitle.accept("사냥 시작하기!")
             // 저장된 배너 이미지 경로 (없으면 nil → 플레이스홀더)
