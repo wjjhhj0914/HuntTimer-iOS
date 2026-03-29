@@ -1,7 +1,67 @@
 import UIKit
 import SnapKit
 
+// MARK: - YearPickerCell
+
+private final class YearPickerCell: UITableViewCell {
+    static let id = "YearPickerCell"
+
+    private let pillView: UIView = {
+        let v = UIView()
+        v.layer.cornerRadius = 12
+        return v
+    }()
+
+    private let yearLabel: UILabel = {
+        let l = UILabel()
+        l.textAlignment = .center
+        return l
+    }()
+
+    override init(style: UITableViewCell.CellStyle, reuseIdentifier: String?) {
+        super.init(style: style, reuseIdentifier: reuseIdentifier)
+        backgroundColor = .clear
+        selectionStyle  = .none
+        contentView.addSubview(pillView)
+        pillView.addSubview(yearLabel)
+        pillView.snp.makeConstraints { make in
+            make.centerY.equalToSuperview()
+            make.leading.trailing.equalToSuperview().inset(4)
+            make.height.equalTo(40)
+        }
+        yearLabel.snp.makeConstraints { $0.edges.equalToSuperview() }
+    }
+    required init?(coder: NSCoder) { fatalError() }
+
+    func configure(year: Int, isSelected: Bool, distanceFromSelected: Int) {
+        yearLabel.text = "\(year)"
+        if isSelected {
+            pillView.backgroundColor = UIColor(hex: "#FF8FAB")
+            yearLabel.textColor      = .white
+            yearLabel.font           = .appFont(size: 16, weight: .bold)
+            yearLabel.alpha          = 1
+        } else {
+            pillView.backgroundColor = .clear
+            yearLabel.textColor      = UIColor(hex: "#3D2B2B")
+            switch distanceFromSelected {
+            case 1:
+                yearLabel.font  = .appFont(size: 15)
+                yearLabel.alpha = 0.75
+            case 2:
+                yearLabel.font  = .appFont(size: 15)
+                yearLabel.alpha = 0.55
+            default:
+                yearLabel.font  = .appFont(size: 14)
+                yearLabel.alpha = 1
+            }
+        }
+    }
+}
+
+// MARK: - DatePickerBottomSheetViewController
+
 /// 생년월일 선택 바텀시트 (ehxo2 디자인 기준)
+/// 월 레이블 탭 → 년도 퀵점프 피커 오버레이 표시
 final class DatePickerBottomSheetViewController: BaseViewController {
 
     // MARK: - Callback
@@ -25,7 +85,6 @@ final class DatePickerBottomSheetViewController: BaseViewController {
         modalPresentationStyle = .overFullScreen
         modalTransitionStyle   = .crossDissolve
     }
-
     required init?(coder: NSCoder) { fatalError() }
 
     // MARK: - UI
@@ -38,7 +97,7 @@ final class DatePickerBottomSheetViewController: BaseViewController {
 
     private let sheetView: UIView = {
         let v = UIView()
-        v.backgroundColor   = UIColor(hex: "#fff5f8")
+        v.backgroundColor    = UIColor(hex: "#fff5f8")
         v.layer.cornerRadius = 28
         v.layer.maskedCorners = [.layerMinXMinYCorner, .layerMaxXMinYCorner]
         return v
@@ -50,10 +109,62 @@ final class DatePickerBottomSheetViewController: BaseViewController {
     private var sheetBottomConstraint: Constraint?
     private let sheetHeight: CGFloat = 480
 
+    // MARK: - Year Picker State
+    private var years: [Int] = []
+    private var selectedYearIndex: Int = 0
+    private var isYearPickerVisible = false
+
+    // MARK: - Year Picker Views
+    private let yearChevron: UIImageView = {
+        let cfg = UIImage.SymbolConfiguration(pointSize: 11, weight: .semibold)
+        let iv  = UIImageView(image: UIImage(systemName: "chevron.down", withConfiguration: cfg))
+        iv.tintColor   = UIColor(hex: "#E8507A")
+        iv.contentMode = .scaleAspectFit
+        return iv
+    }()
+
+    /// 캘린더 영역을 반투명 흰색으로 덮는 오버레이 (피커 뒤 배경)
+    private let calendarFrostView: UIView = {
+        let v = UIView()
+        v.backgroundColor = UIColor.white.withAlphaComponent(0.9)
+        v.alpha = 0
+        return v
+    }()
+
+    /// 그림자를 담당하는 컨테이너 (clipsToBounds OFF → 그림자 표시)
+    private let yearPickerShadow: UIView = {
+        let v = UIView()
+        v.backgroundColor     = .white
+        v.layer.cornerRadius  = 16
+        v.layer.shadowColor   = UIColor.black.cgColor
+        v.layer.shadowOpacity = 0.09
+        v.layer.shadowRadius  = 20
+        v.layer.shadowOffset  = CGSize(width: 0, height: 4)
+        v.alpha = 0
+        return v
+    }()
+
+    private lazy var yearTableView: UITableView = {
+        let tv = UITableView()
+        tv.backgroundColor             = .white
+        tv.layer.cornerRadius          = 16
+        tv.separatorStyle              = .none
+        tv.showsVerticalScrollIndicator = false
+        tv.clipsToBounds               = true
+        tv.dataSource                  = self
+        tv.delegate                    = self
+        tv.register(YearPickerCell.self, forCellReuseIdentifier: YearPickerCell.id)
+        return tv
+    }()
+
+    private let yearRowHeight: CGFloat = 44
+    private let visibleYearRows: Int   = 7
+
     // MARK: - Lifecycle
     override func viewDidLoad() {
         super.viewDidLoad()
         view.backgroundColor = .clear
+        setupYearData()
     }
 
     override func viewDidAppear(_ animated: Bool) {
@@ -81,16 +192,24 @@ final class DatePickerBottomSheetViewController: BaseViewController {
         dimView.onTap(self, action: #selector(dimTapped))
     }
 
+    // MARK: - Year Data
+    private func setupYearData() {
+        let currentYear = Calendar.current.component(.year, from: Date())
+        // 오름차순 (오래된 연도 → 최신 연도)
+        years = Array((currentYear - 25)...currentYear)
+        let selectedYear  = calendar.component(.year, from: currentMonth)
+        selectedYearIndex = years.firstIndex(of: selectedYear) ?? max(0, years.count - 1)
+    }
+
     // MARK: - Build Sheet
     private func buildSheetContent() {
-        // Handle
-        let handle     = makeHandle()
-        let headerRow  = makeHeaderRow()
-        let sep1       = makeSeparator(color: "#F0E4E8")
-        let monthNav   = makeMonthNav()
-        let dowHeader  = makeDayOfWeekHeader()
-        let sep2       = makeSeparator(color: "#F5EEF0")
-        let grid       = buildCalendarGrid()
+        let handle    = makeHandle()
+        let headerRow = makeHeaderRow()
+        let sep1      = makeSeparator(color: "#F0E4E8")
+        let monthNav  = makeMonthNav()
+        let dowHeader = makeDayOfWeekHeader()
+        let sep2      = makeSeparator(color: "#F5EEF0")
+        let grid      = buildCalendarGrid()
 
         let stack = UIStackView.make(axis: .vertical, spacing: 0)
         [handle, headerRow, sep1, monthNav, dowHeader, sep2, grid].forEach { stack.addArrangedSubview($0) }
@@ -101,12 +220,39 @@ final class DatePickerBottomSheetViewController: BaseViewController {
             make.bottom.lessThanOrEqualToSuperview()
         }
 
+        // ── Year Picker Overlay ──────────────────────────────────────
+        // monthNav 아래부터 시작: handle(24) + header(56) + sep(1) + monthNav(52) = 133
+        let pickerTopOffset: CGFloat = 133
+
+        sheetView.addSubview(calendarFrostView)
+        calendarFrostView.snp.makeConstraints { make in
+            make.top.equalToSuperview().offset(pickerTopOffset)
+            make.leading.trailing.bottom.equalToSuperview()
+        }
+
+        let pickerHeight = yearRowHeight * CGFloat(visibleYearRows)
+        sheetView.addSubview(yearPickerShadow)
+        yearPickerShadow.snp.makeConstraints { make in
+            make.centerX.equalToSuperview()
+            make.top.equalToSuperview().offset(pickerTopOffset + 4)
+            make.width.equalTo(160)
+            make.height.equalTo(pickerHeight)
+        }
+
+        yearPickerShadow.addSubview(yearTableView)
+        yearTableView.snp.makeConstraints { $0.edges.equalToSuperview() }
+
+        // 오버레이 탭 → 피커 닫기
+        calendarFrostView.addGestureRecognizer(
+            UITapGestureRecognizer(target: self, action: #selector(overlayTapped))
+        )
+
         updateCalendar()
     }
 
     private func makeHandle() -> UIView {
         let handle = UIView()
-        handle.backgroundColor   = UIColor(hex: "#D0C0C8")
+        handle.backgroundColor    = UIColor(hex: "#D0C0C8")
         handle.layer.cornerRadius = 2.5
 
         let area = UIView()
@@ -139,8 +285,8 @@ final class DatePickerBottomSheetViewController: BaseViewController {
         let btn = UIButton(type: .system)
         btn.setTitle("완료", for: .normal)
         btn.setTitleColor(.white, for: .normal)
-        btn.titleLabel?.font = .appFont(size: 15, weight: .semibold)
-        btn.backgroundColor   = AppTheme.Color.primary
+        btn.titleLabel?.font   = .appFont(size: 15, weight: .semibold)
+        btn.backgroundColor    = AppTheme.Color.primary
         btn.layer.cornerRadius = 18
         btn.contentEdgeInsets  = UIEdgeInsets(top: 0, left: 20, bottom: 0, right: 20)
         btn.snp.makeConstraints { $0.height.equalTo(36) }
@@ -160,12 +306,23 @@ final class DatePickerBottomSheetViewController: BaseViewController {
         prevBtn.addTarget(self, action: #selector(prevMonth), for: .touchUpInside)
         nextBtn.addTarget(self, action: #selector(nextMonth), for: .touchUpInside)
 
+        // 월 레이블 + 다운 쉐브론 → 탭 시 년도 피커 표시
+        yearChevron.snp.makeConstraints { $0.width.height.equalTo(14) }
+
+        let labelStack = UIStackView.make(axis: .horizontal, spacing: 4, alignment: .center)
+        labelStack.addArrangedSubview(monthLabel)
+        labelStack.addArrangedSubview(yearChevron)
+        labelStack.isUserInteractionEnabled = true
+        labelStack.addGestureRecognizer(
+            UITapGestureRecognizer(target: self, action: #selector(monthLabelTapped))
+        )
+
         let nav = UIView()
         nav.addSubview(prevBtn)
-        nav.addSubview(monthLabel)
+        nav.addSubview(labelStack)
         nav.addSubview(nextBtn)
         prevBtn.snp.makeConstraints { $0.leading.equalToSuperview().offset(16); $0.centerY.equalToSuperview() }
-        monthLabel.snp.makeConstraints { $0.center.equalToSuperview() }
+        labelStack.snp.makeConstraints { $0.center.equalToSuperview() }
         nextBtn.snp.makeConstraints { $0.trailing.equalToSuperview().offset(-16); $0.centerY.equalToSuperview() }
         nav.snp.makeConstraints { $0.height.equalTo(52) }
         return nav
@@ -175,8 +332,8 @@ final class DatePickerBottomSheetViewController: BaseViewController {
         let btn    = UIButton(type: .system)
         let config = UIImage.SymbolConfiguration(pointSize: 14, weight: .medium)
         btn.setImage(UIImage(systemName: systemName, withConfiguration: config), for: .normal)
-        btn.tintColor       = UIColor(hex: "#E8507A")
-        btn.backgroundColor = UIColor(hex: "#FFF0F4")
+        btn.tintColor          = UIColor(hex: "#E8507A")
+        btn.backgroundColor    = UIColor(hex: "#FFF0F4")
         btn.layer.cornerRadius = 18
         btn.snp.makeConstraints { $0.width.height.equalTo(36) }
         return btn
@@ -195,9 +352,9 @@ final class DatePickerBottomSheetViewController: BaseViewController {
         ]
         let stack = UIStackView.make(axis: .horizontal, alignment: .center, distribution: .fillEqually)
         stack.snp.makeConstraints { $0.height.equalTo(36) }
-        zip(days, colors).forEach { (day, color) in
-            let l = UILabel.make(text: day, size: 13, weight: .semibold, color: color, alignment: .center)
-            stack.addArrangedSubview(l)
+        zip(days, colors).forEach { day, color in
+            stack.addArrangedSubview(UILabel.make(text: day, size: 13, weight: .semibold,
+                                                  color: color, alignment: .center))
         }
         return stack
     }
@@ -211,8 +368,8 @@ final class DatePickerBottomSheetViewController: BaseViewController {
 
             for col in 0..<7 {
                 let btn = UIButton(type: .system)
-                btn.titleLabel?.font    = .appFont(size: 15)
-                btn.layer.cornerRadius  = 18
+                btn.titleLabel?.font   = .appFont(size: 15)
+                btn.layer.cornerRadius = 18
                 btn.tag = row * 7 + col
                 btn.addTarget(self, action: #selector(dayTapped(_:)), for: .touchUpInside)
                 btn.snp.makeConstraints { $0.width.height.equalTo(36) }
@@ -236,7 +393,7 @@ final class DatePickerBottomSheetViewController: BaseViewController {
         comps.day = 1
         guard let firstDay = calendar.date(from: comps) else { return [] }
 
-        let offset = calendar.component(.weekday, from: firstDay) - 1  // 0=일, 6=토
+        let offset      = calendar.component(.weekday, from: firstDay) - 1  // 0=일, 6=토
         let daysInMonth = calendar.range(of: .day, in: .month, for: firstDay)!.count
 
         var dates: [Date?] = Array(repeating: nil, count: offset)
@@ -254,17 +411,21 @@ final class DatePickerBottomSheetViewController: BaseViewController {
         df.dateFormat = "yyyy년 M월"
         monthLabel.text = df.string(from: currentMonth)
 
+        // selectedYearIndex 동기화
+        let currentYear = calendar.component(.year, from: currentMonth)
+        if let idx = years.firstIndex(of: currentYear) { selectedYearIndex = idx }
+
         let dates = calendarDates(for: currentMonth)
         for (i, btn) in dayButtons.enumerated() {
             guard i < dates.count, let date = dates[i] else {
                 btn.setTitle("", for: .normal)
-                btn.backgroundColor           = .clear
-                btn.isUserInteractionEnabled  = false
+                btn.backgroundColor          = .clear
+                btn.isUserInteractionEnabled = false
                 continue
             }
 
-            let day      = calendar.component(.day, from: date)
-            let col      = i % 7   // 0=일, 6=토
+            let day        = calendar.component(.day, from: date)
+            let col        = i % 7
             let isSelected = calendar.isDate(date, inSameDayAs: selectedDate)
 
             btn.setTitle("\(day)", for: .normal)
@@ -284,8 +445,49 @@ final class DatePickerBottomSheetViewController: BaseViewController {
         }
     }
 
+    // MARK: - Year Picker Show / Hide
+    @objc private func monthLabelTapped() {
+        isYearPickerVisible ? hideYearPicker() : showYearPicker()
+    }
+
+    @objc private func overlayTapped() {
+        hideYearPicker()
+    }
+
+    private func showYearPicker() {
+        isYearPickerVisible = true
+        yearTableView.reloadData()
+
+        // 선택된 연도가 피커 중앙(3번째 위치)에 오도록 스크롤
+        let topRow = max(0, selectedYearIndex - 3)
+        yearTableView.scrollToRow(at: IndexPath(row: topRow, section: 0),
+                                   at: .top, animated: false)
+
+        UIView.animate(withDuration: 0.22, delay: 0, options: .curveEaseOut) {
+            self.calendarFrostView.alpha = 1
+            self.yearPickerShadow.alpha  = 1
+            self.yearChevron.transform   = CGAffineTransform(rotationAngle: .pi)
+        }
+        UIImpactFeedbackGenerator(style: .light).impactOccurred()
+    }
+
+    private func hideYearPicker(animated: Bool = true) {
+        isYearPickerVisible = false
+        if animated {
+            UIView.animate(withDuration: 0.18, delay: 0, options: .curveEaseIn) {
+                self.calendarFrostView.alpha = 0
+                self.yearPickerShadow.alpha  = 0
+                self.yearChevron.transform   = .identity
+            } completion: { _ in }
+        } else {
+            calendarFrostView.alpha = 0
+            yearPickerShadow.alpha  = 0
+            yearChevron.transform   = .identity
+        }
+    }
+
     // MARK: - Actions
-    @objc private func dimTapped()   { dismissSheet() }
+    @objc private func dimTapped() { dismissSheet() }
 
     @objc private func doneTapped() {
         dismissSheet { [weak self] in
@@ -295,11 +497,13 @@ final class DatePickerBottomSheetViewController: BaseViewController {
     }
 
     @objc private func prevMonth() {
+        guard !isYearPickerVisible else { return }
         currentMonth = calendar.date(byAdding: .month, value: -1, to: currentMonth) ?? currentMonth
         updateCalendar()
     }
 
     @objc private func nextMonth() {
+        guard !isYearPickerVisible else { return }
         currentMonth = calendar.date(byAdding: .month, value: 1, to: currentMonth) ?? currentMonth
         updateCalendar()
     }
@@ -330,6 +534,49 @@ final class DatePickerBottomSheetViewController: BaseViewController {
             self.view.layoutIfNeeded()
         } completion: { _ in
             self.dismiss(animated: false, completion: completion)
+        }
+    }
+}
+
+// MARK: - UITableViewDataSource / Delegate
+
+extension DatePickerBottomSheetViewController: UITableViewDataSource, UITableViewDelegate {
+
+    func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
+        years.count
+    }
+
+    func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
+        let cell = tableView.dequeueReusableCell(withIdentifier: YearPickerCell.id,
+                                                  for: indexPath) as! YearPickerCell
+        cell.configure(year: years[indexPath.row],
+                        isSelected: indexPath.row == selectedYearIndex,
+                        distanceFromSelected: abs(indexPath.row - selectedYearIndex))
+        return cell
+    }
+
+    func tableView(_ tableView: UITableView, heightForRowAt indexPath: IndexPath) -> CGFloat {
+        yearRowHeight
+    }
+
+    func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
+        let newYear       = years[indexPath.row]
+        selectedYearIndex = indexPath.row
+
+        // 선택된 연도로 currentMonth 이동 (월은 유지)
+        var comps = calendar.dateComponents([.year, .month], from: currentMonth)
+        comps.year = newYear
+        if let newDate = calendar.date(from: comps) {
+            currentMonth = newDate
+        }
+
+        yearTableView.reloadData()
+        UIImpactFeedbackGenerator(style: .light).impactOccurred()
+
+        // 선택 시각적 확인 후 피커 닫기
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.15) { [weak self] in
+            self?.hideYearPicker()
+            self?.updateCalendar()
         }
     }
 }
