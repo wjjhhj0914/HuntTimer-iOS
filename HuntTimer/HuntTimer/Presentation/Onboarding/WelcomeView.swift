@@ -26,9 +26,9 @@ final class WelcomeView: BaseView {
         titleRow.addArrangedSubview(greetL)
         titleRow.addArrangedSubview(accentL)
 
-        let sub1 = UILabel.make(text: "아이의 프로필을", size: 17,
+        let sub1 = UILabel.make(text: "사냥을 기록하기 전에", size: 17,
                                 color: UIColor(hex: "#9B7B7B"), alignment: .center)
-        let sub2 = UILabel.make(text: "만들어볼까요?", size: 17,
+        let sub2 = UILabel.make(text: "아이의 프로필을 먼저 생성해 주세요!", size: 17,
                                 color: UIColor(hex: "#9B7B7B"), alignment: .center)
 
         let contentStack = UIStackView.make(axis: .vertical, spacing: 10, alignment: .center)
@@ -40,14 +40,15 @@ final class WelcomeView: BaseView {
         addSubview(ctaButton)
 
         ctaButton.snp.makeConstraints { make in
-            make.center.equalToSuperview()
+            make.centerX.equalToSuperview()
+            make.centerY.equalToSuperview().offset(120)
             make.width.equalTo(220)
             make.height.equalTo(66)
         }
 
         contentStack.snp.makeConstraints { make in
             make.centerX.equalToSuperview()
-            make.bottom.equalTo(ctaButton.snp.top).offset(-40)
+            make.bottom.equalTo(self.snp.centerY).offset(27)
         }
     }
 }
