@@ -39,15 +39,41 @@ final class SessionSaveModalViewController: UIViewController {
         contentView.photoSlotView.addGestureRecognizer(photoTap)
 
         contentView.memoTextView.delegate = self
+
+        // 모달 배경 탭 → 키보드 내리기
+        let bgTap = UITapGestureRecognizer(target: self, action: #selector(dismissKeyboard))
+        bgTap.cancelsTouchesInView = false
+        contentView.addGestureRecognizer(bgTap)
     }
 
     // MARK: - Actions
 
     @objc private func closeTapped() {
         view.endEditing(true)
-        dismiss(animated: true) { [weak self] in
-            self?.onCancel?()
-        }
+
+        let alert = UIAlertController(
+            title: "기록을 어떻게 할까요?",
+            message: "작성 중인 사진과 메모는 사라집니다.",
+            preferredStyle: .alert
+        )
+
+        // 시간만 저장 — 메모·사진 없이 사냥 시간만 Realm에 기록
+        alert.addAction(UIAlertAction(title: "시간만 저장", style: .default) { [weak self] _ in
+            guard let self else { return }
+            dismiss(animated: true) { self.onSave?(nil, nil) }
+        })
+
+        // 기록 삭제 — 아무것도 저장하지 않고 파기
+        alert.addAction(UIAlertAction(title: "기록 삭제", style: .destructive) { [weak self] _ in
+            guard let self else { return }
+            dismiss(animated: true) { self.onCancel?() }
+        })
+
+        // 취소 — 알림창만 닫고 기록 화면으로 복귀
+        // .alert 스타일은 바깥 탭으로 dismiss 되지 않으므로 별도 처리 불필요
+        alert.addAction(UIAlertAction(title: "취소", style: .cancel))
+
+        present(alert, animated: true)
     }
 
     @objc private func saveTapped() {
@@ -61,6 +87,10 @@ final class SessionSaveModalViewController: UIViewController {
         dismiss(animated: true) { [weak self] in
             self?.onSave?(memo, self?.selectedPhoto)
         }
+    }
+
+    @objc private func dismissKeyboard() {
+        view.endEditing(true)
     }
 
     @objc private func photoSlotTapped() {
@@ -85,6 +115,14 @@ final class SessionSaveModalViewController: UIViewController {
 // MARK: - UITextViewDelegate (메모 플레이스홀더)
 
 extension SessionSaveModalViewController: UITextViewDelegate {
+
+    func textView(_ textView: UITextView, shouldChangeTextIn range: NSRange, replacementText text: String) -> Bool {
+        if text == "\n" {
+            textView.resignFirstResponder()
+            return false
+        }
+        return true
+    }
 
     func textViewDidBeginEditing(_ textView: UITextView) {
         guard contentView.isShowingPlaceholder else { return }
