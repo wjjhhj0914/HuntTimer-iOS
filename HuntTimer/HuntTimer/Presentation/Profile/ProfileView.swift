@@ -20,7 +20,8 @@ final class ProfileView: BaseView {
     }()
 
     // MARK: - Public UI
-    private(set) var catSettingsCard: UIView = UIView()
+    private(set) var catSettingsCard:  UIView = UIView()
+    private(set) var appSettingsCard:  UIView = UIView()
 
     let avatarImageView: AsyncImageView = {
         let iv = AsyncImageView(contentMode: .scaleAspectFill, cornerRadius: 56)
@@ -331,7 +332,7 @@ final class ProfileView: BaseView {
             let bg: UIColor; let fg: UIColor
         }
         let rows: [AppInfoRow] = [
-            AppInfoRow(symbol: "gearshape.fill",   label: "앱 설정",          desc: "알림, 테마 설정",
+            AppInfoRow(symbol: "gearshape.fill",   label: "앱 설정",          desc: "알림 설정",
                        bg: UIColor(white: 0.92, alpha: 1), fg: AppTheme.Color.textMedium),
             AppInfoRow(symbol: "info.circle.fill",  label: "버전 정보",        desc: "v1.1.0",
                        bg: AppTheme.Color.primaryLight,    fg: AppTheme.Color.primary),
@@ -340,9 +341,10 @@ final class ProfileView: BaseView {
         ]
 
         let listStack = UIStackView.make(axis: .vertical, spacing: 8)
-        rows.forEach { row in
+        rows.enumerated().forEach { index, row in
             let card = UIView()
             card.applyCardStyle(cornerRadius: AppTheme.Radius.large)
+            if index == 0 { appSettingsCard = card }
 
             let iconBG = UIView()
             iconBG.backgroundColor   = row.bg

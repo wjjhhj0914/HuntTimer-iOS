@@ -104,6 +104,11 @@ final class ProfileViewController: BaseViewController {
         contentView.catSettingsCard.isUserInteractionEnabled = true
         contentView.catSettingsCard.addGestureRecognizer(tap)
 
+        // 앱 설정 행 탭 → 앱 설정 화면
+        let appSettingsTap = UITapGestureRecognizer(target: self, action: #selector(appSettingsTapped))
+        contentView.appSettingsCard.isUserInteractionEnabled = true
+        contentView.appSettingsCard.addGestureRecognizer(appSettingsTap)
+
         // 프로필 사진 편집 버튼
         contentView.photoEditButton.addTarget(self, action: #selector(photoTapped), for: .touchUpInside)
     }
@@ -120,6 +125,10 @@ final class ProfileViewController: BaseViewController {
         picker.allowsEditing = true
         picker.delegate      = self
         present(picker, animated: true)
+    }
+
+    @objc private func appSettingsTapped() {
+        navigationController?.pushViewController(AppSettingsViewController(), animated: true)
     }
 
     @objc private func catSettingsTapped() {
