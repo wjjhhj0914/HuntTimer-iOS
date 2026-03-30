@@ -2,13 +2,14 @@ import UIKit
 import RxSwift
 import RxCocoa
 import RealmSwift
+import CropViewController   // TOCropViewController Swift 래퍼
 
 /// 홈 화면 ViewController — RxSwift 바인딩만 담당
 final class HomeViewController: BaseViewController {
 
-    private let contentView          = HomeView()
-    private let viewModel            = HomeViewModel()
-    private let disposeBag           = DisposeBag()
+    private let contentView           = HomeView()
+    private let viewModel             = HomeViewModel()
+    private let disposeBag            = DisposeBag()
     private let viewWillAppearSubject = PublishSubject<Void>()
 
     // MARK: - loadView
@@ -36,7 +37,7 @@ final class HomeViewController: BaseViewController {
         output.greeting.drive(contentView.greetLabel.rx.text).disposed(by: disposeBag)
         output.catTitle.drive(contentView.titleLabel.rx.text).disposed(by: disposeBag)
 
-        // Banner — 전체 배경 이미지: 경로 있으면 로컬 파일 로딩, 없으면 primaryLight 플레이스홀더
+        // Banner — 경로 있으면 로컬 파일 로딩, 없으면 primaryLight 플레이스홀더
         output.bannerImagePath
             .drive(onNext: { [weak self] path in
                 guard let self else { return }
@@ -59,6 +60,7 @@ final class HomeViewController: BaseViewController {
         contentView.editBannerButton.rx.tap
             .subscribe(onNext: { [weak self] in self?.presentBannerImagePicker() })
             .disposed(by: disposeBag)
+
         output.streakText.drive(contentView.streakLabel.rx.text).disposed(by: disposeBag)
         output.heroCatName.drive(contentView.heroCatLabel.rx.text).disposed(by: disposeBag)
         output.heroStatus.drive(contentView.heroStatusLabel.rx.text).disposed(by: disposeBag)
@@ -76,7 +78,6 @@ final class HomeViewController: BaseViewController {
                 self.contentView.progressValueLabel.text    = "\(elapsedText) | \(goalMins)분"
                 self.contentView.goalBadgeLabel.text        = "목표 \(pct)%"
                 self.contentView.timeBadgeLabel.text        = Self.formatRemaining(seconds: remainSecs)
-                // 화면 등장 시 0 → 현재값으로 부드럽게 차오르는 애니메이션
                 self.contentView.gaugeView.animateProgress(ratio)
             })
             .disposed(by: disposeBag)
@@ -108,14 +109,14 @@ final class HomeViewController: BaseViewController {
         output.hasCat
             .drive(onNext: { [weak self] hasCat in
                 guard let self else { return }
-                self.contentView.bannerSectionView?.isHidden   = !hasCat
+                self.contentView.bannerSectionView?.isHidden    = !hasCat
                 self.contentView.progressSectionView?.isHidden  = !hasCat
                 self.contentView.quickStatsSectionView?.isHidden = !hasCat
-                self.contentView.recentSectionView?.isHidden   = !hasCat
+                self.contentView.recentSectionView?.isHidden    = !hasCat
             })
             .disposed(by: disposeBag)
 
-        // startButton: 고양이 등록 시 → 타이머 탭으로 전환
+        // startButton: 고양이 등록 시 → 타이머 탭
         contentView.startButton.rx.tap
             .withLatestFrom(output.hasCat)
             .filter { $0 }
@@ -124,14 +125,14 @@ final class HomeViewController: BaseViewController {
             })
             .disposed(by: disposeBag)
 
-        // 전체 보기 → 캘린더(Log) 탭으로 전환
+        // 전체 보기 → 캘린더(Log) 탭
         contentView.seeAllButton.rx.tap
             .subscribe(onNext: { [weak self] in
                 self?.tabBarController?.selectedIndex = 2
             })
             .disposed(by: disposeBag)
 
-        // startButton: 고양이 미등록 시 → 프로필 등록 화면으로
+        // startButton: 고양이 미등록 시 → 프로필 등록
         contentView.startButton.rx.tap
             .withLatestFrom(output.hasCat)
             .filter { !$0 }
@@ -145,6 +146,7 @@ final class HomeViewController: BaseViewController {
     }
 
     // MARK: - Helpers
+
     private static func formatElapsed(seconds: Int) -> String {
         if seconds < 60 { return "\(seconds)초" }
         let m = seconds / 60, s = seconds % 60
@@ -163,27 +165,34 @@ final class HomeViewController: BaseViewController {
         sessions.forEach { contentView.recentStack.addArrangedSubview(contentView.makeSessionRow($0)) }
     }
 
+    // MARK: - Banner Image Picker
+
     private func presentBannerImagePicker() {
         guard UIImagePickerController.isSourceTypeAvailable(.photoLibrary) else { return }
-        let picker              = UIImagePickerController()
-        picker.sourceType       = .photoLibrary
-        picker.allowsEditing    = true   // 크롭 영역 지정 활성화
-        picker.delegate         = self
+        let picker           = UIImagePickerController()
+        picker.sourceType    = .photoLibrary
+        picker.allowsEditing = false   // 원본 그대로 → TOCropViewController 에서 정확한 비율로 크롭
+        picker.delegate      = self
         present(picker, animated: true)
     }
-}
 
-// MARK: - UIImagePickerControllerDelegate
+    /// 선택된 원본 이미지를 배너 비율(35:18)로 크롭할 수 있는 화면 표시
+    private func presentBannerCrop(with image: UIImage) {
+        let cropVC = CropViewController(image: image)
+        cropVC.delegate = self
 
-extension HomeViewController: UIImagePickerControllerDelegate, UINavigationControllerDelegate {
+        // 배너 실제 비율: (screenWidth - 40) × 180 을 CGSize로 직접 지정
+        cropVC.aspectRatioPreset        = CGSize(width: UIScreen.main.bounds.width - 40, height: 180)
+        cropVC.aspectRatioLockEnabled   = true    // 비율 고정
+        cropVC.resetAspectRatioEnabled  = false   // 리셋 버튼으로 비율 변경 불가
+        cropVC.aspectRatioPickerButtonHidden = true // 비율 선택 UI 숨김
 
-    func imagePickerController(_ picker: UIImagePickerController,
-                               didFinishPickingMediaWithInfo info: [UIImagePickerController.InfoKey: Any]) {
-        picker.dismiss(animated: true)
-        // allowsEditing = true 이므로 editedImage 우선, 없으면 originalImage 사용
-        guard let image = info[.editedImage] as? UIImage
-                       ?? info[.originalImage] as? UIImage else { return }
+        present(cropVC, animated: true)
+    }
 
+    // MARK: - Save
+
+    private func applyBannerImage(_ image: UIImage) {
         let iv = contentView.bannerImageView
         UIView.transition(with: iv, duration: 0.25, options: .transitionCrossDissolve) {
             iv.image           = image
@@ -191,10 +200,6 @@ extension HomeViewController: UIImagePickerControllerDelegate, UINavigationContr
             iv.backgroundColor = .clear
         }
         saveBannerImage(image)
-    }
-
-    func imagePickerControllerDidCancel(_ picker: UIImagePickerController) {
-        picker.dismiss(animated: true)
     }
 
     private func saveBannerImage(_ image: UIImage) {
@@ -216,5 +221,44 @@ extension HomeViewController: UIImagePickerControllerDelegate, UINavigationContr
         } catch {
             print("[HuntTimer] 배너 이미지 경로 Realm 저장 실패:", error)
         }
+    }
+}
+
+// MARK: - UIImagePickerControllerDelegate
+
+extension HomeViewController: UIImagePickerControllerDelegate, UINavigationControllerDelegate {
+
+    func imagePickerController(_ picker: UIImagePickerController,
+                               didFinishPickingMediaWithInfo info: [UIImagePickerController.InfoKey: Any]) {
+        picker.dismiss(animated: true) { [weak self] in
+            guard let self,
+                  let image = info[.originalImage] as? UIImage else { return }
+            self.presentBannerCrop(with: image)
+        }
+    }
+
+    func imagePickerControllerDidCancel(_ picker: UIImagePickerController) {
+        picker.dismiss(animated: true)
+    }
+}
+
+// MARK: - CropViewControllerDelegate (TOCropViewController)
+
+extension HomeViewController: CropViewControllerDelegate {
+
+    /// 크롭 완료 — 잘린 이미지를 배너에 적용하고 저장
+    func cropViewController(_ cropViewController: CropViewController,
+                            didCropToImage image: UIImage,
+                            withRect cropRect: CGRect,
+                            angle: Int) {
+        cropViewController.dismiss(animated: true) { [weak self] in
+            self?.applyBannerImage(image)
+        }
+    }
+
+    /// 크롭 취소 — 아무것도 변경하지 않고 닫기
+    func cropViewController(_ cropViewController: CropViewController,
+                            didFinishCancelled cancelled: Bool) {
+        cropViewController.dismiss(animated: true)
     }
 }

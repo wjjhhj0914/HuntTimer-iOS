@@ -8,6 +8,7 @@
 
 /* Begin PBXBuildFile section */
 		9386CD0E2F7278DD00EED7CF /* RealmSwift in Embed Frameworks */ = {isa = PBXBuildFile; productRef = 93D4F3B52F702C9A0053F2A5 /* RealmSwift */; settings = {ATTRIBUTES = (CodeSignOnCopy, ); }; };
+		9386CD912F79FFE700EED7CF /* CropViewController in Frameworks */ = {isa = PBXBuildFile; productRef = 9386CD902F79FFE700EED7CF /* CropViewController */; };
 		93D4F3B62F702C9A0053F2A5 /* RealmSwift in Frameworks */ = {isa = PBXBuildFile; productRef = 93D4F3B52F702C9A0053F2A5 /* RealmSwift */; };
 		93D4F3B92F7030190053F2A5 /* RxCocoa in Frameworks */ = {isa = PBXBuildFile; productRef = 93D4F3B82F7030190053F2A5 /* RxCocoa */; };
 		93D4F3BB2F7030190053F2A5 /* RxSwift in Frameworks */ = {isa = PBXBuildFile; productRef = 93D4F3BA2F7030190053F2A5 /* RxSwift */; };
@@ -64,6 +65,7 @@
 			files = (
 				93D4F3BB2F7030190053F2A5 /* RxSwift in Frameworks */,
 				93D4F4342F71087C0053F2A5 /* SnapKit in Frameworks */,
+				9386CD912F79FFE700EED7CF /* CropViewController in Frameworks */,
 				93D4F3C42F7030B70053F2A5 /* FSCalendar in Frameworks */,
 				93D4F3BE2F70302F0053F2A5 /* Alamofire in Frameworks */,
 				93D4F3B92F7030190053F2A5 /* RxCocoa in Frameworks */,
@@ -121,6 +123,7 @@
 				93D4F3C32F7030B70053F2A5 /* FSCalendar */,
 				93D4F3C62F7030CD0053F2A5 /* Toast */,
 				93D4F4332F71087C0053F2A5 /* SnapKit */,
+				9386CD902F79FFE700EED7CF /* CropViewController */,
 			);
 			productName = HuntTimer;
 			productReference = 93D4F37C2F7006DE0053F2A5 /* HuntTimer.app */;
@@ -158,6 +161,7 @@
 				93D4F3C22F7030B70053F2A5 /* XCRemoteSwiftPackageReference "FSCalendar" */,
 				93D4F3C52F7030CD0053F2A5 /* XCRemoteSwiftPackageReference "Toast-Swift" */,
 				93D4F4322F71087C0053F2A5 /* XCRemoteSwiftPackageReference "SnapKit" */,
+				9386CD8F2F79FFE700EED7CF /* XCRemoteSwiftPackageReference "TOCropViewController" */,
 			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = 93D4F37D2F7006DE0053F2A5 /* Products */;
@@ -409,6 +413,14 @@
 /* End XCConfigurationList section */
 
 /* Begin XCRemoteSwiftPackageReference section */
+		9386CD8F2F79FFE700EED7CF /* XCRemoteSwiftPackageReference "TOCropViewController" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/TimOliver/TOCropViewController";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 3.1.1;
+			};
+		};
 		93D4F3B22F702C9A0053F2A5 /* XCRemoteSwiftPackageReference "realm-swift" */ = {
 			isa = XCRemoteSwiftPackageReference;
 			repositoryURL = "https://github.com/realm/realm-swift.git";
@@ -468,6 +480,11 @@
 /* End XCRemoteSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
+		9386CD902F79FFE700EED7CF /* CropViewController */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 9386CD8F2F79FFE700EED7CF /* XCRemoteSwiftPackageReference "TOCropViewController" */;
+			productName = CropViewController;
+		};
 		93D4F3B52F702C9A0053F2A5 /* RealmSwift */ = {
 			isa = XCSwiftPackageProductDependency;
 			package = 93D4F3B22F702C9A0053F2A5 /* XCRemoteSwiftPackageReference "realm-swift" */;
