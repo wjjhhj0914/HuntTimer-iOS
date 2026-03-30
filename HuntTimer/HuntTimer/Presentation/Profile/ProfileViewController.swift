@@ -2,6 +2,7 @@ import UIKit
 import RxSwift
 import RxCocoa
 import RealmSwift
+import StoreKit
 
 /// 프로필 화면 ViewController — 추모 모드 토글 바인딩만 담당
 final class ProfileViewController: BaseViewController {
@@ -109,6 +110,11 @@ final class ProfileViewController: BaseViewController {
         contentView.appSettingsCard.isUserInteractionEnabled = true
         contentView.appSettingsCard.addGestureRecognizer(appSettingsTap)
 
+        // 리뷰 남기기 행 탭 → 인앱 리뷰 요청
+        let reviewTap = UITapGestureRecognizer(target: self, action: #selector(reviewTapped))
+        contentView.reviewCard.isUserInteractionEnabled = true
+        contentView.reviewCard.addGestureRecognizer(reviewTap)
+
         // 프로필 사진 편집 버튼
         contentView.photoEditButton.addTarget(self, action: #selector(photoTapped), for: .touchUpInside)
     }
@@ -129,6 +135,20 @@ final class ProfileViewController: BaseViewController {
 
     @objc private func appSettingsTapped() {
         navigationController?.pushViewController(AppSettingsViewController(), animated: true)
+    }
+
+    @objc private func reviewTapped() {
+        // 인앱 리뷰 팝업 시도 — windowScene이 없으면 앱스토어 URL로 폴백
+        if let scene = view.window?.windowScene {
+            SKStoreReviewController.requestReview(in: scene)
+        } else {
+            // TODO: 앱스토어에 등록 후 아래 URL의 앱 ID(id 뒤 숫자)를 실제 ID로 교체하세요
+            // 예) id123456789 → 실제 앱 ID
+            let urlString = "itms-apps://itunes.apple.com/app/idXXXXXXXXXX?action=write-review"
+            if let url = URL(string: urlString) {
+                UIApplication.shared.open(url)
+            }
+        }
     }
 
     @objc private func catSettingsTapped() {

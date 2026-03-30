@@ -22,6 +22,7 @@ final class ProfileView: BaseView {
     // MARK: - Public UI
     private(set) var catSettingsCard:  UIView = UIView()
     private(set) var appSettingsCard:  UIView = UIView()
+    private(set) var reviewCard:       UIView = UIView()
 
     let avatarImageView: AsyncImageView = {
         let iv = AsyncImageView(contentMode: .scaleAspectFill, cornerRadius: 56)
@@ -344,7 +345,13 @@ final class ProfileView: BaseView {
         rows.enumerated().forEach { index, row in
             let card = UIView()
             card.applyCardStyle(cornerRadius: AppTheme.Radius.large)
-            if index == 0 { appSettingsCard = card }
+
+            switch index {
+            case 0: appSettingsCard = card           // 앱 설정 — ViewController에서 탭 연결
+            case 1: card.isUserInteractionEnabled = false  // 버전 정보 — 탭 불가 (정보성 행)
+            case 2: reviewCard = card                // 리뷰 남기기 — ViewController에서 탭 연결
+            default: break
+            }
 
             let iconBG = UIView()
             iconBG.backgroundColor   = row.bg
@@ -363,20 +370,23 @@ final class ProfileView: BaseView {
             let textS  = UIStackView.make(axis: .vertical, spacing: 2)
             textS.addArrangedSubview(labelL)
             textS.addArrangedSubview(descL)
-
-            let chevronCfg2 = UIImage.SymbolConfiguration(pointSize: 13, weight: .semibold)
-            let chevron = UIImageView(image: UIImage(systemName: "chevron.forward", withConfiguration: chevronCfg2))
-            chevron.tintColor   = AppTheme.Color.textMuted
-            chevron.contentMode = .scaleAspectFit
-            // textS가 남은 공간을 채우고, chevron은 우측 끝에 고정
             textS.setContentHuggingPriority(.defaultLow, for: .horizontal)
-            chevron.setContentHuggingPriority(.required, for: .horizontal)
-            chevron.setContentCompressionResistancePriority(.required, for: .horizontal)
 
             let rowStack = UIStackView.make(axis: .horizontal, spacing: 12, alignment: .center)
             rowStack.addArrangedSubview(iconBG)
             rowStack.addArrangedSubview(textS)
-            rowStack.addArrangedSubview(chevron)
+
+            // 버전 정보(index 1)는 정보성 행이므로 chevron 없음
+            if index != 1 {
+                let chevronCfg2 = UIImage.SymbolConfiguration(pointSize: 13, weight: .semibold)
+                let chevron = UIImageView(image: UIImage(systemName: "chevron.forward", withConfiguration: chevronCfg2))
+                chevron.tintColor   = AppTheme.Color.textMuted
+                chevron.contentMode = .scaleAspectFit
+                chevron.setContentHuggingPriority(.required, for: .horizontal)
+                chevron.setContentCompressionResistancePriority(.required, for: .horizontal)
+                rowStack.addArrangedSubview(chevron)
+            }
+
             card.addSubview(rowStack)
             rowStack.snp.makeConstraints { make in
                 make.top.bottom.leading.equalToSuperview().inset(12)
