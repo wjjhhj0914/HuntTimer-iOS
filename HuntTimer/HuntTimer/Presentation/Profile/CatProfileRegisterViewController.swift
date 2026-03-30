@@ -192,7 +192,7 @@ final class CatProfileViewController: BaseViewController {
             UIView.transition(with: window,
                               duration: 0.4,
                               options: .transitionCrossDissolve) {
-                window.rootViewController = MainPageViewController()
+                window.rootViewController = MainTabBarController()
             }
         })
         present(alert, animated: true)

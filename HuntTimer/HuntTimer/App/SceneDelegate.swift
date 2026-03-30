@@ -18,7 +18,7 @@ class SceneDelegate: UIResponder, UIWindowSceneDelegate {
         let hasCat = (try? Realm())?.objects(Cat.self).isEmpty == false
         let rootVC: UIViewController
         if hasCat {
-            rootVC = MainPageViewController()
+            rootVC = MainTabBarController()
         } else {
             let nav = UINavigationController(rootViewController: WelcomeViewController())
             nav.setNavigationBarHidden(true, animated: false)
