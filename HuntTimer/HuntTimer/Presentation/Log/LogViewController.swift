@@ -164,8 +164,9 @@ final class LogViewController: BaseViewController {
         formatter.dateFormat = "a h:mm"
 
         return playSessions.enumerated().map { idx, s in
-            let mins    = s.duration / 60
-            let toyName = s.toys.first?.name
+            let mins     = s.duration / 60
+            let toyName  = s.toys.first?.name
+            let category = s.toys.first?.category ?? ""
             let title: String
             if let name = toyName {
                 title = "\(name)\(Self.roPostposition(for: name)) 사냥했어요!"
@@ -177,6 +178,7 @@ final class LogViewController: BaseViewController {
                 time:            formatter.string(from: s.startTime),
                 title:           title,
                 toy:             toyName ?? "장난감 없음",
+                toySymbol:       Self.sfSymbol(for: category),
                 durationText:    mins > 0 ? "\(mins)분" : "1분 미만",
                 durationSeconds: s.duration,
                 calories:        Int(Double(s.duration) / 60.0 * 2.8),
@@ -239,7 +241,19 @@ final class LogViewController: BaseViewController {
         present(vc, animated: true)
     }
 
-    // MARK: - Korean postposition helper
+    // MARK: - Helpers
+
+    private static func sfSymbol(for category: String) -> String {
+        switch category {
+        case "깃털":    return "leaf.fill"
+        case "벌레":    return "ant.fill"
+        case "레이저":  return "bolt.fill"
+        case "카샤카샤": return "timelapse"
+        case "오뎅꼬치": return "oar.2.crossed"
+        default:       return "pawprint.fill"
+        }
+    }
+
     private static func roPostposition(for name: String) -> String {
         guard let lastChar = name.last,
               let scalar   = lastChar.unicodeScalars.first else { return "으로" }

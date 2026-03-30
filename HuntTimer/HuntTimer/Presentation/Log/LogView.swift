@@ -383,8 +383,14 @@ final class LogView: BaseView {
     private func makeTimelineRow(_ session: HuntSession, index: Int) -> UIView {
         // UIStackView를 직접 반환 — plain UIView wrapper는 rowsStack 내에서
         // intrinsic height를 제공하지 못해 셀이 겹치는 원인이 됨
-        let imgView = AsyncImageView(contentMode: .scaleAspectFill, cornerRadius: 14)
-        imgView.loadImage(from: session.imageURL)
+        let symCfg  = UIImage.SymbolConfiguration(pointSize: 20, weight: .semibold)
+        let imgView = UIImageView(image: UIImage(systemName: session.toySymbol,
+                                                  withConfiguration: symCfg))
+        imgView.contentMode       = .center
+        imgView.tintColor         = AppTheme.Color.primary
+        imgView.backgroundColor   = AppTheme.Color.primaryLight
+        imgView.layer.cornerRadius = 14
+        imgView.clipsToBounds     = true
         imgView.layer.borderWidth = 2
         imgView.layer.borderColor = UIColor.white.cgColor
         imgView.snp.makeConstraints { $0.width.height.equalTo(48) }

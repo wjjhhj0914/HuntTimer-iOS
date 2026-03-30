@@ -309,8 +309,15 @@ final class HomeView: BaseView {
         let card = UIView()
         card.applyCardStyle(cornerRadius: AppTheme.Radius.large)
 
-        let imgView = AsyncImageView(contentMode: .scaleAspectFill, cornerRadius: 14)
-        imgView.loadImage(from: session.imageURL)
+        // 장난감 SF Symbol 아이콘 뷰
+        let symCfg  = UIImage.SymbolConfiguration(pointSize: 20, weight: .semibold)
+        let imgView = UIImageView(image: UIImage(systemName: session.toySymbol,
+                                                 withConfiguration: symCfg))
+        imgView.contentMode      = .center
+        imgView.tintColor        = AppTheme.Color.primary
+        imgView.backgroundColor  = AppTheme.Color.primaryLight
+        imgView.layer.cornerRadius = 14
+        imgView.clipsToBounds    = true
 
         let toyLabel  = UILabel.make(text: session.title, size: 13, weight: .bold, color: AppTheme.Color.textDark)
         let timeLabel = UILabel.make(text: session.time,  size: 11, color: AppTheme.Color.textMuted)

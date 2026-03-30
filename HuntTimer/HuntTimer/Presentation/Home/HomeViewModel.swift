@@ -214,8 +214,9 @@ final class HomeViewModel {
 
         let recent = all.sorted { $0.startTime > $1.startTime }.prefix(3)
         let huntSessions: [HuntSession] = recent.enumerated().map { idx, s in
-            let mins    = s.duration / 60
-            let toyName = s.toys.first?.name
+            let mins     = s.duration / 60
+            let toyName  = s.toys.first?.name
+            let category = s.toys.first?.category ?? ""
             let title: String
             if let name = toyName {
                 title = "\(name)\(Self.roPostposition(for: name)) 사냥했어요!"
@@ -227,6 +228,7 @@ final class HomeViewModel {
                 time:            formatter.string(from: s.startTime),
                 title:           title,
                 toy:             toyName ?? "",
+                toySymbol:       Self.sfSymbol(for: category),
                 durationText:    mins > 0 ? "\(mins)분" : "1분 미만",
                 durationSeconds: s.duration,
                 calories:        Int(Double(s.duration) / 60.0 * 2.8),
@@ -237,6 +239,19 @@ final class HomeViewModel {
     }
 
     // MARK: - Helpers
+
+    /// 장난감 카테고리(= 장난감 이름) → SF Symbol 이름 매핑
+    /// TimerView.makeToySection() 의 items 배열과 1:1 대응
+    private static func sfSymbol(for category: String) -> String {
+        switch category {
+        case "깃털":    return "leaf.fill"
+        case "벌레":    return "ant.fill"
+        case "레이저":  return "bolt.fill"
+        case "카샤카샤": return "timelapse"
+        case "오뎅꼬치": return "oar.2.crossed"
+        default:       return "pawprint.fill"   // 장난감 미선택 or 알 수 없는 카테고리
+        }
+    }
 
     private static func computeStreak(from sessions: [PlaySession], calendar: Calendar) -> Int {
         let activeDays = Set(sessions.map { calendar.startOfDay(for: $0.startTime) })
