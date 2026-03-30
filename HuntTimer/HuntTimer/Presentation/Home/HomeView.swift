@@ -26,7 +26,8 @@ final class HomeView: BaseView {
     }()
     let editBannerButton: UIButton = {
         let btn = UIButton(type: .system)
-        btn.setImage(UIImage(systemName: "photo"), for: .normal)
+        let symCfg = UIImage.SymbolConfiguration(pointSize: 14, weight: .medium)
+        btn.setImage(UIImage(systemName: "photo", withConfiguration: symCfg), for: .normal)
         btn.tintColor = .white
         btn.backgroundColor = UIColor(white: 0, alpha: 0.28)
         btn.layer.cornerRadius = 16
