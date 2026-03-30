@@ -219,7 +219,9 @@ final class HomeViewModel {
         formatter.locale     = Locale(identifier: "ko_KR")
         formatter.dateFormat = "a h:mm"
 
-        let recent = all.sorted { $0.startTime > $1.startTime }.prefix(3)
+        let recent = all.filter { calendar.isDateInToday($0.startTime) }
+                       .sorted { $0.startTime > $1.startTime }
+                       .prefix(3)
         let huntSessions: [HuntSession] = recent.enumerated().map { idx, s in
             let mins     = s.duration / 60
             let toyName  = s.toys.first?.name

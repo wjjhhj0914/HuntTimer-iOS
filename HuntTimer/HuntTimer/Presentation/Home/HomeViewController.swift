@@ -108,14 +108,13 @@ final class HomeViewController: BaseViewController {
             })
             .disposed(by: disposeBag)
 
-        // hasCat: 섹션 show/hide
+        // hasCat: 섹션 show/hide (recentSectionView는 populateRecentSessions에서 관리)
         output.hasCat
             .drive(onNext: { [weak self] hasCat in
                 guard let self else { return }
-                self.contentView.bannerSectionView?.isHidden    = !hasCat
-                self.contentView.progressSectionView?.isHidden  = !hasCat
+                self.contentView.bannerSectionView?.isHidden     = !hasCat
+                self.contentView.progressSectionView?.isHidden   = !hasCat
                 self.contentView.quickStatsSectionView?.isHidden = !hasCat
-                self.contentView.recentSectionView?.isHidden    = !hasCat
             })
             .disposed(by: disposeBag)
 
@@ -166,6 +165,8 @@ final class HomeViewController: BaseViewController {
     private func populateRecentSessions(_ sessions: [HuntSession]) {
         contentView.recentStack.arrangedSubviews.forEach { $0.removeFromSuperview() }
         sessions.forEach { contentView.recentStack.addArrangedSubview(contentView.makeSessionRow($0)) }
+        // 오늘 기록이 없으면 섹션 자체를 숨김
+        contentView.recentSectionView?.isHidden = sessions.isEmpty
     }
 
     // MARK: - Banner Image Picker
