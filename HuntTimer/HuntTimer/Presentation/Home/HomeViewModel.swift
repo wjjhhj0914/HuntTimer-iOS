@@ -153,9 +153,16 @@ final class HomeViewModel {
             heroStatus.accept(breedDisplay.isEmpty ? "사냥 준비 완료! 🐾" : breedDisplay)
             goalMinutes.accept(cat.targetTime)
             startBtnTitle.accept("사냥 시작하기!")
-            // 저장된 배너 이미지 경로 (없으면 nil → 플레이스홀더)
-            let path = cat.bannerImagePath.isEmpty ? nil : cat.bannerImagePath
-            bannerImagePath.accept(path)
+            // 파일명만 저장돼 있으므로 현재 Documents 경로와 조합 → 빌드/재설치 후에도 유효
+            // 구버전 호환: 절대 경로가 저장된 경우 마지막 경로 컴포넌트(파일명)만 추출
+            if cat.bannerImagePath.isEmpty {
+                bannerImagePath.accept(nil)
+            } else {
+                let fileName = (cat.bannerImagePath as NSString).lastPathComponent
+                let dir      = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0]
+                let fullPath = dir.appendingPathComponent(fileName).path
+                bannerImagePath.accept(fullPath)
+            }
         } else {
             catTitle.accept("아직 등록된 냥이가 없어요!")
             greeting.accept("냥이를 등록해주세요 🐾")

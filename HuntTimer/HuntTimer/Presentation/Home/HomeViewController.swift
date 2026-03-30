@@ -220,7 +220,8 @@ final class HomeViewController: BaseViewController {
         guard let realm = try? Realm(),
               let cat   = realm.objects(Cat.self).first else { return }
         do {
-            try realm.write { cat.bannerImagePath = url.path }
+            // 절대 경로 대신 파일명만 저장 → 빌드/재설치 시 컨테이너 경로 변경에 무관
+        try realm.write { cat.bannerImagePath = fileName }
             print("[HuntTimer] 배너 이미지 경로 저장 완료:", url.path)
         } catch {
             print("[HuntTimer] 배너 이미지 경로 Realm 저장 실패:", error)
