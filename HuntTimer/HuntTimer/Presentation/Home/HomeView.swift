@@ -36,6 +36,15 @@ final class HomeView: BaseView {
     let streakLabel     = UILabel.make(text: "", size: 12, weight: .bold, color: .white)
     let heroCatLabel    = UILabel.make(text: "", size: 18, weight: .black, color: .white)
     let heroStatusLabel = UILabel.make(text: "", size: 13, color: UIColor(white: 1, alpha: 0.85))
+    let bannerPlaceholderLabel: UILabel = {
+        let l = UILabel()
+        l.text          = "우리 아이의 가장 멋진 사냥 순간을 채워주세요! 🐾"
+        l.font          = .systemFont(ofSize: 14, weight: .medium)
+        l.textColor     = UIColor(white: 1, alpha: 0.75)
+        l.textAlignment = .center
+        l.numberOfLines = 2
+        return l
+    }()
 
     // MARK: - Progress
     let gaugeView          = CircularProgressView(size: 130)
@@ -155,6 +164,8 @@ final class HomeView: BaseView {
         gradView.isUserInteractionEnabled = false
         container.addSubview(gradView)
 
+        container.addSubview(bannerPlaceholderLabel)
+
         let streakBG = UIView()
         streakBG.backgroundColor    = UIColor(white: 1, alpha: 0.20)
         streakBG.layer.cornerRadius = 14
@@ -167,6 +178,11 @@ final class HomeView: BaseView {
         // ── 2단계: 제약 설정 ──────────────────────────────────────────────
         bannerImageView.snp.makeConstraints { $0.edges.equalToSuperview() }
         gradView.snp.makeConstraints { $0.edges.equalToSuperview() }
+
+        bannerPlaceholderLabel.snp.makeConstraints { make in
+            make.center.equalToSuperview()
+            make.leading.trailing.equalToSuperview().inset(24)
+        }
 
         // 그라디언트는 레이아웃 후 프레임 확정 시점에 추가
         DispatchQueue.main.async {

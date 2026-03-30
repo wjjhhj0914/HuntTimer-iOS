@@ -37,21 +37,24 @@ final class HomeViewController: BaseViewController {
         output.greeting.drive(contentView.greetLabel.rx.text).disposed(by: disposeBag)
         output.catTitle.drive(contentView.titleLabel.rx.text).disposed(by: disposeBag)
 
-        // Banner — 경로 있으면 로컬 파일 로딩, 없으면 primaryLight 플레이스홀더
+        // Banner — 경로 있으면 로컬 파일 로딩, 없으면 primaryLight 플레이스홀더 + 안내 문구 표시
         output.bannerImagePath
             .drive(onNext: { [weak self] path in
                 guard let self else { return }
-                let iv = self.contentView.bannerImageView
+                let iv          = self.contentView.bannerImageView
+                let placeholder = self.contentView.bannerPlaceholderLabel
                 if let path, let image = UIImage(contentsOfFile: path) {
                     UIView.transition(with: iv, duration: 0.25, options: .transitionCrossDissolve) {
                         iv.image           = image
                         iv.contentMode     = .scaleAspectFill
                         iv.backgroundColor = .clear
                     }
+                    placeholder.isHidden = true
                 } else {
-                    iv.image           = nil
-                    iv.contentMode     = .scaleAspectFill
-                    iv.backgroundColor = AppTheme.Color.primaryLight
+                    iv.image             = nil
+                    iv.contentMode       = .scaleAspectFill
+                    iv.backgroundColor   = AppTheme.Color.primaryLight
+                    placeholder.isHidden = false
                 }
             })
             .disposed(by: disposeBag)
@@ -199,6 +202,7 @@ final class HomeViewController: BaseViewController {
             iv.contentMode     = .scaleAspectFill
             iv.backgroundColor = .clear
         }
+        contentView.bannerPlaceholderLabel.isHidden = true
         saveBannerImage(image)
     }
 
