@@ -2,7 +2,6 @@ import UIKit
 import RxSwift
 import RxCocoa
 import RealmSwift
-import StoreKit
 
 /// 프로필 화면 ViewController — 추모 모드 토글 바인딩만 담당
 final class ProfileViewController: BaseViewController {
@@ -138,16 +137,9 @@ final class ProfileViewController: BaseViewController {
     }
 
     @objc private func reviewTapped() {
-        // 인앱 리뷰 팝업 시도 — windowScene이 없으면 앱스토어 URL로 폴백
-        if let scene = view.window?.windowScene {
-            SKStoreReviewController.requestReview(in: scene)
-        } else {
-            // TODO: 앱스토어에 등록 후 아래 URL의 앱 ID(id 뒤 숫자)를 실제 ID로 교체하세요
-            // 예) id123456789 → 실제 앱 ID
-            let urlString = "itms-apps://itunes.apple.com/app/idXXXXXXXXXX?action=write-review"
-            if let url = URL(string: urlString) {
-                UIApplication.shared.open(url)
-            }
+        let urlString = "itms-apps://itunes.apple.com/app/id6761323921?action=write-review"
+        if let url = URL(string: urlString) {
+            UIApplication.shared.open(url)
         }
     }
 
