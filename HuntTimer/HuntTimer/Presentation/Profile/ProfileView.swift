@@ -61,6 +61,7 @@ final class ProfileView: BaseView {
     // MARK: - BaseView
     override func setupUI() {
         backgroundColor = AppTheme.Color.background
+        memorialToggle.isOn = UserDefaults.standard.bool(forKey: "isMemorialMode")
         setupScrollView()
         buildContent()
     }

@@ -15,6 +15,7 @@ final class TimerViewController: BaseViewController {
     private var elapsedSeconds    = 0
     private var isRunning         = false
     private var isPaused          = false
+    private var isMemorialMode    = false
     private var timer: Timer?
     private var sessionStartTime: Date?   // 타이머 최초 시작 시각 (일시정지 후 재개 시 유지)
 
@@ -46,6 +47,8 @@ final class TimerViewController: BaseViewController {
         super.viewWillAppear(animated)
         let name = fetchFirstCatName()
         contentView.tipLabel.text = "하루 30분 이상 놀아주면 \(name)의 스트레스가 줄어요!"
+        isMemorialMode = UserDefaults.standard.bool(forKey: "isMemorialMode")
+        applyMemorialMode()
     }
 
     // MARK: - BaseViewController
@@ -89,8 +92,37 @@ final class TimerViewController: BaseViewController {
         }
     }
 
+    // MARK: - Memorial Mode
+    private func applyMemorialMode() {
+        if isMemorialMode {
+            // 진행 중인 타이머가 있으면 정지
+            if isRunning || isPaused { stopTimer() }
+
+            UIView.animate(withDuration: 0.22) {
+                self.contentView.statusDot.backgroundColor = AppTheme.Color.purple
+                self.contentView.statusLabel.text          = "추모 모드"
+                let disabledAlpha: CGFloat = 0.3
+                self.contentView.startButton.isEnabled = false
+                self.contentView.startButton.alpha     = disabledAlpha
+                self.contentView.stopButton.isEnabled  = false
+                self.contentView.stopButton.alpha      = disabledAlpha
+                self.contentView.moreButton.isEnabled  = false
+                self.contentView.moreButton.alpha      = disabledAlpha
+                self.contentView.presetButtons.forEach { $0.isEnabled = false; $0.alpha = disabledAlpha }
+                self.contentView.toyChipButtons.forEach { $0.isEnabled = false; $0.alpha = disabledAlpha }
+            }
+        } else {
+            contentView.presetButtons.forEach { $0.isEnabled = true }
+            contentView.toyChipButtons.forEach { $0.isEnabled = true }
+            updateStatusUI()
+            updatePresetButtons()
+            updateToyUI()
+        }
+    }
+
     // MARK: - Timer Actions
     @objc private func startPauseTapped() {
+        guard !isMemorialMode else { return }
         guard !isRunning else { return }   // 재생 전용 — 정지는 moreButton이 담당
         startTimer()
         UIImpactFeedbackGenerator(style: .medium).impactOccurred()

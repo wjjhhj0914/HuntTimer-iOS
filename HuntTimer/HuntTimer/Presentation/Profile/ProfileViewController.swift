@@ -90,6 +90,14 @@ final class ProfileViewController: BaseViewController {
             })
             .disposed(by: disposeBag)
 
+        // 추모 모드 변경 시 UserDefaults 저장
+        contentView.memorialToggle.rx.isOn
+            .skip(1)
+            .subscribe(onNext: { isOn in
+                UserDefaults.standard.set(isOn, forKey: "isMemorialMode")
+            })
+            .disposed(by: disposeBag)
+
         // 추모 모드 ON 시 얼럿
         contentView.memorialToggle.rx.isOn
             .skip(1)
