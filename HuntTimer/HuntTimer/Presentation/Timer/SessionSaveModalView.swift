@@ -64,17 +64,10 @@ final class SessionSaveModalView: UIView {
         btn.setTitle("기록 저장하기", for: .normal)
         btn.setTitleColor(.white, for: .normal)
         btn.titleLabel?.font = .appFont(size: 15, weight: .bold)
+        btn.backgroundColor    = AppTheme.Color.primary
         btn.layer.cornerRadius = 24
         btn.clipsToBounds      = true
         return btn
-    }()
-
-    private let saveGradient: CAGradientLayer = {
-        let gl = CAGradientLayer()
-        gl.colors     = [UIColor(hex: "#FF8FAB").cgColor, UIColor(hex: "#E8507A").cgColor]
-        gl.startPoint = CGPoint(x: 0.5, y: 0)
-        gl.endPoint   = CGPoint(x: 0.5, y: 1)
-        return gl
     }()
 
     // MARK: - Init
@@ -84,11 +77,6 @@ final class SessionSaveModalView: UIView {
         buildUI()
     }
     required init?(coder: NSCoder) { fatalError() }
-
-    override func layoutSubviews() {
-        super.layoutSubviews()
-        saveGradient.frame = saveButton.bounds
-    }
 
     // MARK: - Build
 
@@ -260,7 +248,6 @@ final class SessionSaveModalView: UIView {
     }
 
     private func makeSaveButtonWrap() -> UIView {
-        saveButton.layer.insertSublayer(saveGradient, at: 0)
         saveButton.snp.makeConstraints { $0.height.equalTo(48) }
 
         let wrapper = UIView()
