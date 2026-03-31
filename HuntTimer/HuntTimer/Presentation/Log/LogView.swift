@@ -268,14 +268,18 @@ final class LogView: BaseView {
         card.layer.cornerRadius = AppTheme.Radius.large
 
         let statDefs: [(String, UILabel, String)] = [
-            ("🎯", summaryCountLabel, "총 사냥 횟수"),
-            ("⏱️", summaryHoursLabel, "총 시간"),
-            ("📅", summaryDaysLabel,  "활동 일수"),
+            ("target",   summaryCountLabel, "총 사냥 횟수"),
+            ("clock",    summaryHoursLabel, "총 시간"),
+            ("calendar", summaryDaysLabel,  "활동 일수"),
         ]
         let row = UIStackView.make(axis: .horizontal, distribution: .fillEqually)
-        statDefs.forEach { emoji, valueLabel, desc in
+        statDefs.forEach { symbolName, valueLabel, desc in
+            let config   = UIImage.SymbolConfiguration(pointSize: 18, weight: .medium)
+            let iconView = UIImageView(image: UIImage(systemName: symbolName, withConfiguration: config))
+            iconView.tintColor   = UIColor(hex: "#9B7A00")
+            iconView.contentMode = .scaleAspectFit
             let col = UIStackView.make(axis: .vertical, spacing: 2, alignment: .center)
-            col.addArrangedSubview(UILabel.make(text: emoji, size: 18, alignment: .center))
+            col.addArrangedSubview(iconView)
             col.addArrangedSubview(valueLabel)
             col.addArrangedSubview(UILabel.make(text: desc, size: 10, color: UIColor(hex: "#9B7A00"), alignment: .center))
             row.addArrangedSubview(col)
