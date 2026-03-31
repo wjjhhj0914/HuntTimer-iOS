@@ -248,18 +248,22 @@ final class HomeView: BaseView {
 
     private func makeQuickStatsSection() -> UIView {
         let stats: [(String, String, UILabel)] = [
-            ("🎯", "이번 주",  weeklyValueLabel),
-            ("🏆", "최고 기록", bestValueLabel),
-            ("📅", "이번 달",  monthlyValueLabel),
+            ("target",   "이번 주",  weeklyValueLabel),
+            ("trophy",   "최고 기록", bestValueLabel),
+            ("calendar", "이번 달",  monthlyValueLabel),
         ]
         let row = UIStackView.make(axis: .horizontal, spacing: 8, distribution: .fillEqually)
-        stats.forEach { emoji, label, valueLabel in
+        stats.forEach { symbolName, label, valueLabel in
             let card = UIView()
             card.applyCardStyle(cornerRadius: AppTheme.Radius.large)
-            let emojiL = UILabel.make(text: emoji, size: 20, alignment: .center)
+            let config    = UIImage.SymbolConfiguration(pointSize: 20, weight: .medium)
+            let iconImage = UIImage(systemName: symbolName, withConfiguration: config)
+            let iconView  = UIImageView(image: iconImage)
+            iconView.tintColor = AppTheme.Color.primary
+            iconView.contentMode = .scaleAspectFit
             let labelL = UILabel.make(text: label, size: 10, color: AppTheme.Color.textMuted, alignment: .center)
             let stack  = UIStackView.make(axis: .vertical, spacing: 2, alignment: .center)
-            [emojiL, labelL, valueLabel].forEach { stack.addArrangedSubview($0) }
+            [iconView, labelL, valueLabel].forEach { stack.addArrangedSubview($0) }
             card.addSubview(stack)
             stack.snp.makeConstraints { make in
                 make.top.bottom.equalToSuperview().inset(12)
