@@ -363,11 +363,17 @@ final class LogView: BaseView {
         return wrapper
     }
 
-    /// 행 탭 콜백 — LogViewController에서 주입 (index: 탭된 세션의 순서)
-    var onSessionRowTap: ((Int) -> Void)?
+    /// 삭제 버튼 탭 콜백 — LogViewController에서 주입 (index: 탭된 세션의 순서)
+    var onDeleteTap: ((Int) -> Void)?
+
+    /// 현재 스와이프로 열린 행의 콘텐츠 뷰 (weak — 행 제거 시 자동 nil)
+    private weak var currentSwipeContent: UIView?
+
+    private let swipeRevealWidth: CGFloat = 60
 
     /// 세션 목록을 갱신 — 빈 배열이면 empty state 표시
     func reloadSessionRows(_ sessions: [HuntSession]) {
+        currentSwipeContent = nil
         rowsStack.arrangedSubviews.forEach { $0.removeFromSuperview() }
 
         if sessions.isEmpty {
@@ -385,8 +391,6 @@ final class LogView: BaseView {
 
     // MARK: - Timeline Row
     private func makeTimelineRow(_ session: HuntSession, index: Int) -> UIView {
-        // UIStackView를 직접 반환 — plain UIView wrapper는 rowsStack 내에서
-        // intrinsic height를 제공하지 못해 셀이 겹치는 원인이 됨
         let symCfg  = UIImage.SymbolConfiguration(pointSize: 20, weight: .semibold)
         let imgView = UIImageView(image: UIImage(systemName: session.toySymbol,
                                                   withConfiguration: symCfg))
@@ -420,22 +424,82 @@ final class LogView: BaseView {
         card.addSubview(innerRow)
         innerRow.snp.makeConstraints { $0.edges.equalToSuperview().inset(12) }
 
-        // 투명 탭 버튼 오버레이 — 카드 전체를 탭 가능하게 만듦
-        let tapBtn = UIButton(type: .system)
-        tapBtn.tag             = index
-        tapBtn.backgroundColor = .clear
-        tapBtn.addTarget(self, action: #selector(sessionRowTapped(_:)), for: .touchUpInside)
-        card.addSubview(tapBtn)
-        tapBtn.snp.makeConstraints { $0.edges.equalToSuperview() }
-
+        // 콘텐츠 (스와이프로 왼쪽으로 밀리는 부분)
         let outerRow = UIStackView.make(axis: .horizontal, spacing: 8, alignment: .center)
         outerRow.addArrangedSubview(imgView)
         outerRow.addArrangedSubview(card)
-        return outerRow
+        outerRow.tag = 100   // handleRowPan에서 viewWithTag(100)으로 탐색
+
+        // 삭제 버튼 (outerRow 뒤에 숨어 있다가 스와이프 시 노출)
+        let delCfg    = UIImage.SymbolConfiguration(pointSize: 22, weight: .semibold)
+        let deleteBtn = UIButton(type: .system)
+        deleteBtn.setImage(UIImage(systemName: "minus.circle.fill", withConfiguration: delCfg), for: .normal)
+        deleteBtn.tintColor = .systemRed
+        deleteBtn.tag = index
+        deleteBtn.addTarget(self, action: #selector(deleteRowTapped(_:)), for: .touchUpInside)
+
+        let deleteWrapper = UIView()
+        deleteWrapper.addSubview(deleteBtn)
+        deleteBtn.snp.makeConstraints { $0.center.equalToSuperview() }
+
+        // 컨테이너: outerRow가 왼쪽으로 밀리면 오른쪽 deleteWrapper가 드러남
+        let container = UIView()
+        container.clipsToBounds = true
+        container.addSubview(deleteWrapper)   // z-order 하단 (outerRow 뒤)
+        container.addSubview(outerRow)        // z-order 상단 (초기에 deleteWrapper 덮음)
+
+        outerRow.snp.makeConstraints { $0.edges.equalToSuperview() }
+        deleteWrapper.snp.makeConstraints { make in
+            make.top.bottom.equalToSuperview()
+            make.trailing.equalToSuperview()
+            make.width.equalTo(swipeRevealWidth)
+        }
+
+        let pan = UIPanGestureRecognizer(target: self, action: #selector(handleRowPan(_:)))
+        pan.delegate = self
+        container.addGestureRecognizer(pan)
+
+        return container
     }
 
-    @objc private func sessionRowTapped(_ sender: UIButton) {
-        onSessionRowTap?(sender.tag)
+    @objc private func handleRowPan(_ sender: UIPanGestureRecognizer) {
+        guard let container = sender.view,
+              let content   = container.viewWithTag(100) else { return }
+
+        let dx = sender.translation(in: container).x
+        sender.setTranslation(.zero, in: container)
+
+        switch sender.state {
+        case .began:
+            // 다른 열린 행이 있으면 닫기
+            if let prev = currentSwipeContent, prev !== content {
+                UIView.animate(withDuration: 0.2) { prev.transform = .identity }
+            }
+        case .changed:
+            let newTx = max(-swipeRevealWidth, min(0, content.transform.tx + dx))
+            content.transform = CGAffineTransform(translationX: newTx, y: 0)
+        case .ended, .cancelled:
+            let vel        = sender.velocity(in: container)
+            let shouldOpen = content.transform.tx < -(swipeRevealWidth / 2) || vel.x < -400
+            UIView.animate(withDuration: 0.3, delay: 0,
+                           usingSpringWithDamping: 0.8, initialSpringVelocity: 0.3,
+                           options: .allowUserInteraction) {
+                content.transform = shouldOpen
+                    ? CGAffineTransform(translationX: -self.swipeRevealWidth, y: 0)
+                    : .identity
+            }
+            currentSwipeContent = shouldOpen ? content : nil
+        default:
+            break
+        }
+    }
+
+    @objc private func deleteRowTapped(_ sender: UIButton) {
+        UIView.animate(withDuration: 0.2) {
+            self.currentSwipeContent?.transform = .identity
+        }
+        currentSwipeContent = nil
+        onDeleteTap?(sender.tag)
     }
 
     private func makePillLabel(_ text: String, bg: UIColor, fg: UIColor) -> UIView {
@@ -452,6 +516,7 @@ final class LogView: BaseView {
     }
 
     // MARK: - Calendar Data
+
     func buildCalendarCells() -> [Int?] {
         let cal      = Calendar(identifier: .gregorian)
         let comps    = DateComponents(calendar: .current, year: year, month: month + 1, day: 1)
@@ -462,5 +527,14 @@ final class LogView: BaseView {
         (1...daysInMonth).forEach { cells.append($0) }
         while cells.count % 7 != 0 { cells.append(nil) }
         return cells
+    }
+}
+
+// MARK: - UIGestureRecognizerDelegate (수직 스크롤과 충돌 방지)
+extension LogView: UIGestureRecognizerDelegate {
+    override func gestureRecognizerShouldBegin(_ gr: UIGestureRecognizer) -> Bool {
+        guard let pan = gr as? UIPanGestureRecognizer else { return true }
+        let vel = pan.velocity(in: gr.view)
+        return abs(vel.x) > abs(vel.y)   // 수평 스와이프일 때만 활성화
     }
 }

@@ -36,11 +36,11 @@ final class LogViewController: BaseViewController {
 
         contentView.profileButton.addTarget(self, action: #selector(profileTapped), for: .touchUpInside)
 
-        // 타임라인 행 탭 → 탭한 세션 하나만 상세 모달에 표시
-        contentView.onSessionRowTap = { [weak self] index in
+        // 타임라인 행 스와이프 → 삭제 확인 얼럿
+        contentView.onDeleteTap = { [weak self] index in
             guard let self,
                   index < self.currentPlaySessions.count else { return }
-            self.presentDetailModal(sessions: [self.currentPlaySessions[index]])
+            self.showDeleteAlert(at: index)
         }
 
         reloadCalendar()
@@ -185,6 +185,45 @@ final class LogViewController: BaseViewController {
                 imageURL:        ""
             )
         }
+    }
+
+    // MARK: - Delete
+
+    private func showDeleteAlert(at index: Int) {
+        let alert = UIAlertController(
+            title: "사냥 기록 삭제",
+            message: "사냥 기록을 삭제하시겠습니까?\n삭제한 기록은 되돌릴 수 없어요!",
+            preferredStyle: .alert
+        )
+        alert.addAction(UIAlertAction(title: "취소", style: .cancel))
+        alert.addAction(UIAlertAction(title: "삭제", style: .destructive) { [weak self] _ in
+            self?.deleteSession(at: index)
+        })
+        present(alert, animated: true)
+    }
+
+    private func deleteSession(at index: Int) {
+        guard index < currentPlaySessions.count,
+              let realm = try? Realm() else { return }
+        let session = currentPlaySessions[index]
+        do {
+            try realm.write {
+                realm.delete(session.photos)   // PhotoLog (역참조) 삭제
+                realm.delete(session.toys)     // Toy 목록 삭제
+                realm.delete(session)          // PlaySession 본체 삭제
+            }
+        } catch {
+            print("[Log] 세션 삭제 실패:", error)
+            return
+        }
+        let cal   = Calendar.current
+        var comps = cal.dateComponents([.year, .month], from: currentDate)
+        comps.day = selectedDay ?? cal.component(.day, from: Date())
+        if let date = cal.date(from: comps) {
+            reloadSessions(for: date)
+        }
+        reloadCalendar()
+        UINotificationFeedbackGenerator().notificationOccurred(.success)
     }
 
     // MARK: - Realm Queries
