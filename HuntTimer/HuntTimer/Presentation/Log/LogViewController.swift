@@ -244,7 +244,8 @@ final class LogViewController: BaseViewController {
         for session in sessions {
             let day = cal.component(.day, from: session.startTime)
             days.insert(day)
-            if photos[day] == nil, let path = session.photos.first?.imagePath, !path.isEmpty {
+            if photos[day] == nil,
+               let path = session.photos.first(where: { !$0.imagePath.isEmpty })?.imagePath {
                 photos[day] = path
             }
             totalDuration += session.duration
