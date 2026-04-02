@@ -139,7 +139,9 @@ private final class SessionPageView: UIView {
     private func makePhotoSection() -> UIStackView {
         photoImageView.addSubview(photoEmptyIcon)
         photoEmptyIcon.snp.makeConstraints { $0.center.equalToSuperview() }
-        photoImageView.snp.makeConstraints { $0.height.equalTo(128) }
+        photoImageView.snp.makeConstraints { make in
+            make.height.equalTo(photoImageView.snp.width)   // 1:1 비율 (자기 참조)
+        }
 
         let s = UIStackView.make(axis: .vertical, spacing: 10)
         s.addArrangedSubview(makeSectionHeader(icon: "photo", title: "사진"))
