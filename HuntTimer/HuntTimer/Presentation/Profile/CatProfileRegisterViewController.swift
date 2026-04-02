@@ -185,7 +185,7 @@ final class CatProfileViewController: BaseViewController {
             return
         }
 
-        let alert = UIAlertController(title: "등록 완료!", message: "\(name) 냥이의 프로필이 등록됐어요 🐾", preferredStyle: .alert)
+        let alert = UIAlertController(title: "등록 완료!", message: "이제 사냥하러 가볼까요?", preferredStyle: .alert)
         alert.addAction(UIAlertAction(title: "시작하기", style: .default) { [weak self] _ in
             guard let windowScene = self?.view.window?.windowScene,
                   let window      = windowScene.windows.first else { return }
@@ -260,7 +260,7 @@ final class CatProfileViewController: BaseViewController {
         guard !contentView.unknownBirthdayToggle.isOn else { return }
 
         let sheet = DatePickerBottomSheetViewController(
-            initialDate: tempBirthdate ?? Calendar.current.date(byAdding: .year, value: -2, to: Date()) ?? Date()
+            initialDate: tempBirthdate ?? Date()
         )
         sheet.onDateSelected = { [weak self] date in
             guard let self else { return }
