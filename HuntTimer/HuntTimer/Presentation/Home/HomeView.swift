@@ -39,7 +39,7 @@ final class HomeView: BaseView {
     let heroStatusLabel = UILabel.make(text: "", size: 13, color: UIColor(white: 1, alpha: 0.85))
     let bannerPlaceholderLabel: UILabel = {
         let l = UILabel()
-        l.text          = "우리 아이의 가장 멋진 사냥 순간을 채워주세요! 🐾"
+        l.text          = "우리 아이의 가장 멋진 사냥 순간을 채워주세요!"
         l.font          = .systemFont(ofSize: 14, weight: .medium)
         l.textColor     = UIColor(white: 1, alpha: 0.75)
         l.textAlignment = .center
