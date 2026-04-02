@@ -244,11 +244,15 @@ final class LogViewController: BaseViewController {
         for session in sessions {
             let day = cal.component(.day, from: session.startTime)
             days.insert(day)
-            if photos[day] == nil,
-               let path = session.photos.first(where: { !$0.imagePath.isEmpty })?.imagePath {
-                photos[day] = path
-            }
             totalDuration += session.duration
+
+            // 해당 세션에 연결된 사진이 있으면 날짜에 매핑
+            if photos[day] == nil,
+               let log = realm.objects(PhotoLog.self)
+                   .filter("session == %@ AND imagePath != %@", session, "")
+                   .first {
+                photos[day] = log.imagePath
+            }
         }
         return (days, photos, sessions.count, totalDuration)
     }
