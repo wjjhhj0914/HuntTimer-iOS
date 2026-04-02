@@ -53,6 +53,14 @@ final class ProfileView: BaseView {
     let catInfoLabel = UILabel.make(text: "", size: 13,
                                     color: AppTheme.Color.textMedium, alignment: .center)
 
+    // MARK: - Stats Card (VC가 Realm 데이터 로드 후 갱신)
+    let huntCountLabel  = UILabel.make(text: "—", size: 14, weight: .bold,
+                                       color: AppTheme.Color.textDark, alignment: .center)
+    let totalTimeLabel  = UILabel.make(text: "—", size: 14, weight: .bold,
+                                       color: AppTheme.Color.textDark, alignment: .center)
+    let statsBadgeLabel = UILabel.make(text: "—", size: 14, weight: .bold,
+                                       color: AppTheme.Color.textDark, alignment: .center)
+
     // MARK: - Badge Grid (동적 갱신)
     private let badgeGridStack  = UIStackView.make(axis: .vertical, spacing: 8)
     private let badgeCountLabel = UILabel.make(text: "0 / 8 달성", size: 12,
@@ -124,29 +132,26 @@ final class ProfileView: BaseView {
             make.width.height.equalTo(112)
         }
 
-        let statsData: [(String, String, String)] = [
-            ("🎯", "247회", "총 사냥"),
-            ("⏱️", "41.5h", "총 시간"),
-            ("🏅", "4개",   "배지"),
+        let statsDefs: [(String, UILabel, String)] = [
+            ("🎯", huntCountLabel,  "총 사냥"),
+            ("⏱️", totalTimeLabel,  "총 시간"),
+            ("🏅", statsBadgeLabel, "배지"),
         ]
         let statsRow = UIStackView.make(axis: .horizontal, spacing: 12, alignment: .center, distribution: .fillEqually)
-        statsData.forEach { emoji, val, lbl in
+        statsDefs.forEach { emoji, valLabel, lbl in
             let card = UIView()
-            card.backgroundColor   = AppTheme.Color.primaryLight
+            card.backgroundColor    = AppTheme.Color.primaryLight
             card.layer.cornerRadius = AppTheme.Radius.medium
             let col = UIStackView.make(axis: .vertical, spacing: 2, alignment: .center)
             col.addArrangedSubview(UILabel.make(text: emoji, size: 16, alignment: .center))
-            col.addArrangedSubview(UILabel.make(text: val, size: 14, weight: .bold,
-                                                color: AppTheme.Color.textDark, alignment: .center))
+            col.addArrangedSubview(valLabel)
             col.addArrangedSubview(UILabel.make(text: lbl, size: 10, color: AppTheme.Color.primary, alignment: .center))
             card.addSubview(col)
-            // col: 좌우는 카드에 고정, 세로는 중앙 정렬 (top/bottom 미설정 → 카드 높이를 col이 결정하지 않음)
             col.snp.makeConstraints { make in
                 make.centerY.equalToSuperview()
                 make.leading.trailing.equalToSuperview().inset(6)
             }
             statsRow.addArrangedSubview(card)
-            // 카드 높이 = 카드 너비 (1:1 정사각형), fillEqually가 너비를 결정한 뒤 적용
             card.snp.makeConstraints { $0.height.equalTo(card.snp.width) }
         }
 
@@ -336,7 +341,7 @@ final class ProfileView: BaseView {
         let rows: [AppInfoRow] = [
             AppInfoRow(symbol: "gearshape.fill",   label: "앱 설정",          desc: "알림 설정",
                        bg: UIColor(white: 0.92, alpha: 1), fg: AppTheme.Color.textMedium),
-            AppInfoRow(symbol: "info.circle.fill",  label: "버전 정보",        desc: "v1.1.0",
+            AppInfoRow(symbol: "info.circle.fill",  label: "버전 정보",        desc: "v1.0.0",
                        bg: AppTheme.Color.primaryLight,    fg: AppTheme.Color.primary),
             AppInfoRow(symbol: "star.fill",          label: "리뷰 남기기",      desc: "개발자한테 리뷰를 남겨 주세요!",
                        bg: AppTheme.Color.yellowLight,     fg: AppTheme.Color.yellowDark),

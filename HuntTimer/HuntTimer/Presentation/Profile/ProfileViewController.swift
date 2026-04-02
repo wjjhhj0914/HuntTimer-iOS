@@ -29,6 +29,7 @@ final class ProfileViewController: BaseViewController {
         loadProfileImage()
         loadCatInfo()
         reloadBadges()
+        reloadStats()
     }
 
     private func loadCatInfo() {
@@ -55,6 +56,31 @@ final class ProfileViewController: BaseViewController {
             let badges = BadgeManager.evaluateBadges()
             DispatchQueue.main.async {
                 self?.contentView.reloadBadges(badges)
+            }
+        }
+    }
+
+    private func reloadStats() {
+        DispatchQueue.global(qos: .userInitiated).async { [weak self] in
+            guard let realm = try? Realm() else { return }
+            let sessions     = realm.objects(PlaySession.self)
+            let huntCount    = sessions.count
+            let totalSeconds = sessions.sum(ofProperty: "duration") as Int
+            let earnedBadges = BadgeManager.evaluateBadges().filter { $0.unlocked }.count
+
+            let hours = totalSeconds / 3600
+            let mins  = (totalSeconds % 3600) / 60
+            let timeText: String
+            if hours > 0 {
+                timeText = mins > 0 ? "\(hours)h \(mins)m" : "\(hours)h"
+            } else {
+                timeText = "\(mins)m"
+            }
+
+            DispatchQueue.main.async { [weak self] in
+                self?.contentView.huntCountLabel.text  = "\(huntCount)회"
+                self?.contentView.totalTimeLabel.text  = timeText
+                self?.contentView.statsBadgeLabel.text = "\(earnedBadges)개"
             }
         }
     }
