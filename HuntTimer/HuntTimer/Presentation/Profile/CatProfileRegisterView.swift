@@ -112,7 +112,6 @@ final class CatProfileRegisterView: BaseView {
     }()
 
     private let contentStack = UIStackView.make(axis: .vertical, spacing: 12)
-    private var gradientLayer: CAGradientLayer?
 
     /// 수정 모드 레이아웃 전환에 필요한 참조
     private var ctaContainer: UIView?
@@ -158,11 +157,6 @@ final class CatProfileRegisterView: BaseView {
             make.leading.trailing.equalToSuperview().inset(16)
             make.width.equalTo(scrollView).offset(-32)
         }
-    }
-
-    override func layoutSubviews() {
-        super.layoutSubviews()
-        gradientLayer?.frame = registerButton.bounds
     }
 
     // MARK: - Header
@@ -414,12 +408,7 @@ final class CatProfileRegisterView: BaseView {
         let wrap = UIView()
         wrap.backgroundColor = AppTheme.Color.background
 
-        let grad = CAGradientLayer()
-        grad.colors     = [UIColor(hex: "#FF7EA1").cgColor, UIColor(hex: "#FF5C85").cgColor]
-        grad.startPoint = CGPoint(x: 0, y: 0)
-        grad.endPoint   = CGPoint(x: 0, y: 1)
-        registerButton.layer.insertSublayer(grad, at: 0)
-        self.gradientLayer = grad
+        registerButton.backgroundColor = AppTheme.Color.primary
 
         wrap.addSubview(registerButton)
         registerButton.snp.makeConstraints { make in

@@ -36,7 +36,7 @@ private final class YearPickerCell: UITableViewCell {
     func configure(year: Int, isSelected: Bool, distanceFromSelected: Int) {
         yearLabel.text = "\(year)"
         if isSelected {
-            pillView.backgroundColor = UIColor(hex: "#FF8FAB")
+            pillView.backgroundColor = AppTheme.Color.primary
             yearLabel.textColor      = .white
             yearLabel.font           = .appFont(size: 16, weight: .bold)
             yearLabel.alpha          = 1
@@ -93,7 +93,7 @@ private final class MonthPickerCell: UITableViewCell {
     func configure(month: String, isSelected: Bool, distanceFromSelected: Int) {
         monthLabel.text = month
         if isSelected {
-            pillView.backgroundColor = UIColor(hex: "#FF8FAB")
+            pillView.backgroundColor = AppTheme.Color.primary
             monthLabel.textColor     = .white
             monthLabel.font          = .appFont(size: 16, weight: .bold)
             monthLabel.alpha         = 1
@@ -171,7 +171,7 @@ final class DatePickerBottomSheetViewController: BaseViewController {
     private let yearChevron: UIImageView = {
         let cfg = UIImage.SymbolConfiguration(pointSize: 11, weight: .semibold)
         let iv  = UIImageView(image: UIImage(systemName: "chevron.down", withConfiguration: cfg))
-        iv.tintColor   = UIColor(hex: "#E8507A")
+        iv.tintColor   = AppTheme.Color.primary
         iv.contentMode = .scaleAspectFit
         return iv
     }()
@@ -421,8 +421,8 @@ final class DatePickerBottomSheetViewController: BaseViewController {
         let btn    = UIButton(type: .system)
         let config = UIImage.SymbolConfiguration(pointSize: 14, weight: .medium)
         btn.setImage(UIImage(systemName: systemName, withConfiguration: config), for: .normal)
-        btn.tintColor          = UIColor(hex: "#E8507A")
-        btn.backgroundColor    = UIColor(hex: "#FFF0F4")
+        btn.tintColor          = AppTheme.Color.primary
+        btn.backgroundColor    = AppTheme.Color.primary.withAlphaComponent(0.12)
         btn.layer.cornerRadius = 18
         btn.snp.makeConstraints { $0.width.height.equalTo(36) }
         return btn

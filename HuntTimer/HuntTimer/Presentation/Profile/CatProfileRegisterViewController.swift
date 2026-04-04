@@ -91,7 +91,7 @@ final class CatProfileViewController: BaseViewController {
     private func configureForMode() {
         switch mode {
         case .registration:
-            contentView.headerTitleLabel.text   = "냥이 프로필 등록"
+            contentView.headerTitleLabel.text   = "고양이 프로필 등록"
             contentView.registerButton.isHidden = false
             contentView.saveButton.isHidden     = true
         case .edit:
@@ -142,6 +142,11 @@ final class CatProfileViewController: BaseViewController {
         if let data = cat.profileImageData, let image = UIImage(data: data) {
             contentView.photoImageView.image    = image
             contentView.photoImageView.isHidden = false
+        }
+
+        // 생년월일이 이미 설정돼 있으면 primary 색상으로 표시
+        if cat.birthday != nil {
+            contentView.birthdateLabel.textColor = AppTheme.Color.primary
         }
     }
 
@@ -266,7 +271,7 @@ final class CatProfileViewController: BaseViewController {
             guard let self else { return }
             self.tempBirthdate = date
             self.contentView.birthdateLabel.text      = self.dateFormatter.string(from: date)
-            self.contentView.birthdateLabel.textColor = AppTheme.Color.textMuted
+            self.contentView.birthdateLabel.textColor = AppTheme.Color.primary
         }
         present(sheet, animated: false)
     }
@@ -281,8 +286,10 @@ final class CatProfileViewController: BaseViewController {
             } else {
                 let text = self.tempBirthdate.map { self.dateFormatter.string(from: $0) }
                               ?? "생년월일을 선택하세요"
-                self.contentView.birthdateLabel.text                 = text
-                self.contentView.birthdateLabel.textColor            = AppTheme.Color.textMuted
+                self.contentView.birthdateLabel.text      = text
+                self.contentView.birthdateLabel.textColor = self.tempBirthdate != nil
+                    ? AppTheme.Color.primary
+                    : AppTheme.Color.textMuted
                 self.contentView.dateFieldView.alpha                 = 1.0
                 self.contentView.dateFieldView.isUserInteractionEnabled = true
             }
