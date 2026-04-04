@@ -4,7 +4,7 @@ enum AppTheme {
 
     // MARK: - Colors
     enum Color {
-        static let primary      = UIColor(hex: "#FF8FAB")
+        static let primary      = UIColor(hex: "#8DC4A7")
         static let primaryDeep  = UIColor(hex: "#FF6B9A")
         static let primaryLight = UIColor(hex: "#FFE4EE")
         static let yellow       = UIColor(hex: "#FFD966")
