@@ -25,17 +25,15 @@ final class CatListView: BaseView {
     // MARK: - Empty State
     private let catCircle: UIView = {
         let v = UIView()
-        v.backgroundColor = AppTheme.Color.primaryLight
+        v.backgroundColor = UIColor(hex: "#FEF0E4")
         v.layer.cornerRadius = 120
         return v
     }()
 
-    private let catLabel: UILabel = {
-        let l = UILabel()
-        l.text = "🐱"
-        l.font = .systemFont(ofSize: 72)
-        l.textAlignment = .center
-        return l
+    private let catImageView: UIImageView = {
+        let iv = UIImageView(image: UIImage(named: "RegisterProfile_Cat"))
+        iv.contentMode = .scaleAspectFit
+        return iv
     }()
 
     private let emptyTitleLabel: UILabel = {
@@ -60,7 +58,7 @@ final class CatListView: BaseView {
     override func setupUI() {
         backgroundColor = AppTheme.Color.background
 
-        catCircle.addSubview(catLabel)
+        catCircle.addSubview(catImageView)
         [titleLabel, addButton, catCircle, emptyTitleLabel, emptySubLabel].forEach { addSubview($0) }
 
         // Header
@@ -80,7 +78,11 @@ final class CatListView: BaseView {
             make.centerY.equalToSuperview().offset(-70)
             make.width.height.equalTo(240)
         }
-        catLabel.snp.makeConstraints { $0.center.equalToSuperview() }
+        catImageView.snp.makeConstraints { make in
+            make.center.equalToSuperview()
+            make.width.equalTo(102)
+            make.height.equalTo(94)
+        }
 
         // 안내 텍스트
         emptyTitleLabel.snp.makeConstraints { make in
