@@ -23,8 +23,6 @@ final class WelcomeViewController: BaseViewController {
 
     // MARK: - Actions
     @objc private func ctaTapped() {
-        let vc = CatProfileViewController()
-        vc.mode = .registration
-        navigationController?.pushViewController(vc, animated: true)
+        navigationController?.pushViewController(CatListViewController(), animated: true)
     }
 }
