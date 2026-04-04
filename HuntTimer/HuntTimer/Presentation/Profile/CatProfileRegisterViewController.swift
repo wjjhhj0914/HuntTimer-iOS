@@ -124,6 +124,8 @@ final class CatProfileViewController: BaseViewController {
             contentView.birthdateLabel.textColor            = AppTheme.Color.textMuted
             contentView.dateFieldView.alpha                 = 0.5
             contentView.dateFieldView.isUserInteractionEnabled = false
+            contentView.unknownBirthdayLabel.textColor      = AppTheme.Color.primary
+            contentView.unknownBirthdayLabel.font           = .appFont(size: 13, weight: .bold)
         }
 
         // 성별 (tempIsMale도 함께 업데이트됨)
@@ -135,7 +137,7 @@ final class CatProfileViewController: BaseViewController {
         // 품종
         if let breed = CatBreed.from(rawValue: cat.breed) {
             contentView.breedDisplayLabel.text      = breed.displayName
-            contentView.breedDisplayLabel.textColor = AppTheme.Color.textMuted
+            contentView.breedDisplayLabel.textColor = AppTheme.Color.primary
         }
 
         // 프로필 사진
@@ -283,6 +285,8 @@ final class CatProfileViewController: BaseViewController {
                 self.contentView.birthdateLabel.textColor            = AppTheme.Color.textMuted
                 self.contentView.dateFieldView.alpha                 = 0.5
                 self.contentView.dateFieldView.isUserInteractionEnabled = false
+                self.contentView.unknownBirthdayLabel.textColor      = AppTheme.Color.primary
+                self.contentView.unknownBirthdayLabel.font           = .appFont(size: 13, weight: .bold)
             } else {
                 let text = self.tempBirthdate.map { self.dateFormatter.string(from: $0) }
                               ?? "생년월일을 선택하세요"
@@ -292,6 +296,8 @@ final class CatProfileViewController: BaseViewController {
                     : AppTheme.Color.textMuted
                 self.contentView.dateFieldView.alpha                 = 1.0
                 self.contentView.dateFieldView.isUserInteractionEnabled = true
+                self.contentView.unknownBirthdayLabel.textColor      = UIColor(hex: "#bfa2a2")
+                self.contentView.unknownBirthdayLabel.font           = .appFont(size: 13)
             }
         }
     }
@@ -303,7 +309,7 @@ final class CatProfileViewController: BaseViewController {
             guard let self else { return }
             self.tempBreed = breed
             self.contentView.breedDisplayLabel.text      = breed.displayName
-            self.contentView.breedDisplayLabel.textColor = AppTheme.Color.textMuted
+            self.contentView.breedDisplayLabel.textColor = AppTheme.Color.primary
         }
         present(sheet, animated: false)
     }

@@ -44,6 +44,9 @@ final class CatProfileRegisterView: BaseView {
     let birthdateLabel = UILabel.make(text: "생년월일을 선택하세요", size: 15, weight: .semibold,
                                       color: AppTheme.Color.textMuted)
 
+    let unknownBirthdayLabel = UILabel.make(text: "생일을 모르겠어요", size: 13,
+                                             color: UIColor(hex: "#bfa2a2"))
+
     let unknownBirthdayToggle: UISwitch = {
         let sw = UISwitch()
         sw.onTintColor = AppTheme.Color.primary
@@ -294,9 +297,8 @@ final class CatProfileRegisterView: BaseView {
         divider.backgroundColor = UIColor(hex: "#F0E4E8")
         divider.snp.makeConstraints { $0.height.equalTo(1) }
 
-        let toggleLabel = UILabel.make(text: "생일을 모르겠어요", size: 13, color: UIColor(hex: "#bfa2a2"))
-        let toggleRow   = UIStackView.make(axis: .horizontal, alignment: .center)
-        toggleRow.addArrangedSubview(toggleLabel)
+        let toggleRow = UIStackView.make(axis: .horizontal, alignment: .center)
+        toggleRow.addArrangedSubview(unknownBirthdayLabel)
         toggleRow.addArrangedSubview(unknownBirthdayToggle)
         toggleRow.snp.makeConstraints { $0.height.equalTo(36) }
 
