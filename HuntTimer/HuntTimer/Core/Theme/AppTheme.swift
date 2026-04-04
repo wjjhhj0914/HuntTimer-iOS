@@ -10,7 +10,7 @@ enum AppTheme {
         static let yellow       = UIColor(hex: "#FFD966")
         static let yellowLight  = UIColor(hex: "#FFF3D6")
         static let yellowDark   = UIColor(hex: "#C49A00")
-        static let background   = UIColor(hex: "#FFF5F8")
+        static let background   = UIColor(hex: "#FEF8F3")
         static let cardBG       = UIColor.white
         static let textDark     = UIColor(hex: "#3D2C2C")
         static let textMedium   = UIColor(hex: "#9B6E6E")

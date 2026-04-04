@@ -360,7 +360,7 @@ final class CatProfileRegisterView: BaseView {
         titleRow.addArrangedSubview(titleText)
 
         // goalFieldView: 탭 시 목표 시간 바텀시트 오픈
-        goalFieldView.backgroundColor   = UIColor(hex: "#FFF5F7")
+        goalFieldView.backgroundColor   = AppTheme.Color.background
         goalFieldView.layer.cornerRadius = AppTheme.Radius.small
         goalFieldView.snp.makeConstraints { $0.height.equalTo(44) }
 
