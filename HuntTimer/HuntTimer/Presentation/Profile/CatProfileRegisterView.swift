@@ -188,59 +188,52 @@ final class CatProfileRegisterView: BaseView {
 
     // MARK: - Photo Section
     private func makePhotoSection() -> UIView {
-        // photoContainerView: 110×110 tappable circle area
         photoContainerView.backgroundColor = .clear
 
         let circle = UIView()
-        circle.layer.cornerRadius = 55
-        circle.clipsToBounds = true
+        circle.backgroundColor    = AppTheme.Color.primary.withAlphaComponent(0.12)
+        circle.layer.cornerRadius = 60
 
-        let grad = CAGradientLayer()
-        grad.colors     = [UIColor(hex: "#FFE8EE").cgColor, UIColor(hex: "#FFCDD8").cgColor]
-        grad.startPoint = CGPoint(x: 0, y: 0)
-        grad.endPoint   = CGPoint(x: 1, y: 1)
-        grad.frame      = CGRect(x: 0, y: 0, width: 110, height: 110)
-        circle.layer.insertSublayer(grad, at: 0)
+        // 점선 테두리
+        let dashLayer = CAShapeLayer()
+        dashLayer.strokeColor    = AppTheme.Color.primary.cgColor
+        dashLayer.fillColor      = UIColor.clear.cgColor
+        dashLayer.lineWidth      = 1.5
+        dashLayer.lineDashPattern = [6, 4]
+        dashLayer.path = UIBezierPath(ovalIn: CGRect(x: 0, y: 0, width: 120, height: 120)).cgPath
+        circle.layer.addSublayer(dashLayer)
 
-        let catIcon = UIImageView()
-        let config   = UIImage.SymbolConfiguration(pointSize: 36, weight: .regular)
-        catIcon.image       = UIImage(systemName: "pawprint.fill", withConfiguration: config)
-        catIcon.tintColor   = AppTheme.Color.primary
-        catIcon.contentMode = .scaleAspectFit
-        catIcon.tag         = 99  // used to hide it when photo is selected
+        // 카메라 아이콘
+        let camIcon = UIImageView()
+        let camConfig = UIImage.SymbolConfiguration(pointSize: 22, weight: .regular)
+        camIcon.image       = UIImage(systemName: "camera", withConfiguration: camConfig)
+        camIcon.tintColor   = AppTheme.Color.primary
+        camIcon.contentMode = .scaleAspectFit
+        camIcon.snp.makeConstraints { $0.width.height.equalTo(28) }
 
-        circle.addSubview(catIcon)
+        let addLabel = UILabel.make(text: "사진 추가", size: 13, weight: .medium,
+                                    color: AppTheme.Color.primary)
+
+        let innerStack = UIStackView.make(axis: .vertical, spacing: 6, alignment: .center)
+        innerStack.addArrangedSubview(camIcon)
+        innerStack.addArrangedSubview(addLabel)
+
+        // photoImageView: 사진 선택 시 innerStack 위에 오버레이
+        photoImageView.layer.cornerRadius = 60
+
+        circle.addSubview(innerStack)
         circle.addSubview(photoImageView)
-        catIcon.snp.makeConstraints { make in
-            make.center.equalToSuperview()
-            make.width.height.equalTo(40)
-        }
+        innerStack.snp.makeConstraints { $0.center.equalToSuperview() }
         photoImageView.snp.makeConstraints { $0.edges.equalToSuperview() }
 
-        let camBtn = UIView()
-        camBtn.backgroundColor   = AppTheme.Color.primary
-        camBtn.layer.cornerRadius = 15
-        let camIcon = UIImageView()
-        let camConfig = UIImage.SymbolConfiguration(pointSize: 12, weight: .medium)
-        camIcon.image     = UIImage(systemName: "camera.fill", withConfiguration: camConfig)
-        camIcon.tintColor = .white
-        camIcon.contentMode = .scaleAspectFit
-        camBtn.addSubview(camIcon)
-        camIcon.snp.makeConstraints { $0.center.equalToSuperview() }
-
         photoContainerView.addSubview(circle)
-        photoContainerView.addSubview(camBtn)
-        circle.snp.makeConstraints { $0.width.height.equalTo(110); $0.top.leading.equalToSuperview() }
-        camBtn.snp.makeConstraints { make in
-            make.width.height.equalTo(30)
-            make.trailing.bottom.equalTo(circle)
-        }
-        photoContainerView.snp.makeConstraints { $0.width.height.equalTo(110) }
+        circle.snp.makeConstraints { $0.width.height.equalTo(120); $0.edges.equalToSuperview() }
+        photoContainerView.snp.makeConstraints { $0.width.height.equalTo(120) }
 
-        let hintL = UILabel.make(text: "사진을 눌러 등록해주세요", size: 12, weight: .medium,
+        let hintL = UILabel.make(text: "탭하여 프로필 사진을 추가하세요", size: 12, weight: .medium,
                                  color: AppTheme.Color.textMuted)
 
-        let stack = UIStackView.make(axis: .vertical, spacing: 6, alignment: .center)
+        let stack = UIStackView.make(axis: .vertical, spacing: 12, alignment: .center)
         stack.addArrangedSubview(photoContainerView)
         stack.addArrangedSubview(hintL)
 
