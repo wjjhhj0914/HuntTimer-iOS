@@ -150,16 +150,13 @@ final class SessionSaveModalView: UIView {
 
     private func makeResultCard() -> UIView {
         let card = UIView()
-        card.backgroundColor    = AppTheme.Color.yellowLight
+        card.backgroundColor    = AppTheme.Color.background
         card.layer.cornerRadius = 14
 
         let leftStack = UIStackView.make(axis: .vertical, spacing: 3)
-        leftStack.addArrangedSubview(UILabel.make(text: "오늘 함께 놀아줬어요!",
+        leftStack.addArrangedSubview(UILabel.make(text: "오늘 이만큼 놀아줬어요!",
                                                    size: 12, weight: .bold,
                                                    color: AppTheme.Color.textDark))
-        leftStack.addArrangedSubview(UILabel.make(text: "냥이가 즐거워했을 거예요 ☺️",
-                                                   size: 10,
-                                                   color: AppTheme.Color.textMuted))
 
         let durationSubLabel = UILabel.make(text: "총 사냥 시간", size: 9,
                                              color: AppTheme.Color.textMuted, alignment: .right)
@@ -185,7 +182,7 @@ final class SessionSaveModalView: UIView {
     }
 
     private func makeMemoSection() -> UIStackView {
-        let titleL = UILabel.make(text: "✏️ 오늘은 어땠나요?", size: 13, weight: .bold,
+        let titleL = UILabel.make(text: "오늘은 어땠나요?", size: 13, weight: .bold,
                                    color: UIColor(hex: "#3D2B2B"))
         let optL   = UILabel.make(text: "(선택 사항)", size: 11, color: AppTheme.Color.textMuted)
         titleL.setContentHuggingPriority(.required, for: .horizontal)
@@ -202,7 +199,7 @@ final class SessionSaveModalView: UIView {
     }
 
     private func makePhotoSection() -> UIStackView {
-        let titleL = UILabel.make(text: "📷 사진 추가", size: 13, weight: .bold,
+        let titleL = UILabel.make(text: "사진 추가", size: 13, weight: .bold,
                                    color: UIColor(hex: "#3D2B2B"))
         let optL   = UILabel.make(text: "(선택 사항)", size: 11, color: AppTheme.Color.textMuted)
         titleL.setContentHuggingPriority(.required, for: .horizontal)
