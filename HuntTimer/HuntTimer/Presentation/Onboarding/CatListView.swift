@@ -144,9 +144,9 @@ final class CatListView: BaseView {
             make.leading.trailing.equalToSuperview().inset(40)
         }
 
-        // TableView — below header, above start button
+        // TableView — below subtitle, above start button
         tableView.snp.makeConstraints { make in
-            make.top.equalTo(titleLabel.snp.bottom).offset(12)
+            make.top.equalTo(subtitleLabel.snp.bottom).offset(16)
             make.leading.trailing.equalToSuperview()
             make.bottom.equalTo(startButton.snp.top).offset(-12)
         }
