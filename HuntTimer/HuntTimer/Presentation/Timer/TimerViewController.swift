@@ -53,6 +53,9 @@ final class TimerViewController: BaseViewController {
 
     // MARK: - BaseViewController
     override func setupBind() {
+        // 상태 배지 버튼 (toggle)
+        contentView.statusBadgeButton.addTarget(self, action: #selector(statusBadgeTapped), for: .touchUpInside)
+
         // 타이머 액션
         contentView.startButton.addTarget(self, action: #selector(startPauseTapped), for: .touchUpInside)
         contentView.stopButton.addTarget(self,  action: #selector(stopTapped),       for: .touchUpInside)
@@ -99,8 +102,10 @@ final class TimerViewController: BaseViewController {
             if isRunning || isPaused { stopTimer() }
 
             UIView.animate(withDuration: 0.22) {
-                self.contentView.statusDot.backgroundColor = AppTheme.Color.purple
-                self.contentView.statusLabel.text          = "추모 모드"
+                self.contentView.statusDot.backgroundColor      = AppTheme.Color.purple
+                self.contentView.statusLabel.text               = "추모 모드"
+                self.contentView.statusBadgeButton.isEnabled    = false
+                self.contentView.statusBadgeButton.alpha        = 0.6
                 let disabledAlpha: CGFloat = 0.3
                 self.contentView.startButton.isEnabled = false
                 self.contentView.startButton.alpha     = disabledAlpha
@@ -112,11 +117,26 @@ final class TimerViewController: BaseViewController {
                 self.contentView.toyChipButtons.forEach { $0.isEnabled = false; $0.alpha = disabledAlpha }
             }
         } else {
+            contentView.statusBadgeButton.isEnabled = true
+            contentView.statusBadgeButton.alpha     = 1.0
             contentView.presetButtons.forEach { $0.isEnabled = true }
             contentView.toyChipButtons.forEach { $0.isEnabled = true }
             updateStatusUI()
             updatePresetButtons()
             updateToyUI()
+        }
+    }
+
+    // MARK: - Status Badge Toggle
+    @objc private func statusBadgeTapped() {
+        guard !isMemorialMode else { return }
+        UIImpactFeedbackGenerator(style: .medium).impactOccurred()
+        if isRunning {
+            // 사냥 중 → 일시정지
+            pauseTimer()
+        } else {
+            // 사냥 준비 or 일시정지 → 사냥 시작 / 재개
+            startTimer()
         }
     }
 

@@ -25,12 +25,19 @@ final class TimerView: BaseView {
 //    }()
 //    let bgGradientView = UIView()
 
-    // MARK: - Status Badge
+    // MARK: - Status Badge Button
+    let statusBadgeButton: UIButton = {
+        let btn = UIButton(type: .custom)
+        btn.backgroundColor    = UIColor(white: 1, alpha: 0.75)
+        btn.layer.cornerRadius = 16
+        return btn
+    }()
     let statusDot: UIView = {
         let v = UIView()
         v.backgroundColor = AppTheme.Color.textMuted
         v.layer.cornerRadius = 5
         v.snp.makeConstraints { $0.width.height.equalTo(10) }
+        v.isUserInteractionEnabled = false
         return v
     }()
     let statusLabel = UILabel.make(text: "사냥 준비", size: 13, weight: .bold, color: AppTheme.Color.textDark)
@@ -113,21 +120,17 @@ final class TimerView: BaseView {
     private func makeBgSection() -> UIView {
         let container = UIView()
 
-        // Status badge (이미지 제거, 배지만 유지)
-        let statusBadge = UIView()
-        statusBadge.backgroundColor = UIColor(white: 1, alpha: 0.75)
-        statusBadge.layer.cornerRadius = 16
-
         let statusRow = UIStackView.make(axis: .horizontal, spacing: 6, alignment: .center)
+        statusRow.isUserInteractionEnabled = false
         statusRow.addArrangedSubview(statusDot)
         statusRow.addArrangedSubview(statusLabel)
-        statusBadge.addSubview(statusRow)
+        statusBadgeButton.addSubview(statusRow)
         statusRow.snp.makeConstraints { make in
             make.top.bottom.equalToSuperview().inset(8)
             make.leading.trailing.equalToSuperview().inset(12)
         }
-        container.addSubview(statusBadge)
-        statusBadge.snp.makeConstraints { make in
+        container.addSubview(statusBadgeButton)
+        statusBadgeButton.snp.makeConstraints { make in
             make.top.equalToSuperview().offset(14)
             make.bottom.equalToSuperview().offset(-14)
             make.leading.equalToSuperview().offset(16)
