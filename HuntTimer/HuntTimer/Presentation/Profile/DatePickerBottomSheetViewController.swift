@@ -90,9 +90,14 @@ private final class MonthPickerCell: UITableViewCell {
     }
     required init?(coder: NSCoder) { fatalError() }
 
-    func configure(month: String, isSelected: Bool, distanceFromSelected: Int) {
+    func configure(month: String, isSelected: Bool, distanceFromSelected: Int, isDisabled: Bool = false) {
         monthLabel.text = month
-        if isSelected {
+        if isDisabled {
+            pillView.backgroundColor = .clear
+            monthLabel.textColor     = UIColor(hex: "#3D2B2B")
+            monthLabel.font          = .appFont(size: 14)
+            monthLabel.alpha         = 0.25
+        } else if isSelected {
             pillView.backgroundColor = AppTheme.Color.primary
             monthLabel.textColor     = .white
             monthLabel.font          = .appFont(size: 16, weight: .bold)
@@ -506,6 +511,7 @@ final class DatePickerBottomSheetViewController: BaseViewController {
         if let idx = years.firstIndex(of: currentYear) { selectedYearIndex = idx }
         selectedMonthIndex = currentMonth2 - 1
 
+        let today = calendar.startOfDay(for: Date())
         let dates = calendarDates(for: currentMonth)
         for (i, btn) in dayButtons.enumerated() {
             guard i < dates.count, let date = dates[i] else {
@@ -518,14 +524,20 @@ final class DatePickerBottomSheetViewController: BaseViewController {
             let day        = calendar.component(.day, from: date)
             let col        = i % 7
             let isSelected = calendar.isDate(date, inSameDayAs: selectedDate)
+            let isFuture   = calendar.startOfDay(for: date) > today
 
             btn.setTitle("\(day)", for: .normal)
-            btn.isUserInteractionEnabled = true
 
-            if isSelected {
+            if isFuture {
+                btn.backgroundColor          = .clear
+                btn.setTitleColor(UIColor(hex: "#3D2B2B").withAlphaComponent(0.2), for: .normal)
+                btn.isUserInteractionEnabled = false
+            } else if isSelected {
+                btn.isUserInteractionEnabled = true
                 btn.backgroundColor = AppTheme.Color.primary
                 btn.setTitleColor(.white, for: .normal)
             } else {
+                btn.isUserInteractionEnabled = true
                 btn.backgroundColor = .clear
                 switch col {
                 case 0:  btn.setTitleColor(UIColor(hex: "#E8507A"), for: .normal)
@@ -534,6 +546,18 @@ final class DatePickerBottomSheetViewController: BaseViewController {
                 }
             }
         }
+    }
+
+    // MARK: - Future Date Helpers
+
+    /// 현재 피커에서 선택된 연도 기준으로 특정 월(0-based index)이 미래인지 판단
+    private func isFutureMonth(monthIndex: Int) -> Bool {
+        let todayYear  = Calendar.current.component(.year,  from: Date())
+        let todayMonth = Calendar.current.component(.month, from: Date())
+        let pickerYear = years[selectedYearIndex]
+        if pickerYear < todayYear  { return false }
+        if pickerYear > todayYear  { return true  }
+        return (monthIndex + 1) > todayMonth   // 같은 연도: 이번 달 이후는 미래
     }
 
     // MARK: - Year Picker Show / Hide
@@ -599,7 +623,12 @@ final class DatePickerBottomSheetViewController: BaseViewController {
 
     @objc private func nextMonth() {
         guard !isYearPickerVisible else { return }
-        currentMonth = calendar.date(byAdding: .month, value: 1, to: currentMonth) ?? currentMonth
+        guard let next = calendar.date(byAdding: .month, value: 1, to: currentMonth) else { return }
+        // 이번 달보다 미래로 이동 불가
+        let todayComps    = calendar.dateComponents([.year, .month], from: Date())
+        let thisMonthStart = calendar.date(from: todayComps) ?? Date()
+        guard next <= thisMonthStart else { return }
+        currentMonth = next
         updateCalendar()
     }
 
@@ -652,9 +681,11 @@ extension DatePickerBottomSheetViewController: UITableViewDataSource, UITableVie
         } else {
             let cell = tableView.dequeueReusableCell(withIdentifier: MonthPickerCell.id,
                                                       for: indexPath) as! MonthPickerCell
+            let isDisabled = isFutureMonth(monthIndex: indexPath.row)
             cell.configure(month: months[indexPath.row],
                             isSelected: indexPath.row == selectedMonthIndex,
-                            distanceFromSelected: abs(indexPath.row - selectedMonthIndex))
+                            distanceFromSelected: abs(indexPath.row - selectedMonthIndex),
+                            isDisabled: isDisabled)
             return cell
         }
     }
@@ -670,12 +701,20 @@ extension DatePickerBottomSheetViewController: UITableViewDataSource, UITableVie
             // 년도 선택: 피커 유지, 달 선택을 기다림
             selectedYearIndex = indexPath.row
             comps.year = years[indexPath.row]
-            if let newDate = calendar.date(from: comps) { currentMonth = newDate }
+            if var newDate = calendar.date(from: comps) {
+                // 선택한 연도+현재 월이 미래이면 이번 달로 보정
+                let todayComps     = calendar.dateComponents([.year, .month], from: Date())
+                let thisMonthStart = calendar.date(from: todayComps) ?? Date()
+                if newDate > thisMonthStart { newDate = thisMonthStart }
+                currentMonth = newDate
+            }
             yearTableView.reloadData()
+            monthTableView.reloadData()     // 미래 달 비활성 상태 갱신
             updateCalendar()
             UIImpactFeedbackGenerator(style: .light).impactOccurred()
         } else {
-            // 달 선택: 피커 닫기
+            // 달 선택: 미래 달이면 무시
+            guard !isFutureMonth(monthIndex: indexPath.row) else { return }
             selectedMonthIndex = indexPath.row
             comps.month = indexPath.row + 1
             if let newDate = calendar.date(from: comps) { currentMonth = newDate }
