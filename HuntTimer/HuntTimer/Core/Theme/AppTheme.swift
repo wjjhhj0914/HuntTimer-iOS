@@ -4,21 +4,21 @@ enum AppTheme {
 
     // MARK: - Colors
     enum Color {
-        static let primary      = UIColor(hex: "#8DC4A7")
-        static let primaryDeep  = UIColor(hex: "#FF6B9A")
-        static let primaryLight = UIColor(hex: "#FFE4EE")
-        static let yellow       = UIColor(hex: "#FFD966")
-        static let yellowLight  = UIColor(hex: "#FFF3D6")
-        static let yellowDark   = UIColor(hex: "#C49A00")
-        static let background   = UIColor(hex: "#FEF8F3")
+        static let primary      = UIColor(hex: "#8DC4A7")  // Sage Green
+        static let primaryDeep  = UIColor(hex: "#5FA380")  // Mint 500
+        static let primaryLight = UIColor(hex: "#EDF7F2")  // Mint 50
+        static let yellow       = UIColor(hex: "#FFD4B5")  // Peach
+        static let yellowLight  = UIColor(hex: "#F5E3D0")  // Sand
+        static let yellowDark   = UIColor(hex: "#8B6A5A")  // Mocha
+        static let background   = UIColor(hex: "#FEF8F3")  // Warm White
         static let cardBG       = UIColor.white
-        static let textDark     = UIColor(hex: "#3D2C2C")
-        static let textMedium   = UIColor(hex: "#9B6E6E")
-        static let textMuted    = UIColor(hex: "#C4A0A0")
-        static let purple       = UIColor(hex: "#A78BFA")
-        static let purpleDeep   = UIColor(hex: "#8B5CF6")
-        static let purpleLight  = UIColor(hex: "#EDE9FE")
-        static let separator    = UIColor(hex: "#FFE4EE")
+        static let textDark     = UIColor(hex: "#2D1B0E")  // Espresso
+        static let textMedium   = UIColor(hex: "#8B6A5A")  // Mocha
+        static let textMuted    = UIColor(hex: "#C4956A")  // Clay
+        static let purple       = UIColor(hex: "#F0C0C8")  // Rose
+        static let purpleDeep   = UIColor(hex: "#C4D4E4")  // Mist
+        static let purpleLight  = UIColor(hex: "#C9EBD8")  // Mint 100
+        static let separator    = UIColor(hex: "#EDF7F2")  // Mint 50
     }
 
     // MARK: - Corner Radius

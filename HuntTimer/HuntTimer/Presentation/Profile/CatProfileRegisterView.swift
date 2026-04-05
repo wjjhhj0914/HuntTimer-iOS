@@ -45,7 +45,7 @@ final class CatProfileRegisterView: BaseView {
                                       color: AppTheme.Color.textMuted)
 
     let unknownBirthdayLabel = UILabel.make(text: "생일을 모르겠어요", size: 13,
-                                             color: UIColor(hex: "#bfa2a2"))
+                                             color: AppTheme.Color.textMuted)
 
     let unknownBirthdayToggle: UISwitch = {
         let sw = UISwitch()
@@ -294,7 +294,7 @@ final class CatProfileRegisterView: BaseView {
         }
 
         let divider = UIView()
-        divider.backgroundColor = UIColor(hex: "#F0E4E8")
+        divider.backgroundColor = AppTheme.Color.separator
         divider.snp.makeConstraints { $0.height.equalTo(1) }
 
         let toggleRow = UIStackView.make(axis: .horizontal, alignment: .center)
@@ -343,7 +343,7 @@ final class CatProfileRegisterView: BaseView {
         bulletIcon.snp.makeConstraints { $0.width.height.equalTo(14) }
 
         let titleText = UILabel.make(text: "하루 사냥 목표 (개별 목표)", size: 12, weight: .semibold,
-                                     color: UIColor(hex: "#bfa2a2"))
+                                     color: AppTheme.Color.textMuted)
         let titleRow = UIStackView.make(axis: .horizontal, spacing: 6, alignment: .center)
         titleRow.addArrangedSubview(bulletIcon)
         titleRow.addArrangedSubview(titleText)
@@ -353,7 +353,7 @@ final class CatProfileRegisterView: BaseView {
         goalFieldView.layer.cornerRadius = AppTheme.Radius.small
         goalFieldView.snp.makeConstraints { $0.height.equalTo(44) }
 
-        let unitL = UILabel.make(text: "분 (Minutes)", size: 13, color: UIColor(hex: "#bfa2a2"))
+        let unitL = UILabel.make(text: "분 (Minutes)", size: 13, color: AppTheme.Color.textMuted)
         goalFieldView.addSubview(goalMinuteLabel)
         goalFieldView.addSubview(unitL)
         goalMinuteLabel.snp.makeConstraints { make in

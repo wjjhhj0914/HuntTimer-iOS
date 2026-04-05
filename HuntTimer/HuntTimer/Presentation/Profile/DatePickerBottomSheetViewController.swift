@@ -42,7 +42,7 @@ private final class YearPickerCell: UITableViewCell {
             yearLabel.alpha          = 1
         } else {
             pillView.backgroundColor = .clear
-            yearLabel.textColor      = UIColor(hex: "#3D2B2B")
+            yearLabel.textColor      = AppTheme.Color.textDark
             switch distanceFromSelected {
             case 1:
                 yearLabel.font  = .appFont(size: 15)
@@ -94,7 +94,7 @@ private final class MonthPickerCell: UITableViewCell {
         monthLabel.text = month
         if isDisabled {
             pillView.backgroundColor = .clear
-            monthLabel.textColor     = UIColor(hex: "#3D2B2B")
+            monthLabel.textColor     = AppTheme.Color.textDark
             monthLabel.font          = .appFont(size: 14)
             monthLabel.alpha         = 0.25
         } else if isSelected {
@@ -104,7 +104,7 @@ private final class MonthPickerCell: UITableViewCell {
             monthLabel.alpha         = 1
         } else {
             pillView.backgroundColor = .clear
-            monthLabel.textColor     = UIColor(hex: "#3D2B2B")
+            monthLabel.textColor     = AppTheme.Color.textDark
             switch distanceFromSelected {
             case 1:  monthLabel.font = .appFont(size: 15); monthLabel.alpha = 0.75
             case 2:  monthLabel.font = .appFont(size: 15); monthLabel.alpha = 0.55
@@ -153,14 +153,14 @@ final class DatePickerBottomSheetViewController: BaseViewController {
 
     private let sheetView: UIView = {
         let v = UIView()
-        v.backgroundColor    = UIColor(hex: "#fff5f8")
+        v.backgroundColor    = AppTheme.Color.background
         v.layer.cornerRadius = 28
         v.layer.maskedCorners = [.layerMinXMinYCorner, .layerMaxXMinYCorner]
         return v
     }()
 
     private let monthLabel = UILabel.make(text: "", size: 16, weight: .bold,
-                                          color: UIColor(hex: "#2D1B1B"), alignment: .center)
+                                          color: AppTheme.Color.textDark, alignment: .center)
 
     private var sheetBottomConstraint: Constraint?
     private let sheetHeight: CGFloat = 480
@@ -316,7 +316,7 @@ final class DatePickerBottomSheetViewController: BaseViewController {
         clipWrapper.snp.makeConstraints { $0.edges.equalToSuperview() }
 
         let pickerDivider = UIView()
-        pickerDivider.backgroundColor = UIColor(hex: "#F0E4E8")
+        pickerDivider.backgroundColor = AppTheme.Color.separator
 
         clipWrapper.addSubview(yearTableView)
         clipWrapper.addSubview(pickerDivider)
@@ -346,7 +346,7 @@ final class DatePickerBottomSheetViewController: BaseViewController {
 
     private func makeHandle() -> UIView {
         let handle = UIView()
-        handle.backgroundColor    = UIColor(hex: "#D0C0C8")
+        handle.backgroundColor    = AppTheme.Color.purpleLight
         handle.layer.cornerRadius = 2.5
 
         let area = UIView()
@@ -362,7 +362,7 @@ final class DatePickerBottomSheetViewController: BaseViewController {
 
     private func makeHeaderRow() -> UIView {
         let titleL  = UILabel.make(text: "생년월일 선택", size: 17, weight: .bold,
-                                   color: UIColor(hex: "#2D1B1B"))
+                                   color: AppTheme.Color.textDark)
         let doneBtn = makeDoneButton()
         doneBtn.addTarget(self, action: #selector(doneTapped), for: .touchUpInside)
 
@@ -436,13 +436,13 @@ final class DatePickerBottomSheetViewController: BaseViewController {
     private func makeDayOfWeekHeader() -> UIView {
         let days   = ["일", "월", "화", "수", "목", "금", "토"]
         let colors: [UIColor] = [
-            UIColor(hex: "#E8507A"),
+            AppTheme.Color.purple,
             AppTheme.Color.textMedium,
             AppTheme.Color.textMedium,
             AppTheme.Color.textMedium,
             AppTheme.Color.textMedium,
             AppTheme.Color.textMedium,
-            UIColor(hex: "#5B8FE8")
+            AppTheme.Color.purpleDeep
         ]
         let stack = UIStackView.make(axis: .horizontal, alignment: .center, distribution: .fillEqually)
         stack.snp.makeConstraints { $0.height.equalTo(36) }
@@ -530,7 +530,7 @@ final class DatePickerBottomSheetViewController: BaseViewController {
 
             if isFuture {
                 btn.backgroundColor          = .clear
-                btn.setTitleColor(UIColor(hex: "#3D2B2B").withAlphaComponent(0.2), for: .normal)
+                btn.setTitleColor(AppTheme.Color.textDark.withAlphaComponent(0.2), for: .normal)
                 btn.isUserInteractionEnabled = false
             } else if isSelected {
                 btn.isUserInteractionEnabled = true
@@ -540,9 +540,9 @@ final class DatePickerBottomSheetViewController: BaseViewController {
                 btn.isUserInteractionEnabled = true
                 btn.backgroundColor = .clear
                 switch col {
-                case 0:  btn.setTitleColor(UIColor(hex: "#E8507A"), for: .normal)
-                case 6:  btn.setTitleColor(UIColor(hex: "#5B8FE8"), for: .normal)
-                default: btn.setTitleColor(UIColor(hex: "#3D2B2B"), for: .normal)
+                case 0:  btn.setTitleColor(AppTheme.Color.purple, for: .normal)
+                case 6:  btn.setTitleColor(AppTheme.Color.purpleDeep, for: .normal)
+                default: btn.setTitleColor(AppTheme.Color.textDark, for: .normal)
                 }
             }
         }

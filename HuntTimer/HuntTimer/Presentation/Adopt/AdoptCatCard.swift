@@ -69,7 +69,7 @@ final class AdoptCatCard: UIView {
 
         let urgentBadge = UIView()
         urgentBadge.isHidden = !cat.isUrgent
-        urgentBadge.backgroundColor = UIColor(hex: "#FF6B9A")
+        urgentBadge.backgroundColor = AppTheme.Color.primaryDeep
         urgentBadge.layer.cornerRadius = 12
         let urgentL = UILabel.make(text: "⚡ 긴급 입양 필요", size: 11, weight: .bold, color: .white)
         urgentBadge.addSubview(urgentL)
@@ -111,7 +111,7 @@ final class AdoptCatCard: UIView {
 
         // Card body
         let shelterL = UILabel.make(text: "🏠 \(cat.shelter)", size: 11, weight: .semibold, color: AppTheme.Color.purple)
-        let descL    = UILabel.make(text: cat.desc, size: 13, color: UIColor(hex: "#5C4D4D"), lines: 0)
+        let descL    = UILabel.make(text: cat.desc, size: 13, color: AppTheme.Color.textMedium, lines: 0)
 
         let tagStack = UIStackView.make(axis: .horizontal, spacing: 6)
         tagStack.alignment = .center
@@ -119,7 +119,7 @@ final class AdoptCatCard: UIView {
             let pill = UIView()
             pill.backgroundColor  = AppTheme.Color.purpleLight
             pill.layer.cornerRadius = 10
-            let l = UILabel.make(text: "#\(tag)", size: 11, weight: .semibold, color: UIColor(hex: "#7C6E9B"))
+            let l = UILabel.make(text: "#\(tag)", size: 11, weight: .semibold, color: AppTheme.Color.primary)
             pill.addSubview(l)
             l.snp.makeConstraints { make in
                 make.top.bottom.equalToSuperview().inset(4)

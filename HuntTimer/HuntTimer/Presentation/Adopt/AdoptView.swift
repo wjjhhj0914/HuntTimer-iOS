@@ -187,7 +187,7 @@ final class AdoptView: BaseView {
     func updateFilterBtn(_ btn: UIButton, isLocation: Bool, isSelected: Bool) {
         if isLocation {
             btn.backgroundColor = isSelected ? AppTheme.Color.purple : AppTheme.Color.purpleLight
-            btn.setTitleColor(isSelected ? .white : UIColor(hex: "#7C6E9B"), for: .normal)
+            btn.setTitleColor(isSelected ? .white : AppTheme.Color.primary, for: .normal)
         } else {
             btn.backgroundColor = isSelected ? AppTheme.Color.primary : AppTheme.Color.primaryLight
             btn.setTitleColor(isSelected ? .white : AppTheme.Color.textMedium, for: .normal)

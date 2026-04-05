@@ -8,19 +8,19 @@ private final class SessionPageView: UIView {
     // MARK: - Subviews
 
     private let durationLabel = UILabel.make(text: "0분", size: 28, weight: .black,
-                                              color: UIColor(hex: "#E8507A"))
+                                              color: AppTheme.Color.primary)
 
     private let toyPillView: UIView = {
         let v = UIView()
-        v.backgroundColor    = UIColor(hex: "#FFF0F4")
+        v.backgroundColor    = AppTheme.Color.yellowLight
         v.layer.cornerRadius = 10
         return v
     }()
     private let toyPillLabel = UILabel.make(text: "", size: 13, weight: .semibold,
-                                             color: UIColor(hex: "#E8507A"))
+                                             color: AppTheme.Color.primary)
     private let toyEmptyView: UIView = {
         let v = UIView()
-        v.backgroundColor    = UIColor(hex: "#FFF5F7")
+        v.backgroundColor    = AppTheme.Color.background
         v.layer.cornerRadius = 10
         return v
     }()
@@ -30,14 +30,14 @@ private final class SessionPageView: UIView {
         iv.contentMode        = .scaleAspectFill
         iv.clipsToBounds      = true
         iv.layer.cornerRadius = 14
-        iv.backgroundColor    = UIColor(hex: "#FFF0F4")
+        iv.backgroundColor    = AppTheme.Color.yellowLight
         return iv
     }()
     private let photoEmptyIcon: UIImageView = {
         let iv = UIImageView()
         let cfg = UIImage.SymbolConfiguration(pointSize: 24, weight: .regular)
         iv.image       = UIImage(systemName: "photo", withConfiguration: cfg)
-        iv.tintColor   = UIColor(hex: "#E8A0B8")
+        iv.tintColor   = AppTheme.Color.primary
         iv.contentMode = .scaleAspectFit
         return iv
     }()
@@ -45,7 +45,7 @@ private final class SessionPageView: UIView {
     private let memoLabel: UILabel = {
         let l = UILabel()
         l.font          = .appFont(size: 13, weight: .regular)
-        l.textColor     = UIColor(hex: "#C8B4BC")
+        l.textColor     = AppTheme.Color.textMuted
         l.numberOfLines = 0
         return l
     }()
@@ -118,7 +118,7 @@ private final class SessionPageView: UIView {
 
         // Empty pill
         let emptyLabel = UILabel.make(text: "선택한 장난감이 없어요!", size: 13, weight: .semibold,
-                                      color: UIColor(hex: "#E8A0B8"))
+                                      color: AppTheme.Color.primary)
         toyEmptyView.addSubview(emptyLabel)
         emptyLabel.snp.makeConstraints { make in
             make.top.bottom.equalToSuperview().inset(7)
@@ -151,10 +151,10 @@ private final class SessionPageView: UIView {
 
     private func makeMemoSection() -> UIStackView {
         let memoBox = UIView()
-        memoBox.backgroundColor    = UIColor(hex: "#FFF8FA")
+        memoBox.backgroundColor    = AppTheme.Color.background
         memoBox.layer.cornerRadius = 12
         memoBox.layer.borderWidth  = 1
-        memoBox.layer.borderColor  = UIColor(hex: "#F0D8E0").cgColor
+        memoBox.layer.borderColor  = AppTheme.Color.separator.cgColor
         memoBox.addSubview(memoLabel)
         // memoLabel.numberOfLines = 0 이므로 텍스트 길이에 따라 자동 확장
         memoLabel.snp.makeConstraints { make in
@@ -175,12 +175,12 @@ private final class SessionPageView: UIView {
     private func makeSectionHeader(icon: String, title: String) -> UIStackView {
         let cfg      = UIImage.SymbolConfiguration(pointSize: 11, weight: .semibold)
         let iconView = UIImageView(image: UIImage(systemName: icon, withConfiguration: cfg))
-        iconView.tintColor   = UIColor(hex: "#BFA2A2")
+        iconView.tintColor   = AppTheme.Color.textMuted
         iconView.contentMode = .scaleAspectFit
         iconView.snp.makeConstraints { $0.width.height.equalTo(14) }
 
         let label = UILabel.make(text: title, size: 11, weight: .semibold,
-                                  color: UIColor(hex: "#BFA2A2"))
+                                  color: AppTheme.Color.textMuted)
 
         let row = UIStackView.make(axis: .horizontal, spacing: 5, alignment: .center)
         row.addArrangedSubview(iconView)
@@ -190,7 +190,7 @@ private final class SessionPageView: UIView {
 
     private func makeDivider() -> UIView {
         let v = UIView()
-        v.backgroundColor = UIColor(hex: "#F5ECEF")
+        v.backgroundColor = AppTheme.Color.yellowLight
         v.snp.makeConstraints { $0.height.equalTo(1) }
         return v
     }
@@ -219,10 +219,10 @@ private final class SessionPageView: UIView {
 
         if let text = memo, !text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
             memoLabel.text      = text
-            memoLabel.textColor = UIColor(hex: "#3D2B2B")
+            memoLabel.textColor = AppTheme.Color.textDark
         } else {
             memoLabel.text      = "메모가 없습니다"
-            memoLabel.textColor = UIColor(hex: "#C8B4BC")
+            memoLabel.textColor = AppTheme.Color.textMuted
         }
     }
 
@@ -252,8 +252,8 @@ final class HuntDetailView: UIView {
         let btn = UIButton(type: .system)
         let cfg = UIImage.SymbolConfiguration(pointSize: 13, weight: .semibold)
         btn.setImage(UIImage(systemName: "xmark", withConfiguration: cfg), for: .normal)
-        btn.tintColor       = UIColor(hex: "#BFA2A2")
-        btn.backgroundColor = UIColor(hex: "#F5ECEF")
+        btn.tintColor       = AppTheme.Color.textMuted
+        btn.backgroundColor = AppTheme.Color.yellowLight
         btn.layer.cornerRadius = 16
         return btn
     }()
@@ -262,8 +262,8 @@ final class HuntDetailView: UIView {
 
     private let pageControl: UIPageControl = {
         let pc = UIPageControl()
-        pc.currentPageIndicatorTintColor = UIColor(hex: "#E8507A")
-        pc.pageIndicatorTintColor        = UIColor(hex: "#F0D8E0")
+        pc.currentPageIndicatorTintColor = AppTheme.Color.primary
+        pc.pageIndicatorTintColor        = AppTheme.Color.separator
         pc.hidesForSinglePage            = true
         return pc
     }()
@@ -332,10 +332,10 @@ final class HuntDetailView: UIView {
 
         let titleStack = UIStackView.make(axis: .horizontal, spacing: 4, alignment: .center)
         let titleLabel = UILabel.make(text: "오늘의 사냥 기록", size: 17, weight: .bold,
-                                      color: UIColor(hex: "#3D2B2B"))
+                                      color: AppTheme.Color.textDark)
         let pawCfg  = UIImage.SymbolConfiguration(pointSize: 15, weight: .medium)
         let pawIcon = UIImageView(image: UIImage(systemName: "pawprint.fill", withConfiguration: pawCfg))
-        pawIcon.tintColor   = UIColor(hex: "#E8507A")
+        pawIcon.tintColor   = AppTheme.Color.primary
         pawIcon.contentMode = .scaleAspectFit
         titleStack.addArrangedSubview(titleLabel)
         titleStack.addArrangedSubview(pawIcon)
@@ -357,7 +357,7 @@ final class HuntDetailView: UIView {
 
     private func makeDivider() -> UIView {
         let v = UIView()
-        v.backgroundColor = UIColor(hex: "#F0E4E8")
+        v.backgroundColor = AppTheme.Color.separator
         return v
     }
 

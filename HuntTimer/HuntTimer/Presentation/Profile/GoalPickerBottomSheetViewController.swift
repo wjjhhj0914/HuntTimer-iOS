@@ -97,7 +97,7 @@ final class GoalPickerBottomSheetViewController: BaseViewController {
 
     private func makeHandle() -> UIView {
         let handle = UIView()
-        handle.backgroundColor   = UIColor(hex: "#D0C0C8")
+        handle.backgroundColor   = AppTheme.Color.purpleLight
         handle.layer.cornerRadius = 2.5
 
         let area = UIView()
@@ -113,7 +113,7 @@ final class GoalPickerBottomSheetViewController: BaseViewController {
 
     private func makeHeaderRow() -> UIView {
         let titleL  = UILabel.make(text: "하루 사냥 목표", size: 17, weight: .bold,
-                                   color: UIColor(hex: "#2D1B1B"))
+                                   color: AppTheme.Color.textDark)
         let doneBtn = UIButton(type: .system)
         doneBtn.setTitle("완료", for: .normal)
         doneBtn.setTitleColor(.white, for: .normal)
@@ -135,14 +135,14 @@ final class GoalPickerBottomSheetViewController: BaseViewController {
 
     private func makeSeparator() -> UIView {
         let v = UIView()
-        v.backgroundColor = UIColor(hex: "#F0E4E8")
+        v.backgroundColor = AppTheme.Color.separator
         v.snp.makeConstraints { $0.height.equalTo(1) }
         return v
     }
 
     private func makeSubtitleWrap() -> UIView {
         let subL = UILabel.make(text: "매일 목표 사냥 시간을 설정하세요", size: 13,
-                                color: UIColor(hex: "#bfa2a2"))
+                                color: AppTheme.Color.textMuted)
         let wrap = UIView()
         wrap.addSubview(subL)
         subL.snp.makeConstraints { make in
@@ -158,7 +158,7 @@ final class GoalPickerBottomSheetViewController: BaseViewController {
 
         // 선택된 행 하이라이트 배경
         let highlight = UIView()
-        highlight.backgroundColor   = UIColor(hex: "#FFF0F4")
+        highlight.backgroundColor   = AppTheme.Color.primaryLight
         highlight.layer.cornerRadius = 12
 
         // "분" 단위 레이블
@@ -250,11 +250,11 @@ extension GoalPickerBottomSheetViewController: UIPickerViewDataSource, UIPickerV
             label.alpha     = 1.0
         case 1:
             label.font      = .appFont(size: 20)
-            label.textColor = UIColor(hex: "#9B7B7B")
+            label.textColor = AppTheme.Color.textMedium
             label.alpha     = 0.7
         default:
             label.font      = .appFont(size: 18)
-            label.textColor = UIColor(hex: "#bfa2a2")
+            label.textColor = AppTheme.Color.textMuted
             label.alpha     = 0.5
         }
         return label

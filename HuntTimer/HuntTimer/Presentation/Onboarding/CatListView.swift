@@ -38,7 +38,7 @@ final class CatListView: BaseView {
 
     private let catCircle: UIView = {
         let v = UIView()
-        v.backgroundColor = UIColor(hex: "#FEF0E4")
+        v.backgroundColor = AppTheme.Color.yellowLight
         v.layer.cornerRadius = 120
         return v
     }()

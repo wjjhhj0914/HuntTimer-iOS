@@ -127,14 +127,14 @@ extension SessionSaveModalViewController: UITextViewDelegate {
     func textViewDidBeginEditing(_ textView: UITextView) {
         guard contentView.isShowingPlaceholder else { return }
         textView.text      = ""
-        textView.textColor = UIColor(hex: "#3D2B2B")
+        textView.textColor = AppTheme.Color.textDark
         contentView.isShowingPlaceholder = false
     }
 
     func textViewDidEndEditing(_ textView: UITextView) {
         if textView.text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
             textView.text      = "즐거웠던 순간을 기록해 주세요..."
-            textView.textColor = UIColor(hex: "#C8B4BC")
+            textView.textColor = AppTheme.Color.textMuted
             contentView.isShowingPlaceholder = true
         }
     }

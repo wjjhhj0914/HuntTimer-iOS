@@ -51,7 +51,7 @@ final class TimerView: BaseView {
 
     // MARK: - Tip
     let tipLabel = UILabel.make(text: "하루 30분 이상 놀아주면 냥이의 스트레스가 줄어요!",
-                                size: 12, color: UIColor(hex: "#9B7A00"), lines: 0)
+                                size: 12, color: AppTheme.Color.textMuted, lines: 0)
 
     // MARK: - Preset & Controls
     let presetStack = UIStackView.make(axis: .horizontal, spacing: 8, distribution: .fillEqually)
@@ -296,7 +296,7 @@ final class TimerView: BaseView {
         let stack = UIStackView.make(axis: .horizontal, spacing: 8, alignment: .center)
         let symCfg  = UIImage.SymbolConfiguration(pointSize: 10, weight: .semibold)
         let bulbIcon = UIImageView(image: UIImage(systemName: "lightbulb.max", withConfiguration: symCfg))
-        bulbIcon.tintColor = UIColor(hex: "#9B7A00")
+        bulbIcon.tintColor = AppTheme.Color.textMuted
         bulbIcon.setContentHuggingPriority(.required, for: .horizontal)
         stack.addArrangedSubview(bulbIcon)
         stack.addArrangedSubview(tipLabel)

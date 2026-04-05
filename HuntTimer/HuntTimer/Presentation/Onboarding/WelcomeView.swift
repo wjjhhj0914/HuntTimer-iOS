@@ -20,16 +20,16 @@ final class WelcomeView: BaseView {
         backgroundColor = .white
 
         // Title row: "반가워요, " + "집사님!" (#ff8fab)
-        let greetL  = UILabel.make(text: "반가워요, ", size: 26, weight: .semibold, color: UIColor(hex: "#3D2B2B"))
+        let greetL  = UILabel.make(text: "반가워요, ", size: 26, weight: .semibold, color: AppTheme.Color.textDark)
         let accentL = UILabel.make(text: "집사님!", size: 26, weight: .bold, color: AppTheme.Color.primary)
         let titleRow = UIStackView.make(axis: .horizontal, alignment: .center)
         titleRow.addArrangedSubview(greetL)
         titleRow.addArrangedSubview(accentL)
 
         let sub1 = UILabel.make(text: "사냥을 기록하기 전에", size: 17,
-                                color: UIColor(hex: "#9B7B7B"), alignment: .center)
+                                color: AppTheme.Color.textMedium, alignment: .center)
         let sub2 = UILabel.make(text: "아이의 프로필을 먼저 생성해 주세요!", size: 17,
-                                color: UIColor(hex: "#9B7B7B"), alignment: .center)
+                                color: AppTheme.Color.textMedium, alignment: .center)
 
         let contentStack = UIStackView.make(axis: .vertical, spacing: 10, alignment: .center)
         [titleRow, sub1, sub2].forEach { contentStack.addArrangedSubview($0) }

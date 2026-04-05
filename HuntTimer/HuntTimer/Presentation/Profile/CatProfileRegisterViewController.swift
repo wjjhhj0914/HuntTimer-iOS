@@ -286,7 +286,7 @@ final class CatProfileViewController: BaseViewController {
                     : AppTheme.Color.textMuted
                 self.contentView.dateFieldView.alpha                 = 1.0
                 self.contentView.dateFieldView.isUserInteractionEnabled = true
-                self.contentView.unknownBirthdayLabel.textColor      = UIColor(hex: "#bfa2a2")
+                self.contentView.unknownBirthdayLabel.textColor      = AppTheme.Color.textMuted
                 self.contentView.unknownBirthdayLabel.font           = .appFont(size: 13)
             }
         }

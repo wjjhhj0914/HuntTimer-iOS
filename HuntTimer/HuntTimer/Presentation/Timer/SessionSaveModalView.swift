@@ -16,24 +16,24 @@ final class SessionSaveModalView: UIView {
         let btn = UIButton(type: .system)
         let cfg = UIImage.SymbolConfiguration(pointSize: 13, weight: .semibold)
         btn.setImage(UIImage(systemName: "xmark", withConfiguration: cfg), for: .normal)
-        btn.tintColor       = UIColor(hex: "#BFA2A2")
-        btn.backgroundColor = UIColor(hex: "#F5ECEF")
+        btn.tintColor       = AppTheme.Color.textMuted
+        btn.backgroundColor = AppTheme.Color.yellowLight
         btn.layer.cornerRadius = 16
         return btn
     }()
 
     let durationLabel = UILabel.make(text: "0분", size: 18, weight: .black,
-                                     color: UIColor(hex: "#E8507A"), alignment: .right)
+                                     color: AppTheme.Color.primary, alignment: .right)
 
     let memoTextView: UITextView = {
         let tv = UITextView()
         tv.font               = .appFont(size: 12, weight: .regular)
-        tv.textColor          = UIColor(hex: "#C8B4BC")
+        tv.textColor          = AppTheme.Color.textMuted
         tv.text               = "냥이의 반응이나 특이사항을 적어주세요..."
-        tv.backgroundColor    = UIColor(hex: "#FFF8FA")
+        tv.backgroundColor    = AppTheme.Color.background
         tv.layer.cornerRadius = 12
         tv.layer.borderWidth  = 1
-        tv.layer.borderColor  = UIColor(hex: "#F0D8E0").cgColor
+        tv.layer.borderColor  = AppTheme.Color.separator.cgColor
         tv.textContainerInset = UIEdgeInsets(top: 10, left: 8, bottom: 10, right: 8)
         return tv
     }()
@@ -41,10 +41,10 @@ final class SessionSaveModalView: UIView {
 
     let photoSlotView: UIView = {
         let v = UIView()
-        v.backgroundColor    = UIColor(hex: "#FFF0F4")
+        v.backgroundColor    = AppTheme.Color.yellowLight
         v.layer.cornerRadius = 16
         v.layer.borderWidth  = 1.5
-        v.layer.borderColor  = UIColor(hex: "#F0C8D4").cgColor
+        v.layer.borderColor  = AppTheme.Color.primaryLight.cgColor
         v.clipsToBounds      = true
         return v
     }()
@@ -104,7 +104,7 @@ final class SessionSaveModalView: UIView {
 
         // Divider
         let divider = UIView()
-        divider.backgroundColor = UIColor(hex: "#F0E4E8")
+        divider.backgroundColor = AppTheme.Color.separator
 
         // Content
         let contentStack = UIStackView.make(axis: .vertical, spacing: 14)
@@ -131,7 +131,7 @@ final class SessionSaveModalView: UIView {
     private func makeHeader() -> UIView {
         let v = UIView()
         let title = UILabel.make(text: "사냥 기록 남기기", size: 17, weight: .bold,
-                                  color: UIColor(hex: "#3D2B2B"))
+                                  color: AppTheme.Color.textDark)
         closeButton.snp.makeConstraints { $0.width.height.equalTo(32) }
 
         v.addSubview(title)
@@ -150,19 +150,19 @@ final class SessionSaveModalView: UIView {
 
     private func makeResultCard() -> UIView {
         let card = UIView()
-        card.backgroundColor    = UIColor(hex: "#FFF0F4")
+        card.backgroundColor    = AppTheme.Color.yellowLight
         card.layer.cornerRadius = 14
 
         let leftStack = UIStackView.make(axis: .vertical, spacing: 3)
         leftStack.addArrangedSubview(UILabel.make(text: "오늘 함께 놀아줬어요!",
                                                    size: 12, weight: .bold,
-                                                   color: UIColor(hex: "#3D2B2B")))
+                                                   color: AppTheme.Color.textDark))
         leftStack.addArrangedSubview(UILabel.make(text: "냥이가 즐거워했을 거예요 ☺️",
                                                    size: 10,
-                                                   color: UIColor(hex: "#BFA2A2")))
+                                                   color: AppTheme.Color.textMuted))
 
         let durationSubLabel = UILabel.make(text: "총 사냥 시간", size: 9,
-                                             color: UIColor(hex: "#BFA2A2"), alignment: .right)
+                                             color: AppTheme.Color.textMuted, alignment: .right)
         // 왼쪽은 공간이 부족할 때 먼저 압축되고, 오른쪽(시간)은 항상 온전히 표시
         leftStack.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
 
@@ -187,7 +187,7 @@ final class SessionSaveModalView: UIView {
     private func makeMemoSection() -> UIStackView {
         let titleL = UILabel.make(text: "✏️ 오늘은 어땠나요?", size: 13, weight: .bold,
                                    color: UIColor(hex: "#3D2B2B"))
-        let optL   = UILabel.make(text: "(선택 사항)", size: 11, color: UIColor(hex: "#C0B4BC"))
+        let optL   = UILabel.make(text: "(선택 사항)", size: 11, color: AppTheme.Color.textMuted)
         titleL.setContentHuggingPriority(.required, for: .horizontal)
 
         let headerRow = UIStackView.make(axis: .horizontal, spacing: 4, alignment: .center)
@@ -204,7 +204,7 @@ final class SessionSaveModalView: UIView {
     private func makePhotoSection() -> UIStackView {
         let titleL = UILabel.make(text: "📷 사진 추가", size: 13, weight: .bold,
                                    color: UIColor(hex: "#3D2B2B"))
-        let optL   = UILabel.make(text: "(선택 사항)", size: 11, color: UIColor(hex: "#C0B4BC"))
+        let optL   = UILabel.make(text: "(선택 사항)", size: 11, color: AppTheme.Color.textMuted)
         titleL.setContentHuggingPriority(.required, for: .horizontal)
 
         let headerRow = UIStackView.make(axis: .horizontal, spacing: 4, alignment: .center)
@@ -215,12 +215,12 @@ final class SessionSaveModalView: UIView {
         let cameraIconCfg = UIImage.SymbolConfiguration(pointSize: 28, weight: .regular)
         let cameraIcon    = UIImageView(image: UIImage(systemName: "camera",
                                                         withConfiguration: cameraIconCfg))
-        cameraIcon.tintColor   = UIColor(hex: "#E8A0B8")
+        cameraIcon.tintColor   = AppTheme.Color.primary
         cameraIcon.contentMode = .scaleAspectFit
         cameraIcon.snp.makeConstraints { $0.width.height.equalTo(32) }
 
         let cameraLabel = UILabel.make(text: "사진을 추가하세요", size: 12, weight: .semibold,
-                                        color: UIColor(hex: "#E8A0B8"))
+                                        color: AppTheme.Color.primary)
 
         cameraPlaceholderStack = UIStackView.make(axis: .vertical, spacing: 8, alignment: .center)
         cameraPlaceholderStack.addArrangedSubview(cameraIcon)

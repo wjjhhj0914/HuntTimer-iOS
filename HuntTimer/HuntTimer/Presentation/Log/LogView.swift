@@ -224,7 +224,7 @@ final class LogView: BaseView {
         daysKR.enumerated().forEach { i, d in
             let l = UILabel.make(
                 text: d, size: 11, weight: .bold,
-                color: i == 0 ? AppTheme.Color.primary : i == 6 ? UIColor(hex: "#7BA7FF") : AppTheme.Color.textMuted,
+                color: i == 0 ? AppTheme.Color.primary : i == 6 ? AppTheme.Color.purpleDeep : AppTheme.Color.textMuted,
                 alignment: .center)
             l.snp.makeConstraints { $0.width.equalTo(itemW) }
             dayHeaderRow.addArrangedSubview(l)
@@ -276,12 +276,12 @@ final class LogView: BaseView {
         statDefs.forEach { symbolName, valueLabel, desc in
             let config   = UIImage.SymbolConfiguration(pointSize: 18, weight: .medium)
             let iconView = UIImageView(image: UIImage(systemName: symbolName, withConfiguration: config))
-            iconView.tintColor   = UIColor(hex: "#9B7A00")
+            iconView.tintColor   = AppTheme.Color.textMuted
             iconView.contentMode = .scaleAspectFit
             let col = UIStackView.make(axis: .vertical, spacing: 2, alignment: .center)
             col.addArrangedSubview(iconView)
             col.addArrangedSubview(valueLabel)
-            col.addArrangedSubview(UILabel.make(text: desc, size: 10, color: UIColor(hex: "#9B7A00"), alignment: .center))
+            col.addArrangedSubview(UILabel.make(text: desc, size: 10, color: AppTheme.Color.textMuted, alignment: .center))
             row.addArrangedSubview(col)
         }
         card.addSubview(row)
