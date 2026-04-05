@@ -21,7 +21,7 @@ final class HomeView: BaseView {
     // MARK: - Banner
     let bannerImageView: AsyncImageView = {
         let iv = AsyncImageView(contentMode: .scaleAspectFill)
-        iv.backgroundColor = AppTheme.Color.cardBG   // 이미지 없을 때 위젯 플레이스홀더
+        iv.backgroundColor = AppTheme.Color.primary   // 이미지 없을 때 위젯 플레이스홀더
         return iv
     }()
     let editBannerButton: UIButton = {
@@ -147,7 +147,6 @@ final class HomeView: BaseView {
     // MARK: - Section Builders
     private func makeHeaderSection() -> UIView {
         let textStack = UIStackView.make(axis: .vertical, spacing: 2)
-        textStack.addArrangedSubview(greetLabel)
         textStack.addArrangedSubview(titleLabel)
         return textStack.wrapped(insets: UIEdgeInsets(top: 0, left: 20, bottom: 0, right: 20))
     }

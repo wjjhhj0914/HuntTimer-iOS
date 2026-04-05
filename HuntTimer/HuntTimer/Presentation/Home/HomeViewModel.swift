@@ -146,8 +146,8 @@ final class HomeViewModel {
 
         if let cat = cat {
             let suffix = Self.callSuffix(for: cat.name)
-            catTitle.accept("\(cat.name)\(suffix), 사냥하러 가자!")
-            greeting.accept("안녕하세요 😸")
+            catTitle.accept("오늘의 목표를 향해 힘차게 출발!")
+            greeting.accept("")
             heroCatName.accept(cat.name)
             let breedDisplay = CatBreed(rawValue: cat.breed)?.displayName ?? cat.breed
             heroStatus.accept(breedDisplay.isEmpty ? "사냥 준비 완료! 🐾" : breedDisplay)
@@ -165,7 +165,7 @@ final class HomeViewModel {
             }
         } else {
             catTitle.accept("아직 등록된 냥이가 없어요!")
-            greeting.accept("냥이를 등록해주세요 🐾")
+            greeting.accept("")
             heroCatName.accept("")
             heroStatus.accept("")
             goalMinutes.accept(30)
