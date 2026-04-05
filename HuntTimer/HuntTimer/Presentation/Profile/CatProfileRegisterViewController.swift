@@ -162,7 +162,7 @@ final class CatProfileViewController: BaseViewController {
     @objc private func saveTapped() {
         let name = contentView.nameTextField.text?.trimmingCharacters(in: .whitespaces) ?? ""
         guard !name.isEmpty else {
-            showAlert(title: "이름을 입력해주세요", message: "냥이의 이름을 입력해야 합니다.")
+            showAlert(title: "이름을 입력해 주세요", message: "고양이의 이름을 입력해야 합니다.")
             return
         }
 
@@ -192,17 +192,7 @@ final class CatProfileViewController: BaseViewController {
             return
         }
 
-        let alert = UIAlertController(title: "등록 완료!", message: "이제 사냥하러 가볼까요?", preferredStyle: .alert)
-        alert.addAction(UIAlertAction(title: "시작하기", style: .default) { [weak self] _ in
-            guard let windowScene = self?.view.window?.windowScene,
-                  let window      = windowScene.windows.first else { return }
-            UIView.transition(with: window,
-                              duration: 0.4,
-                              options: .transitionCrossDissolve) {
-                window.rootViewController = MainTabBarController()
-            }
-        })
-        present(alert, animated: true)
+        navigationController?.popViewController(animated: true)
     }
 
     private func updateExisting(name: String) {
