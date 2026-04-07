@@ -40,11 +40,12 @@ final class CatListCell: UITableViewCell {
     }()
 
     private let editButton: UIButton = {
-        let btn = UIButton(type: .system)
-        let cfg = UIImage.SymbolConfiguration(pointSize: 14, weight: .medium)
-        btn.setImage(UIImage(systemName: "pencil", withConfiguration: cfg), for: .normal)
-        btn.tintColor       = AppTheme.Color.primary
-        btn.backgroundColor = AppTheme.Color.primary.withAlphaComponent(0.12)
+        let btn = UIButton(type: .custom)
+        let icon = UIImage(named: "Edit_Pencil_Icon")
+        btn.setImage(icon, for: .normal)
+        btn.imageView?.contentMode = .scaleAspectFit
+        btn.contentEdgeInsets  = UIEdgeInsets(top: 10, left: 10, bottom: 10, right: 10)
+        btn.backgroundColor    = AppTheme.Color.primary.withAlphaComponent(0.12)
         btn.layer.cornerRadius = 20
         return btn
     }()
