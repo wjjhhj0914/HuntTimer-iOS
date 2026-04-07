@@ -4,15 +4,15 @@ enum AppTheme {
 
     // MARK: - Colors
     enum Color {
-        static let primary      = UIColor(hex: "#8DC4A7")  // Sage Green
-        static let primaryDeep  = UIColor(hex: "#5FA380")  // Mint 500
-        static let primaryLight = UIColor(hex: "#EDF7F2")  // Mint 50
+        static let primary      = UIColor(hex: "#ffbf6cff")
+        static let primaryDeep  = UIColor(hex: "#5FA380")
+        static let primaryLight = UIColor(hex: "#FFF0E6")
         static let yellow       = UIColor(hex: "#FFD4B5")  // Peach
-        static let yellowLight  = UIColor(hex: "#F5E3D0")  // Sand
+        static let yellowLight  = UIColor(hex: "#fff5dcff")  // Sand
         static let yellowDark   = UIColor(hex: "#8B6A5A")  // Mocha
         static let background   = UIColor(hex: "#FEF8F3")  // Warm White
         static let cardBG       = UIColor.white
-        static let textDark     = UIColor(hex: "#2D1B0E")  // Espresso
+        static let textDark     = UIColor(hex: "#785b35ff")  // Espresso
         static let textMedium   = UIColor(hex: "#8B6A5A")  // Mocha
         static let textMuted    = UIColor(hex: "#C4956A")  // Clay
         static let purple       = UIColor(hex: "#F0C0C8")  // Rose
