@@ -8,7 +8,7 @@ final class WelcomeView: BaseView {
     let ctaButton: UIButton = {
         let btn = UIButton(type: .system)
         btn.setTitle("프로필 만들러 가기", for: .normal)
-        btn.setTitleColor(.white, for: .normal)
+        btn.setTitleColor(AppTheme.Color.textDark, for: .normal)
         btn.titleLabel?.font = .appFont(size: 17, weight: .bold)
         btn.backgroundColor = AppTheme.Color.primary
         btn.layer.cornerRadius = 28
