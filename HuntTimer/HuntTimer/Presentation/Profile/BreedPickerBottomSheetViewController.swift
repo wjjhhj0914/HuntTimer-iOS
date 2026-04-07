@@ -115,7 +115,7 @@ final class BreedPickerBottomSheetViewController: BaseViewController {
 
     private func makeHandle() -> UIView {
         let handle = UIView()
-        handle.backgroundColor   = AppTheme.Color.purpleLight
+        handle.backgroundColor   = AppTheme.Color.primary
         handle.layer.cornerRadius = 2.5
 
         let area = UIView()
@@ -133,7 +133,7 @@ final class BreedPickerBottomSheetViewController: BaseViewController {
                                    color: AppTheme.Color.textDark)
         let doneBtn = UIButton(type: .system)
         doneBtn.setTitle("완료", for: .normal)
-        doneBtn.setTitleColor(.white, for: .normal)
+        doneBtn.setTitleColor(AppTheme.Color.textDark, for: .normal)
         doneBtn.titleLabel?.font   = .appFont(size: 15, weight: .semibold)
         doneBtn.backgroundColor    = AppTheme.Color.primary
         doneBtn.layer.cornerRadius = 18

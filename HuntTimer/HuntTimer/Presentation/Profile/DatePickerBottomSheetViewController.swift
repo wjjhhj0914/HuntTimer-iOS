@@ -346,7 +346,7 @@ final class DatePickerBottomSheetViewController: BaseViewController {
 
     private func makeHandle() -> UIView {
         let handle = UIView()
-        handle.backgroundColor    = AppTheme.Color.purpleLight
+        handle.backgroundColor    = AppTheme.Color.primary
         handle.layer.cornerRadius = 2.5
 
         let area = UIView()
@@ -378,7 +378,7 @@ final class DatePickerBottomSheetViewController: BaseViewController {
     private func makeDoneButton() -> UIButton {
         let btn = UIButton(type: .system)
         btn.setTitle("완료", for: .normal)
-        btn.setTitleColor(.white, for: .normal)
+        btn.setTitleColor(AppTheme.Color.textDark, for: .normal)
         btn.titleLabel?.font   = .appFont(size: 15, weight: .semibold)
         btn.backgroundColor    = AppTheme.Color.primary
         btn.layer.cornerRadius = 18
