@@ -17,8 +17,8 @@ final class MainTabBarController: UITabBarController {
             (HomeViewController(),  "홈",   "house.fill"),
             (TimerViewController(), "사냥", "pawprint.fill"),
             (LogViewController(),   "캘린더",  "calendar"),
-            (ShopViewController(),  "쇼핑",  "cart.fill"),
-            (AdoptViewController(), "입양",  "heart.fill"),
+//            (ShopViewController(),  "쇼핑",  "cart.fill"),
+//            (AdoptViewController(), "입양",  "heart.fill"),
         ]
 
         viewControllers = tabs.map { vc, title, symbol in
