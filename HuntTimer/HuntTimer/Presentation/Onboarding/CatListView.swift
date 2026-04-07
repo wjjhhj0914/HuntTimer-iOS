@@ -24,7 +24,7 @@ final class CatListView: BaseView {
         let btn = UIButton(type: .system)
         let cfg = UIImage.SymbolConfiguration(pointSize: 16, weight: .semibold)
         btn.setImage(UIImage(systemName: "plus", withConfiguration: cfg), for: .normal)
-        btn.tintColor = .white
+        btn.tintColor = AppTheme.Color.textDark
         btn.backgroundColor = AppTheme.Color.primary
         btn.layer.cornerRadius = 22
         return btn
@@ -38,7 +38,7 @@ final class CatListView: BaseView {
 
     private let catCircle: UIView = {
         let v = UIView()
-        v.backgroundColor = AppTheme.Color.yellowLight
+        v.backgroundColor = AppTheme.Color.primaryLight
         v.layer.cornerRadius = 120
         return v
     }()
@@ -60,7 +60,7 @@ final class CatListView: BaseView {
 
     private let emptySubLabel: UILabel = {
         let l = UILabel()
-        l.text = "첫 번째 고양이를 등록해 볼까요?"
+        l.text = "우측 상단의 플러스 버튼을 눌러서 추가해 주세요"
         l.font = .appFont(size: 15)
         l.textColor = AppTheme.Color.textMuted
         l.textAlignment = .center
@@ -82,13 +82,11 @@ final class CatListView: BaseView {
     let startButton: UIButton = {
         let btn = UIButton(type: .system)
         btn.setTitle("시작하기", for: .normal)
+        btn.setTitleColor(AppTheme.Color.textDark, for: .normal)
         btn.titleLabel?.font = .appFont(size: 17, weight: .bold)
-        btn.setTitleColor(.white, for: .normal)
-        btn.setTitleColor(UIColor.white.withAlphaComponent(0.5), for: .disabled)
         btn.backgroundColor = AppTheme.Color.primary
         btn.layer.cornerRadius = AppTheme.Radius.large
-        btn.isEnabled = false
-        btn.alpha = 0.5
+        btn.isHidden = true
         return btn
     }()
 
@@ -97,9 +95,15 @@ final class CatListView: BaseView {
         backgroundColor = AppTheme.Color.background
 
         catCircle.addSubview(catImageView)
-        emptyContainer.addSubview(catCircle)
-        emptyContainer.addSubview(emptyTitleLabel)
-        emptyContainer.addSubview(emptySubLabel)
+
+        // 원형 이미지 + 레이블을 하나의 스택으로 묶어 emptyContainer 중앙에 배치
+        let emptyStack = UIStackView.make(axis: .vertical, spacing: 0, alignment: .center)
+        emptyStack.addArrangedSubview(catCircle)
+        emptyStack.setCustomSpacing(52, after: catCircle)
+        emptyStack.addArrangedSubview(emptyTitleLabel)
+        emptyStack.setCustomSpacing(10, after: emptyTitleLabel)
+        emptyStack.addArrangedSubview(emptySubLabel)
+        emptyContainer.addSubview(emptyStack)
 
         [titleLabel, subtitleLabel, addButton,
          emptyContainer, tableView, startButton].forEach { addSubview($0) }
@@ -119,43 +123,37 @@ final class CatListView: BaseView {
             make.width.height.equalTo(44)
         }
 
-        // Empty Container — vertically centered in available space
+        // Empty Container — 화면 전체에서 중앙 정렬
         emptyContainer.snp.makeConstraints { make in
             make.leading.trailing.equalToSuperview()
             make.top.equalTo(titleLabel.snp.bottom).offset(20)
-            make.bottom.equalTo(startButton.snp.top).offset(-20)
+            make.bottom.equalTo(safeAreaLayoutGuide).offset(-20)
         }
-        catCircle.snp.makeConstraints { make in
+        // 스택 전체를 emptyContainer 중앙에 배치
+        emptyStack.snp.makeConstraints { make in
             make.centerX.equalToSuperview()
-            make.centerY.equalToSuperview().offset(-30)
-            make.width.height.equalTo(240)
+            make.centerY.equalToSuperview()
+            make.width.equalToSuperview().offset(-80)
         }
+        catCircle.snp.makeConstraints { $0.width.height.equalTo(240) }
         catImageView.snp.makeConstraints { make in
             make.center.equalToSuperview()
             make.width.equalTo(102)
             make.height.equalTo(94)
         }
-        emptyTitleLabel.snp.makeConstraints { make in
-            make.top.equalTo(catCircle.snp.bottom).offset(36)
-            make.leading.trailing.equalToSuperview().inset(40)
-        }
-        emptySubLabel.snp.makeConstraints { make in
-            make.top.equalTo(emptyTitleLabel.snp.bottom).offset(10)
-            make.leading.trailing.equalToSuperview().inset(40)
-        }
-
-        // TableView — below subtitle, above start button
-        tableView.snp.makeConstraints { make in
-            make.top.equalTo(subtitleLabel.snp.bottom).offset(16)
-            make.leading.trailing.equalToSuperview()
-            make.bottom.equalTo(startButton.snp.top).offset(-12)
-        }
 
         // Start Button — pinned to bottom
         startButton.snp.makeConstraints { make in
             make.leading.trailing.equalToSuperview().inset(20)
-            make.bottom.equalTo(safeAreaLayoutGuide).offset(-24)
-            make.height.equalTo(58)
+            make.bottom.equalTo(safeAreaLayoutGuide).offset(-16)
+            make.height.equalTo(54)
+        }
+
+        // TableView — below subtitle, above startButton
+        tableView.snp.makeConstraints { make in
+            make.top.equalTo(subtitleLabel.snp.bottom).offset(16)
+            make.leading.trailing.equalToSuperview()
+            make.bottom.equalTo(startButton.snp.top).offset(-12)
         }
     }
 
@@ -166,14 +164,10 @@ final class CatListView: BaseView {
         emptyContainer.isHidden = hasCats
         tableView.isHidden      = !hasCats
         subtitleLabel.isHidden  = !hasCats
+        startButton.isHidden    = !hasCats
 
         if hasCats {
             subtitleLabel.text = "\(catCount)마리와 함께하는 중"
-        }
-
-        startButton.isEnabled = hasCats
-        UIView.animate(withDuration: 0.2) {
-            self.startButton.alpha = hasCats ? 1.0 : 0.5
         }
     }
 }

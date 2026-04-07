@@ -54,14 +54,13 @@ final class CatListViewController: BaseViewController {
     }
 
     @objc private func startTapped() {
-        guard let windowScene = view.window?.windowScene,
-              let window      = windowScene.windows.first else { return }
-        UIView.transition(with: window,
-                          duration: 0.4,
-                          options: .transitionCrossDissolve) {
-            window.rootViewController = MainTabBarController()
+        guard let window = view.window else { return }
+        let tabBar = MainTabBarController()
+        UIView.transition(with: window, duration: 0.3, options: .transitionCrossDissolve) {
+            window.rootViewController = tabBar
         }
     }
+
 }
 
 // MARK: - UITableViewDataSource
