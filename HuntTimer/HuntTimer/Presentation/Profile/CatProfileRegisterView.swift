@@ -4,36 +4,12 @@ import SnapKit
 /// 냥이 프로필 등록 화면 뷰 (NhHhH 디자인 기준)
 final class CatProfileRegisterView: BaseView {
 
-    // MARK: - Header
-    let headerTitleLabel = UILabel.make(text: "냥이 프로필 등록", size: 18, weight: .black,
-                                        color: AppTheme.Color.textDark)
-
-    let backButton: UIButton = {
-        let btn = UIButton(type: .system)
-        let config = UIImage.SymbolConfiguration(pointSize: 14, weight: .medium)
-        btn.setImage(UIImage(systemName: "chevron.left", withConfiguration: config), for: .normal)
-        btn.tintColor = AppTheme.Color.primary
-        btn.backgroundColor = AppTheme.Color.primaryLight
-        btn.layer.cornerRadius = 18
-        return btn
-    }()
-
-    let saveButton: UIButton = {
-        let btn = UIButton(type: .system)
-        btn.setTitle("저장", for: .normal)
-        btn.setTitleColor(.white, for: .normal)
-        btn.titleLabel?.font = .appFont(size: 14, weight: .bold)
-        btn.backgroundColor = AppTheme.Color.primary
-        btn.layer.cornerRadius = 18
-        btn.contentEdgeInsets = UIEdgeInsets(top: 10, left: 20, bottom: 10, right: 20)
-        return btn
-    }()
 
     // MARK: - Form Fields
     let nameTextField: UITextField = {
         let tf = UITextField()
         tf.font = .appFont(size: 15, weight: .semibold)
-        tf.textColor = AppTheme.Color.primary
+        tf.textColor = AppTheme.Color.textDark
         tf.attributedPlaceholder = NSAttributedString(
             string: "고양이 이름을 입력하세요",
             attributes: [.foregroundColor: AppTheme.Color.textMuted]
@@ -58,7 +34,7 @@ final class CatProfileRegisterView: BaseView {
         btn.setTitle("암컷", for: .normal)
         btn.titleLabel?.font = .appFont(size: 14, weight: .bold)
         btn.backgroundColor = AppTheme.Color.primary
-        btn.setTitleColor(.white, for: .normal)
+        btn.setTitleColor(AppTheme.Color.textDark, for: .normal)
         btn.layer.cornerRadius = 10
         return btn
     }()
@@ -76,7 +52,7 @@ final class CatProfileRegisterView: BaseView {
     let registerButton: UIButton = {
         let btn = UIButton(type: .system)
         btn.setTitle("프로필 등록하기", for: .normal)
-        btn.setTitleColor(.white, for: .normal)
+        btn.setTitleColor(AppTheme.Color.textDark, for: .normal)
         btn.titleLabel?.font = .appFont(size: 17, weight: .bold)
         btn.layer.cornerRadius = 28
         btn.clipsToBounds = true
@@ -94,7 +70,7 @@ final class CatProfileRegisterView: BaseView {
                                           color: AppTheme.Color.textMuted)
 
     // MARK: - Updateable Labels
-    let goalMinuteLabel = UILabel.make(text: "30", size: 20, weight: .bold, color: AppTheme.Color.primary)
+    let goalMinuteLabel = UILabel.make(text: "30", size: 20, weight: .bold, color: AppTheme.Color.textDark)
 
     // MARK: - Profile Photo ImageView
     let photoImageView: UIImageView = {
@@ -123,12 +99,11 @@ final class CatProfileRegisterView: BaseView {
     // MARK: - Setup
     override func setupUI() {
         backgroundColor = AppTheme.Color.background
+        scrollView.keyboardDismissMode = .onDrag
 
-        let headerView = makeHeader()
         let ctaWrap    = makeCTAWrap()
         ctaContainer   = ctaWrap
 
-        addSubview(headerView)
         addSubview(scrollView)
         addSubview(ctaWrap)
         scrollView.addSubview(contentStack)
@@ -141,17 +116,12 @@ final class CatProfileRegisterView: BaseView {
          makeCard(content: makeBreedCardContent())
         ].forEach { contentStack.addArrangedSubview($0) }
 
-        headerView.snp.makeConstraints { make in
-            make.top.equalTo(safeAreaLayoutGuide)
-            make.leading.trailing.equalToSuperview()
-            make.height.equalTo(56)
-        }
         ctaWrap.snp.makeConstraints { make in
             make.leading.trailing.equalToSuperview()
             make.bottom.equalTo(safeAreaLayoutGuide)
         }
         scrollView.snp.makeConstraints { make in
-            make.top.equalTo(headerView.snp.bottom)
+            make.top.equalTo(safeAreaLayoutGuide)
             make.leading.trailing.equalToSuperview()
             scrollCTAConstraint = make.bottom.equalTo(ctaWrap.snp.top).constraint
         }
@@ -162,54 +132,24 @@ final class CatProfileRegisterView: BaseView {
         }
     }
 
-    // MARK: - Header
-    private func makeHeader() -> UIView {
-        let header = UIView()
-
-        header.addSubview(backButton)
-        header.addSubview(headerTitleLabel)
-        header.addSubview(saveButton)
-
-        backButton.snp.makeConstraints { make in
-            make.leading.equalToSuperview().offset(20)
-            make.centerY.equalToSuperview()
-            make.width.height.equalTo(36)
-        }
-        headerTitleLabel.snp.makeConstraints { $0.center.equalToSuperview() }
-        saveButton.snp.makeConstraints { make in
-            make.trailing.equalToSuperview().offset(-20)
-            make.centerY.equalToSuperview()
-        }
-        return header
-    }
-
     // MARK: - Photo Section
     private func makePhotoSection() -> UIView {
         photoContainerView.backgroundColor = .clear
 
         let circle = UIView()
-        circle.backgroundColor    = AppTheme.Color.primary.withAlphaComponent(0.12)
+        circle.backgroundColor    = AppTheme.Color.primary
         circle.layer.cornerRadius = 60
-
-        // 점선 테두리
-        let dashLayer = CAShapeLayer()
-        dashLayer.strokeColor    = AppTheme.Color.primary.cgColor
-        dashLayer.fillColor      = UIColor.clear.cgColor
-        dashLayer.lineWidth      = 1.5
-        dashLayer.lineDashPattern = [6, 4]
-        dashLayer.path = UIBezierPath(ovalIn: CGRect(x: 0, y: 0, width: 120, height: 120)).cgPath
-        circle.layer.addSublayer(dashLayer)
 
         // 카메라 아이콘
         let camIcon = UIImageView()
-        let camConfig = UIImage.SymbolConfiguration(pointSize: 22, weight: .regular)
+        let camConfig = UIImage.SymbolConfiguration(pointSize: 28, weight: .regular)
         camIcon.image       = UIImage(systemName: "camera", withConfiguration: camConfig)
-        camIcon.tintColor   = AppTheme.Color.primary
+        camIcon.tintColor   = UIColor(hex: "#FFF5DC")
         camIcon.contentMode = .scaleAspectFit
         camIcon.snp.makeConstraints { $0.width.height.equalTo(28) }
 
-        let addLabel = UILabel.make(text: "사진 추가", size: 13, weight: .medium,
-                                    color: AppTheme.Color.primary)
+        let addLabel = UILabel.make(text: "사진 추가", size: 11, weight: .semibold,
+                                    color: UIColor(hex: "#FFF5DC"))
 
         let innerStack = UIStackView.make(axis: .vertical, spacing: 6, alignment: .center)
         innerStack.addArrangedSubview(camIcon)
