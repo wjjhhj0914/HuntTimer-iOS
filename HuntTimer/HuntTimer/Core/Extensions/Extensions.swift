@@ -7,10 +7,21 @@ extension UIColor {
         if s.hasPrefix("#") { s.removeFirst() }
         var rgb: UInt64 = 0
         Scanner(string: s).scanHexInt64(&rgb)
-        let r = CGFloat((rgb >> 16) & 0xFF) / 255.0
-        let g = CGFloat((rgb >> 8)  & 0xFF) / 255.0
-        let b = CGFloat(rgb         & 0xFF) / 255.0
-        self.init(red: r, green: g, blue: b, alpha: 1.0)
+        let r, g, b, a: CGFloat
+        if s.count == 8 {
+            // RRGGBBAA
+            r = CGFloat((rgb >> 24) & 0xFF) / 255.0
+            g = CGFloat((rgb >> 16) & 0xFF) / 255.0
+            b = CGFloat((rgb >> 8)  & 0xFF) / 255.0
+            a = CGFloat(rgb         & 0xFF) / 255.0
+        } else {
+            // RRGGBB
+            r = CGFloat((rgb >> 16) & 0xFF) / 255.0
+            g = CGFloat((rgb >> 8)  & 0xFF) / 255.0
+            b = CGFloat(rgb         & 0xFF) / 255.0
+            a = 1.0
+        }
+        self.init(red: r, green: g, blue: b, alpha: a)
     }
 }
 
