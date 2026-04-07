@@ -144,10 +144,11 @@ final class HomeViewModel {
         let cat   = (try? Realm())?.objects(Cat.self).first
         let hasIt = cat != nil
 
+        let todayString = Self.todayDateString()
         if let cat = cat {
             let suffix = Self.callSuffix(for: cat.name)
             catTitle.accept("오늘의 목표를 향해 힘차게 출발!")
-            greeting.accept("")
+            greeting.accept(todayString)
             heroCatName.accept(cat.name)
             let breedDisplay = CatBreed(rawValue: cat.breed)?.displayName ?? cat.breed
             heroStatus.accept(breedDisplay.isEmpty ? "사냥 준비 완료! 🐾" : breedDisplay)
@@ -165,7 +166,7 @@ final class HomeViewModel {
             }
         } else {
             catTitle.accept("아직 등록된 냥이가 없어요!")
-            greeting.accept("")
+            greeting.accept(todayString)
             heroCatName.accept("")
             heroStatus.accept("")
             goalMinutes.accept(30)
@@ -248,6 +249,13 @@ final class HomeViewModel {
     }
 
     // MARK: - Helpers
+
+    private static func todayDateString() -> String {
+        let formatter        = DateFormatter()
+        formatter.locale     = Locale(identifier: "ko_KR")
+        formatter.dateFormat = "yyyy년 MM월 dd일"
+        return formatter.string(from: Date())
+    }
 
     /// 장난감 카테고리(= 장난감 이름) → SF Symbol 이름 매핑
     /// TimerView.makeToySection() 의 items 배열과 1:1 대응

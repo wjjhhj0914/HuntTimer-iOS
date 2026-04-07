@@ -15,7 +15,7 @@ final class HomeView: BaseView {
     private let contentStack = UIStackView.make(axis: .vertical, spacing: 16)
 
     // MARK: - Header
-    let greetLabel  = UILabel.make(text: "", size: 13, color: AppTheme.Color.textMuted)
+    let greetLabel  = UILabel.make(text: "", size: 13, weight: .bold, color: AppTheme.Color.textMuted)
     let titleLabel  = UILabel.make(text: "", size: 22, weight: .black, color: AppTheme.Color.textDark)
 
     // MARK: - Banner
@@ -147,6 +147,7 @@ final class HomeView: BaseView {
     // MARK: - Section Builders
     private func makeHeaderSection() -> UIView {
         let textStack = UIStackView.make(axis: .vertical, spacing: 2)
+        textStack.addArrangedSubview(greetLabel)
         textStack.addArrangedSubview(titleLabel)
         return textStack.wrapped(insets: UIEdgeInsets(top: 0, left: 20, bottom: 0, right: 20))
     }
