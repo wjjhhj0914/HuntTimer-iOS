@@ -12,7 +12,7 @@ private final class SessionPageView: UIView {
 
     private let toyPillView: UIView = {
         let v = UIView()
-        v.backgroundColor    = AppTheme.Color.yellowLight
+        v.backgroundColor    = AppTheme.Color.background
         v.layer.cornerRadius = 10
         return v
     }()
@@ -30,7 +30,7 @@ private final class SessionPageView: UIView {
         iv.contentMode        = .scaleAspectFill
         iv.clipsToBounds      = true
         iv.layer.cornerRadius = 14
-        iv.backgroundColor    = AppTheme.Color.yellowLight
+        iv.backgroundColor    = AppTheme.Color.background
         return iv
     }()
     private let photoEmptyIcon: UIImageView = {
