@@ -1,92 +1,100 @@
 import UIKit
 import SnapKit
 
-/// 타이머 화면 루트 뷰 — 모든 UI 선언과 SnapKit 레이아웃을 담당
+/// 타이머 화면 루트 뷰 — 카드 기반 레이아웃 (타이머 / 장난감 / 고양이 선택)
 final class TimerView: BaseView {
 
     // MARK: - Constants
     let presets = [5, 10, 15, 20, 30]
 
-    // MARK: - Scroll (private)
+    // MARK: - Scroll
     private let scrollView: UIScrollView = {
         let sv = UIScrollView()
         sv.showsVerticalScrollIndicator = false
-        sv.alwaysBounceVertical = true
-        sv.backgroundColor = AppTheme.Color.background
+        sv.alwaysBounceVertical         = true
         return sv
     }()
     private let contentStack = UIStackView.make(axis: .vertical, spacing: 0)
 
-    // MARK: - Background
-//    let bgImageView: AsyncImageView = {
-//        let iv = AsyncImageView(contentMode: .scaleAspectFill)
-//        iv.loadImage(from: "https://images.unsplash.com/photo-1744710835733-936ab49ee0b4?w=800")
-//        return iv
-//    }()
-//    let bgGradientView = UIView()
-
-    // MARK: - Status Badge Button
-    let statusBadgeButton: UIButton = {
-        let btn = UIButton(type: .custom)
-        btn.backgroundColor    = UIColor(white: 1, alpha: 0.75)
-        btn.layer.cornerRadius = 16
-        return btn
+    // MARK: - Timer Card
+    let statusLabel: UILabel = {
+        let l = UILabel()
+        l.text          = "R E A D Y"
+        l.font          = .appFont(size: 10, weight: .semibold)
+        l.textColor     = AppTheme.Color.textMuted
+        l.textAlignment = .center
+        return l
     }()
-    let statusDot: UIView = {
-        let v = UIView()
-        v.backgroundColor = AppTheme.Color.textMuted
-        v.layer.cornerRadius = 5
-        v.snp.makeConstraints { $0.width.height.equalTo(10) }
-        v.isUserInteractionEnabled = false
-        return v
+
+    let timerLabel: UILabel = {
+        let l = UILabel()
+        l.text          = "15:00"
+        l.font          = .appFont(size: 64, weight: .black)
+        l.textColor     = AppTheme.Color.textDark
+        l.textAlignment = .center
+        return l
     }()
-    let statusLabel = UILabel.make(text: "사냥 준비", size: 13, weight: .bold, color: AppTheme.Color.textDark)
 
-    // MARK: - Gauge & Labels
-    let gaugeView      = CircularTimerView()
-    /// 게이지 내부 상단 — 경과 시간 (20pt, pink)
-    let elapsedLabel   = UILabel.make(text: "00:00", size: 20, weight: .black,
-                                      color: AppTheme.Color.primary, alignment: .center)
-    /// 게이지 내부 하단 — 남은 시간 (42pt, pink)
-    let remainingLabel = UILabel.make(text: "15:00", size: 42, weight: .black,
-                                      color: AppTheme.Color.primary, alignment: .center)
+    let presetStack = UIStackView.make(axis: .horizontal, spacing: 8, distribution: .fillEqually)
+    var presetButtons: [UIButton] = []
 
-    // MARK: - Toy Chips
+    // MARK: - Toy Card
     private(set) var toyChipButtons:   [UIButton]    = []
     private(set) var toyChipIconViews: [UIImageView] = []
     private(set) var toyChipLabels:    [UILabel]     = []
 
+    // MARK: - Cat Card
+    let catCollectionView: UICollectionView = {
+        let layout = UICollectionViewFlowLayout()
+        let cv     = UICollectionView(frame: .zero, collectionViewLayout: layout)
+        cv.backgroundColor = .clear
+        cv.isScrollEnabled = false
+        cv.showsVerticalScrollIndicator = false
+        return cv
+    }()
+
+    private var catCollectionHeightConstraint: Constraint?
+
+    let emptyLabel: UILabel = {
+        let l = UILabel()
+        l.text          = "등록된 고양이가 없어요.\n프로필에서 먼저 등록해 주세요 🐾"
+        l.font          = .appFont(size: 14)
+        l.textColor     = AppTheme.Color.textMuted
+        l.textAlignment = .center
+        l.numberOfLines = 0
+        l.isHidden      = true
+        return l
+    }()
+
     // MARK: - Tip
-    let tipLabel = UILabel.make(text: "하루 30분 이상 놀아주면 냥이의 스트레스가 줄어요!",
-                                size: 12, color: AppTheme.Color.textMuted, lines: 0)
+    let tipLabel = UILabel.make(
+        text: "하루 30분 이상 놀아주면 냥이의 스트레스가 줄어요!",
+        size: 12, color: AppTheme.Color.textMuted, lines: 0
+    )
 
-    // MARK: - Preset & Controls
-    let presetStack = UIStackView.make(axis: .horizontal, spacing: 8, distribution: .fillEqually)
-    var presetButtons: [UIButton] = []
+    // MARK: - Bottom Controls
+    let stopButton  = TimerView.makeControlButton(systemName: "stop.fill",  pointSize: 20,
+                                                  bg: AppTheme.Color.primaryLight,  fg: AppTheme.Color.primary)
+    let pauseButton = TimerView.makeControlButton(systemName: "pause.fill", pointSize: 20,
+                                                  bg: AppTheme.Color.yellowLight,   fg: AppTheme.Color.yellowDark)
 
-    let stopButton:  UIButton = makeControlButton(systemName: "stop.fill",  pointSize: 22, bg: AppTheme.Color.primaryLight, fg: AppTheme.Color.primary)
-    let moreButton:  UIButton = makeControlButton(systemName: "pause.fill", pointSize: 22, bg: AppTheme.Color.yellowLight,  fg: AppTheme.Color.yellowDark)
+    /// stop + pause 버튼 컨테이너 (타이머 활성 시에만 표시)
+    let controlRow: UIView = {
+        let v = UIView()
+        v.isHidden = true
+        return v
+    }()
 
-    // CAGradientLayer를 버튼 레이어에 직접 삽입하면 imageView 렌더링과 충돌 → 이미지로 미리 렌더링
     let startButton: UIButton = {
-        let btn = UIButton(type: .custom)
-
-        // 그라디언트를 72×72 이미지로 렌더링 → backgroundImage로 설정
-        let size = CGSize(width: 72, height: 72)
-        let gradLayer = AppTheme.primaryGradient()
-        gradLayer.frame = CGRect(origin: .zero, size: size)
-        let renderer = UIGraphicsImageRenderer(size: size)
-        let gradImage = renderer.image { ctx in gradLayer.render(in: ctx.cgContext) }
-        btn.setBackgroundImage(gradImage, for: .normal)
-
-        // play 아이콘 — .alwaysOriginal로 흰색 고정 (tintColor 상속 무관)
-        let symConfig = UIImage.SymbolConfiguration(pointSize: 30, weight: .bold)
-        let icon = UIImage(systemName: "play.fill", withConfiguration: symConfig)?
-            .withTintColor(.white, renderingMode: .alwaysOriginal)
-        btn.setImage(icon, for: .normal)
-
-        btn.layer.cornerRadius = 20
-        btn.clipsToBounds = true
+        let btn = UIButton(type: .system)
+        btn.setTitle("사냥 시작!", for: .normal)
+        btn.setTitleColor(AppTheme.Color.textDark, for: .normal)
+        btn.titleLabel?.font   = .appFont(size: 18, weight: .heavy)
+        btn.backgroundColor    = AppTheme.Color.primary
+        btn.layer.cornerRadius = 29
+        btn.clipsToBounds      = true
+        btn.isEnabled          = false
+        btn.alpha              = 0.5
         return btn
     }()
 
@@ -95,16 +103,17 @@ final class TimerView: BaseView {
         backgroundColor = AppTheme.Color.background
         setupScrollView()
         buildContent()
+        setupCatCollectionHeight()
+        setupBottomArea()
     }
 
-    override func layoutSubviews() {
-        super.layoutSubviews()
-    }
-
-    // MARK: - Layout
+    // MARK: - Scroll
     private func setupScrollView() {
         addSubview(scrollView)
-        scrollView.snp.makeConstraints { $0.edges.equalToSuperview() }
+        scrollView.snp.makeConstraints { make in
+            make.top.equalTo(safeAreaLayoutGuide)   // 상태바 겹침 방지
+            make.leading.trailing.bottom.equalToSuperview()
+        }
         scrollView.addSubview(contentStack)
         contentStack.snp.makeConstraints { make in
             make.top.leading.trailing.bottom.equalToSuperview()
@@ -113,198 +122,285 @@ final class TimerView: BaseView {
     }
 
     private func buildContent() {
-        contentStack.addArrangedSubview(makeBgSection())
-        contentStack.addArrangedSubview(makeBodySection())
+        let header = makeHeaderSection()
+        let timer  = makeTimerCard()
+        let toy    = makeToyCard()
+        let cat    = makeCatCard()
+        let tip    = makeTipView()
+        let spacer = makeBottomSpacer()
+
+        [header, timer, toy, cat, tip, spacer].forEach { contentStack.addArrangedSubview($0) }
+        contentStack.setCustomSpacing(12, after: header)
+        contentStack.setCustomSpacing(12, after: timer)
+        contentStack.setCustomSpacing(12, after: toy)
+        contentStack.setCustomSpacing(16, after: cat)
     }
 
-    private func makeBgSection() -> UIView {
-        let container = UIView()
+    // MARK: - Section Builders
 
-        let statusRow = UIStackView.make(axis: .horizontal, spacing: 6, alignment: .center)
-        statusRow.isUserInteractionEnabled = false
-        statusRow.addArrangedSubview(statusDot)
-        statusRow.addArrangedSubview(statusLabel)
-        statusBadgeButton.addSubview(statusRow)
-        statusRow.snp.makeConstraints { make in
-            make.top.bottom.equalToSuperview().inset(8)
-            make.leading.trailing.equalToSuperview().inset(12)
+    private func makeHeaderSection() -> UIView {
+        let label = UILabel.make(text: "타이머 설정", size: 24, weight: .bold,
+                                 color: AppTheme.Color.textDark)
+        let wrap = UIView()
+        wrap.addSubview(label)
+        label.snp.makeConstraints { make in
+            make.top.equalToSuperview().offset(16)
+            make.bottom.equalToSuperview().offset(-4)
+            make.leading.equalToSuperview().offset(20)
         }
-        container.addSubview(statusBadgeButton)
-        statusBadgeButton.snp.makeConstraints { make in
-            make.top.equalToSuperview().offset(14)
-            make.bottom.equalToSuperview().offset(-14)
-            make.leading.equalToSuperview().offset(16)
-        }
-
-        return container
+        return wrap
     }
 
-    private func makeBodySection() -> UIView {
-        let bodyStack = UIStackView.make(axis: .vertical, spacing: 20)
-        bodyStack.layoutMargins = UIEdgeInsets(top: 0, left: 20, bottom: 24, right: 20)
-        bodyStack.isLayoutMarginsRelativeArrangement = true
-
-        // Gauge — gaugeWrapper 위에 레이블 오버레이 (gaugeView의 sublayer 제거 사이클에 영향받지 않도록)
-        let gaugeWrapper = UIView()
-        gaugeWrapper.addSubview(gaugeView)
-        gaugeView.snp.makeConstraints { make in
-            make.center.equalToSuperview()
-            make.width.height.equalTo(220)
-        }
-
-        let timerLabels = UIStackView.make(axis: .vertical, spacing: 4, alignment: .center)
-        timerLabels.addArrangedSubview(elapsedLabel)
-        timerLabels.addArrangedSubview(remainingLabel)
-        timerLabels.isUserInteractionEnabled = false
-        gaugeWrapper.addSubview(timerLabels)
-        timerLabels.snp.makeConstraints { $0.center.equalToSuperview() }
-
-        gaugeWrapper.snp.makeConstraints { $0.height.equalTo(220) }
-
-        // "시간 설정" 헤더 — 좌측 정렬, bold 13pt
-        let presetHeader = UILabel.make(text: "시간 설정", size: 13, weight: .bold, color: AppTheme.Color.textDark)
-
-        // Preset buttons
+    private func makeTimerCard() -> UIView {
+        // Preset 칩 버튼 생성
         presets.forEach { min in
             let btn = UIButton(type: .system)
             btn.setTitle("\(min)분", for: .normal)
-            btn.titleLabel?.font = .appFont(size: 13, weight: .bold)
-            btn.tag = min
-            btn.layer.cornerRadius = 14
-            btn.clipsToBounds = true
+            btn.titleLabel?.font = .appFont(size: 13, weight: .semibold)
+            btn.tag              = min
+            btn.layer.cornerRadius = 16
+            btn.clipsToBounds      = true
+            btn.layer.borderWidth  = 1.5
+            btn.layer.borderColor  = AppTheme.Color.yellowLight.cgColor
             btn.snp.makeConstraints { $0.height.equalTo(32) }
             presetButtons.append(btn)
             presetStack.addArrangedSubview(btn)
         }
 
-        // Control row
-        let controlRow = UIStackView.make(axis: .horizontal, spacing: 16, alignment: .center, distribution: .fill)
-        controlRow.addArrangedSubview(stopButton)
-        controlRow.addArrangedSubview(startButton)
-        controlRow.addArrangedSubview(moreButton)
-        stopButton.snp.makeConstraints { $0.width.height.equalTo(56) }
-        startButton.snp.makeConstraints { $0.width.height.equalTo(72) }
-        moreButton.snp.makeConstraints { $0.width.height.equalTo(56) }
+        // 상태 + 시간 레이블 (중앙 정렬)
+        let labelGroup = UIStackView.make(axis: .vertical, spacing: 4, alignment: .center)
+        labelGroup.addArrangedSubview(statusLabel)
+        labelGroup.addArrangedSubview(timerLabel)
 
-        let controlWrapper = UIView()
-        controlWrapper.addSubview(controlRow)
-        controlRow.snp.makeConstraints { $0.center.equalToSuperview() }
-        controlWrapper.snp.makeConstraints { $0.height.equalTo(80) }
+        // 카드 내 전체 스택
+        let cardStack = UIStackView.make(axis: .vertical, spacing: 12)
+        cardStack.addArrangedSubview(labelGroup)
+        cardStack.addArrangedSubview(presetStack)
 
-        [gaugeWrapper, presetHeader, presetStack, makeToySection(), controlWrapper, makeTipView()]
-            .forEach { bodyStack.addArrangedSubview($0) }
-
-        return bodyStack
+        return wrapInCard(cardStack)
     }
 
-    private func makeToySection() -> UIView {
-        let sectionStack = UIStackView.make(axis: .vertical, spacing: 8)
-
-        // 헤더
-        let headerRow = UIStackView.make(axis: .horizontal, spacing: 4, alignment: .center)
-        let titleL = UILabel.make(text: "장난감 선택 영역", size: 13, weight: .bold, color: AppTheme.Color.textDark)
-        let optL   = UILabel.make(text: "(선택 사항)", size: 11, color: AppTheme.Color.textMuted)
-        titleL.setContentHuggingPriority(.required, for: .horizontal)
-        optL.setContentHuggingPriority(.required, for: .horizontal)
-        let headerSpacer = UIView()
-        headerRow.addArrangedSubview(titleL)
-        headerRow.addArrangedSubview(optL)
-        headerRow.addArrangedSubview(headerSpacer)
-
-        // 칩 행
-        let chipsRow = UIStackView.make(axis: .horizontal, spacing: 5, distribution: .fillEqually)
-        let items: [(icon: String, label: String, muted: Bool)] = [
-            ("leaf.fill",   "깃털", false),
-            ("ant.fill",    "벌레", false),
-            ("bolt.fill",   "레이저",      false),
-            ("timelapse", "카샤카샤",     false),
-            ("oar.2.crossed",   "오뎅꼬치",        false),
-            ("xmark",       "선택 안 함",  true),
+    private func makeToyCard() -> UIView {
+        let items: [(String, String, Bool)] = [
+            ("leaf.fill",      "깃털",       false),
+            ("ant.fill",       "벌레",       false),
+            ("bolt.fill",      "레이저",     false),
+            ("timelapse",      "카샤카샤",   false),
+            ("oar.2.crossed",  "오뎅꼬치",   false),
+            ("xmark",          "선택 안 함", true ),
         ]
+
         toyChipButtons.removeAll()
         toyChipIconViews.removeAll()
         toyChipLabels.removeAll()
+
+        var all: [(UIButton, UIImageView, UILabel)] = []
         items.enumerated().forEach { idx, item in
-            let (btn, iconView, lbl) = makeToyChip(iconName: item.icon, labelText: item.label,
-                                                    tag: idx, muted: item.muted)
-            toyChipButtons.append(btn)
-            toyChipIconViews.append(iconView)
-            toyChipLabels.append(lbl)
-            chipsRow.addArrangedSubview(btn)
+            all.append(makeToyChip(iconName: item.0, labelText: item.1,
+                                   tag: idx, muted: item.2))
+        }
+        all.forEach {
+            toyChipButtons.append($0.0)
+            toyChipIconViews.append($0.1)
+            toyChipLabels.append($0.2)
         }
 
-        sectionStack.addArrangedSubview(headerRow)
-        sectionStack.addArrangedSubview(chipsRow)
-        return sectionStack
+        let row1 = makeChipRow(Array(all[0..<3]))
+        let row2 = makeChipRow(Array(all[3..<6]))
+
+        let chipsGrid = UIStackView.make(axis: .vertical, spacing: 8)
+        chipsGrid.addArrangedSubview(row1)
+        chipsGrid.addArrangedSubview(row2)
+
+        let titleL = UILabel.make(text: "장난감 선택", size: 15, weight: .bold,
+                                  color: AppTheme.Color.textDark)
+        let optL   = UILabel.make(text: "(선택 사항)", size: 11, color: AppTheme.Color.textMuted)
+        let headerRow = UIStackView.make(axis: .horizontal, spacing: 6, alignment: .center)
+        headerRow.addArrangedSubview(titleL)
+        headerRow.addArrangedSubview(optL)
+        headerRow.addArrangedSubview(UIView())   // spacer
+
+        let cardStack = UIStackView.make(axis: .vertical, spacing: 12)
+        cardStack.addArrangedSubview(headerRow)
+        cardStack.addArrangedSubview(chipsGrid)
+
+        return wrapInCard(cardStack)
+    }
+
+    private func makeChipRow(_ chips: [(UIButton, UIImageView, UILabel)]) -> UIStackView {
+        let row = UIStackView.make(axis: .horizontal, spacing: 8, distribution: .fillEqually)
+        chips.forEach { btn, _, _ in
+            row.addArrangedSubview(btn)
+            btn.snp.makeConstraints { $0.height.equalTo(36) }
+        }
+        return row
+    }
+
+    private func makeCatCard() -> UIView {
+        catCollectionView.register(CatSelectionCell.self,
+                                   forCellWithReuseIdentifier: CatSelectionCell.id)
+
+        let titleL = UILabel.make(text: "오늘 사냥할 고양이는?", size: 16, weight: .bold,
+                                  color: AppTheme.Color.textDark)
+
+        let cardStack = UIStackView.make(axis: .vertical, spacing: 16)
+        cardStack.addArrangedSubview(titleL)
+        cardStack.setCustomSpacing(24, after: titleL)
+        cardStack.addArrangedSubview(catCollectionView)
+        cardStack.addArrangedSubview(emptyLabel)
+
+        return wrapInCard(cardStack)
+    }
+
+    private func makeTipView() -> UIView {
+        let v = UIView()
+        v.backgroundColor    = UIColor(hex: "#EDF7F2")
+        v.layer.cornerRadius = AppTheme.Radius.large
+
+        let symCfg = UIImage.SymbolConfiguration(pointSize: 10, weight: .semibold)
+        let bulb   = UIImageView(image: UIImage(systemName: "lightbulb.max",
+                                                withConfiguration: symCfg))
+        bulb.tintColor = AppTheme.Color.textMuted
+        bulb.setContentHuggingPriority(.required, for: .horizontal)
+
+        let row = UIStackView.make(axis: .horizontal, spacing: 8, alignment: .center)
+        row.addArrangedSubview(bulb)
+        row.addArrangedSubview(tipLabel)
+        v.addSubview(row)
+        row.snp.makeConstraints { $0.edges.equalToSuperview().inset(14) }
+
+        let wrap = UIView()
+        wrap.addSubview(v)
+        v.snp.makeConstraints { make in
+            make.top.bottom.equalToSuperview()
+            make.leading.trailing.equalToSuperview().inset(20)
+        }
+        return wrap
+    }
+
+    private func makeBottomSpacer() -> UIView {
+        let v = UIView()
+        // startButton(58) + controlRow(52+12) + safeArea(≈34) + padding(32) ≈ 188
+        v.snp.makeConstraints { $0.height.equalTo(148) }
+        return v
+    }
+
+    // MARK: - Cat Collection Height
+
+    private func setupCatCollectionHeight() {
+        catCollectionView.snp.makeConstraints { make in
+            catCollectionHeightConstraint = make.height.equalTo(101).constraint
+        }
+    }
+
+    func updateCatCollectionHeight(_ height: CGFloat) {
+        catCollectionHeightConstraint?.update(offset: max(height, 0))
+    }
+
+    // MARK: - Bottom Area
+
+    private func setupBottomArea() {
+        // stop + pause 버튼 행
+        let btnRow = UIStackView.make(axis: .horizontal, spacing: 16, alignment: .center)
+        btnRow.addArrangedSubview(stopButton)
+        btnRow.addArrangedSubview(pauseButton)
+        stopButton.snp.makeConstraints  { $0.width.height.equalTo(52) }
+        pauseButton.snp.makeConstraints { $0.width.height.equalTo(52) }
+        controlRow.addSubview(btnRow)
+        btnRow.snp.makeConstraints { $0.center.equalToSuperview() }
+
+        addSubview(startButton)
+        addSubview(controlRow)
+
+        startButton.snp.makeConstraints { make in
+            make.leading.trailing.equalToSuperview().inset(20)
+            make.bottom.equalTo(safeAreaLayoutGuide).offset(-16)
+            make.height.equalTo(58)
+        }
+        controlRow.snp.makeConstraints { make in
+            make.leading.trailing.equalToSuperview()
+            make.bottom.equalTo(startButton.snp.top).offset(-12)
+            make.height.equalTo(52)
+        }
+    }
+
+    // MARK: - Factories
+
+    /// 카드 뷰로 감싸기: white bg, radius 24, shadow
+    private func wrapInCard(_ content: UIView) -> UIView {
+        let card = UIView()
+        card.backgroundColor    = .white
+        card.layer.cornerRadius = 24
+        AppTheme.applyCardShadow(to: card, opacity: 0.08, radius: 20)
+        card.addSubview(content)
+        content.snp.makeConstraints { $0.edges.equalToSuperview().inset(20) }
+
+        let wrap = UIView()
+        wrap.addSubview(card)
+        card.snp.makeConstraints { make in
+            make.top.bottom.equalToSuperview()
+            make.leading.trailing.equalToSuperview().inset(20)
+        }
+        return wrap
     }
 
     private func makeToyChip(iconName: String, labelText: String,
                               tag: Int, muted: Bool) -> (UIButton, UIImageView, UILabel) {
         let btn = UIButton(type: .custom)
         btn.tag = tag
-        btn.backgroundColor = AppTheme.Color.primaryLight
-        btn.layer.cornerRadius = 12
-        btn.clipsToBounds = true
-        btn.alpha = 0.6
+        btn.layer.cornerRadius = 18
+        btn.clipsToBounds      = true
+        btn.layer.borderWidth  = 1.5
+
+        if muted {
+            btn.backgroundColor   = UIColor(hex: "#F5F0EE")
+            btn.layer.borderColor = UIColor(hex: "#C4B5B5").cgColor
+        } else {
+            btn.backgroundColor   = .white
+            btn.layer.borderColor = AppTheme.Color.yellowLight.cgColor
+        }
 
         let fgColor: UIColor = muted ? AppTheme.Color.textMuted : AppTheme.Color.primary
 
-        let symCfg   = UIImage.SymbolConfiguration(pointSize: 10, weight: .semibold)
-        let iconView = UIImageView(image: UIImage(systemName: iconName, withConfiguration: symCfg)?
-                                    .withRenderingMode(.alwaysTemplate))
-        iconView.tintColor            = fgColor
-        iconView.contentMode          = .scaleAspectFit
-        iconView.isUserInteractionEnabled = false
+        let cfg = UIImage.SymbolConfiguration(pointSize: 12, weight: .semibold)
+        let iv  = UIImageView(image: UIImage(systemName: iconName, withConfiguration: cfg)?
+                                        .withRenderingMode(.alwaysTemplate))
+        iv.tintColor   = fgColor
+        iv.contentMode = .scaleAspectFit
+        iv.isUserInteractionEnabled = false
 
         let lbl = UILabel()
         lbl.text          = labelText
-        lbl.font          = .appFont(size: 8, weight: .semibold)
+        lbl.font          = .appFont(size: 13, weight: .semibold)
         lbl.textColor     = fgColor
         lbl.textAlignment = .center
-        lbl.numberOfLines = 2
         lbl.isUserInteractionEnabled = false
 
-        let chipStack = UIStackView.make(axis: .vertical, spacing: 2, alignment: .center)
-        chipStack.addArrangedSubview(iconView)
-        chipStack.addArrangedSubview(lbl)
-        chipStack.isUserInteractionEnabled = false
+        let row = UIStackView.make(axis: .horizontal, spacing: 4, alignment: .center)
+        row.addArrangedSubview(iv)
+        row.addArrangedSubview(lbl)
+        row.isUserInteractionEnabled = false
 
-        // 뷰 계층 완성 후 제약 설치 (iconView → chipStack → btn 순서 완료 후)
-        btn.addSubview(chipStack)
-        iconView.snp.makeConstraints  { $0.width.height.equalTo(12) }
-        chipStack.snp.makeConstraints { make in
-            make.top.bottom.equalToSuperview().inset(4)
-            make.leading.trailing.equalToSuperview().inset(4)
+        btn.addSubview(row)
+        iv.snp.makeConstraints  { $0.width.height.equalTo(14) }
+        row.snp.makeConstraints { make in
+            make.center.equalToSuperview()
+            make.leading.greaterThanOrEqualToSuperview().inset(8)
+            make.trailing.lessThanOrEqualToSuperview().inset(8)
         }
 
-        return (btn, iconView, lbl)
+        return (btn, iv, lbl)
     }
 
-    // MARK: - Factories
-    private static func makeControlButton(systemName: String, pointSize: CGFloat, bg: UIColor, fg: UIColor) -> UIButton {
+    private static func makeControlButton(systemName: String, pointSize: CGFloat,
+                                          bg: UIColor, fg: UIColor) -> UIButton {
         let btn = UIButton(type: .system)
-        let symConfig = UIImage.SymbolConfiguration(pointSize: pointSize, weight: .bold)
-        btn.setImage(UIImage(systemName: systemName, withConfiguration: symConfig), for: .normal)
-        btn.tintColor = fg
-        btn.backgroundColor = bg
+        let cfg = UIImage.SymbolConfiguration(pointSize: pointSize, weight: .bold)
+        btn.setImage(UIImage(systemName: systemName, withConfiguration: cfg), for: .normal)
+        btn.tintColor          = fg
+        btn.backgroundColor    = bg
         btn.layer.cornerRadius = 16
-        btn.clipsToBounds = true
+        btn.clipsToBounds      = true
         return btn
-    }
-
-    private func makeTipView() -> UIView {
-        let v = UIView()
-        v.backgroundColor = AppTheme.Color.yellowLight
-        v.layer.cornerRadius = AppTheme.Radius.large
-        let stack = UIStackView.make(axis: .horizontal, spacing: 8, alignment: .center)
-        let symCfg  = UIImage.SymbolConfiguration(pointSize: 10, weight: .semibold)
-        let bulbIcon = UIImageView(image: UIImage(systemName: "lightbulb.max", withConfiguration: symCfg))
-        bulbIcon.tintColor = AppTheme.Color.textMuted
-        bulbIcon.setContentHuggingPriority(.required, for: .horizontal)
-        stack.addArrangedSubview(bulbIcon)
-        stack.addArrangedSubview(tipLabel)
-        v.addSubview(stack)
-        stack.snp.makeConstraints { $0.edges.equalToSuperview().inset(14) }
-        return v
     }
 }
