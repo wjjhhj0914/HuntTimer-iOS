@@ -36,6 +36,8 @@ final class HomeViewModel {
         let monthlyDays: Driver<String>
         // Recent sessions
         let recentSessions: Driver<[HuntSession]>
+        // Cats section
+        let cats: Driver<[Cat]>
         // State
         let hasCat: Driver<Bool>
         let startButtonTitle: Driver<String>
@@ -67,6 +69,7 @@ final class HomeViewModel {
         let bestRecordRelay     = BehaviorRelay<String>(value: "0분")
         let monthlyDaysRelay    = BehaviorRelay<String>(value: "0일")
         let recentSessionsRelay = BehaviorRelay<[HuntSession]>(value: [])
+        let catsRelay           = BehaviorRelay<[Cat]>(value: [])
 
         Observable.merge(input.viewDidLoad, input.viewWillAppear)
             .subscribe(onNext: { [weak self] in
@@ -90,6 +93,9 @@ final class HomeViewModel {
                     monthlyDays:    monthlyDaysRelay,
                     recentSessions: recentSessionsRelay
                 )
+                if let realm = try? Realm() {
+                    catsRelay.accept(Array(realm.objects(Cat.self)))
+                }
             })
             .disposed(by: disposeBag)
 
@@ -124,6 +130,7 @@ final class HomeViewModel {
             bestRecord:       bestRecordRelay.asDriver(),
             monthlyDays:      monthlyDaysRelay.asDriver(),
             recentSessions:   recentSessionsRelay.asDriver(),
+            cats:             catsRelay.asDriver(),
             hasCat:           hasCatRelay.asDriver(),
             startButtonTitle: startBtnTitleRelay.asDriver()
         )

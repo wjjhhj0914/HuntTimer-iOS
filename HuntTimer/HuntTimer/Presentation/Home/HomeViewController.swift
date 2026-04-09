@@ -1,4 +1,5 @@
 import UIKit
+import SnapKit
 import RxSwift
 import RxCocoa
 import RealmSwift
@@ -96,6 +97,20 @@ final class HomeViewController: BaseViewController {
         output.bestRecord.drive(contentView.bestValueLabel.rx.text).disposed(by: disposeBag)
         output.monthlyDays.drive(contentView.monthlyValueLabel.rx.text).disposed(by: disposeBag)
 
+        // Cat section
+        output.cats
+            .drive(onNext: { [weak self] cats in self?.reloadCatSection(cats) })
+            .disposed(by: disposeBag)
+
+        contentView.addCatButton.rx.tap
+            .subscribe(onNext: { [weak self] in
+                guard let self else { return }
+                let vc = CatProfileViewController()
+                vc.mode = .registration
+                self.navigationController?.pushViewController(vc, animated: true)
+            })
+            .disposed(by: disposeBag)
+
         // Recent sessions
         output.recentSessions
             .drive(onNext: { [weak self] sessions in self?.populateRecentSessions(sessions) })
@@ -160,6 +175,63 @@ final class HomeViewController: BaseViewController {
         if seconds < 60 { return "\(seconds)초 남음" }
         let m = seconds / 60, s = seconds % 60
         return s > 0 ? "\(m)분 \(s)초 남음" : "\(m)분 남음"
+    }
+
+    // MARK: - Cat Section
+
+    private func reloadCatSection(_ cats: [Cat]) {
+        let stack = contentView.catAvatarsStack
+        stack.arrangedSubviews.forEach { $0.removeFromSuperview() }
+
+        cats.forEach { cat in
+            stack.addArrangedSubview(makeCatAvatarItem(cat))
+        }
+
+        // 추가 버튼 아이템
+        let addLabel = UILabel.make(text: "추가", size: 12, weight: .semibold,
+                                    color: UIColor(hex: "#C4956A"))
+        addLabel.textAlignment = .center
+        let addItem = UIStackView.make(axis: .vertical, spacing: 6, alignment: .center)
+        addItem.addArrangedSubview(contentView.addCatButton)
+        addItem.addArrangedSubview(addLabel)
+        stack.addArrangedSubview(addItem)
+
+        contentView.catCountBadgeLabel.text = "\(cats.count)마리"
+    }
+
+    private func makeCatAvatarItem(_ cat: Cat) -> UIView {
+        let circle = UIView()
+        circle.backgroundColor    = UIColor(hex: "#FFF9F0")
+        circle.layer.cornerRadius = 32
+        circle.layer.borderWidth  = 3
+        circle.layer.borderColor  = AppTheme.Color.primary.cgColor
+        circle.clipsToBounds      = true
+        circle.snp.makeConstraints { $0.width.height.equalTo(64) }
+
+        if let data = cat.profileImageData, let image = UIImage(data: data) {
+            let iv = UIImageView(image: image)
+            iv.contentMode   = .scaleAspectFill
+            iv.clipsToBounds = true
+            circle.addSubview(iv)
+            iv.snp.makeConstraints { $0.edges.equalToSuperview() }
+        } else {
+            let iv = UIImageView(image: UIImage(named: "RegisterProfile_Cat"))
+            iv.contentMode = .scaleAspectFit
+            circle.addSubview(iv)
+            iv.snp.makeConstraints { make in
+                make.center.equalToSuperview()
+                make.width.height.equalTo(28)
+            }
+        }
+
+        let nameLabel = UILabel.make(text: cat.name, size: 12, weight: .semibold,
+                                     color: AppTheme.Color.textDark)
+        nameLabel.textAlignment = .center
+
+        let item = UIStackView.make(axis: .vertical, spacing: 6, alignment: .center)
+        item.addArrangedSubview(circle)
+        item.addArrangedSubview(nameLabel)
+        return item
     }
 
     private func populateRecentSessions(_ sessions: [HuntSession]) {

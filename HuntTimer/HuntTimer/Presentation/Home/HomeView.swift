@@ -72,6 +72,24 @@ final class HomeView: BaseView {
         return btn
     }()
 
+    // MARK: - Cat Section
+    let catCountBadgeLabel = UILabel.make(text: "0마리", size: 11, weight: .semibold,
+                                          color: UIColor(hex: "#785b35"))
+    let catAvatarsStack = UIStackView.make(axis: .horizontal, spacing: 20, alignment: .center)
+    let addCatButton: UIButton = {
+        let btn = UIButton(type: .system)
+        btn.backgroundColor    = UIColor(hex: "#FFFBF7")
+        btn.layer.cornerRadius = 32
+        btn.clipsToBounds      = true
+        btn.layer.borderWidth  = 2
+        btn.layer.borderColor  = AppTheme.Color.primary.cgColor
+        let symCfg = UIImage.SymbolConfiguration(pointSize: 22, weight: .medium)
+        btn.setImage(UIImage(systemName: "plus", withConfiguration: symCfg), for: .normal)
+        btn.tintColor = AppTheme.Color.primary
+        return btn
+    }()
+    private(set) var catSectionView: UIView?
+
     // MARK: - CTA
     let startButton: UIButton = {
         let btn = UIButton(type: .system)
@@ -128,6 +146,10 @@ final class HomeView: BaseView {
         let quickStats = makeQuickStatsSection()
         quickStatsSectionView = quickStats
         contentStack.addArrangedSubview(quickStats)
+
+        let catSection = makeCatSection()
+        catSectionView = catSection
+        contentStack.addArrangedSubview(catSection)
 
         let recent = makeRecentSection()
         recentSectionView = recent
@@ -267,6 +289,58 @@ final class HomeView: BaseView {
             row.addArrangedSubview(card)
         }
         return row.wrapped(insets: UIEdgeInsets(top: 0, left: 20, bottom: 0, right: 20))
+    }
+
+    private func makeCatSection() -> UIView {
+        let titleL = UILabel.make(text: "오늘 함께할 사냥꾼들", size: 15, weight: .bold,
+                                  color: AppTheme.Color.textDark)
+
+        // N마리 배지
+        let badgeWrap = UIView()
+        badgeWrap.backgroundColor    = UIColor(hex: "#fff5dc")
+        badgeWrap.layer.cornerRadius = 12
+        badgeWrap.addSubview(catCountBadgeLabel)
+        catCountBadgeLabel.snp.makeConstraints { make in
+            make.top.bottom.equalToSuperview().inset(4)
+            make.leading.trailing.equalToSuperview().inset(10)
+        }
+
+        let headerRow = UIStackView.make(axis: .horizontal, alignment: .center)
+        headerRow.addArrangedSubview(titleL)
+        headerRow.addArrangedSubview(UIView())   // spacer
+        headerRow.addArrangedSubview(badgeWrap)
+
+        // 아바타 가로 스크롤
+        let scroll = UIScrollView()
+        scroll.showsHorizontalScrollIndicator = false
+        scroll.addSubview(catAvatarsStack)
+        catAvatarsStack.snp.makeConstraints { make in
+            make.edges.equalToSuperview()
+            make.height.equalTo(scroll)
+        }
+        scroll.snp.makeConstraints { $0.height.equalTo(90) }
+
+        // 추가 버튼 크기 고정 (여기서 한 번만 설정)
+        addCatButton.snp.makeConstraints { $0.width.height.equalTo(64) }
+
+        let cardStack = UIStackView.make(axis: .vertical, spacing: 12)
+        cardStack.addArrangedSubview(headerRow)
+        cardStack.addArrangedSubview(scroll)
+
+        let card = UIView()
+        card.backgroundColor    = .white
+        card.layer.cornerRadius = 24
+        AppTheme.applyCardShadow(to: card, opacity: 0.08, radius: 20)
+        card.addSubview(cardStack)
+        cardStack.snp.makeConstraints { $0.edges.equalToSuperview().inset(16) }
+
+        let wrap = UIView()
+        wrap.addSubview(card)
+        card.snp.makeConstraints { make in
+            make.top.bottom.equalToSuperview()
+            make.leading.trailing.equalToSuperview().inset(20)
+        }
+        return wrap
     }
 
     private func makeRecentSection() -> UIView {
