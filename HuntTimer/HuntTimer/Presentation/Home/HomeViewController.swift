@@ -297,19 +297,32 @@ final class HomeViewController: BaseViewController {
     }
 
     private func deleteCat(_ cat: Cat) {
+        // ⚠️ 삭제 전에 ID를 값으로 복사 — write 이후 Realm 관리 객체는 invalidated 됨
+        let catId = cat.id
+
         guard let realm = try? Realm(),
-              let managed = realm.object(ofType: Cat.self, forPrimaryKey: cat.id) else { return }
+              let managed = realm.object(ofType: Cat.self, forPrimaryKey: catId) else { return }
         do {
             try realm.write { realm.delete(managed) }
-            selectedCatIds.remove(cat.id)
+            // cat / managed 모두 무효화됨 → catId(값 타입)만 사용
+            selectedCatIds.remove(catId)
             UINotificationFeedbackGenerator().notificationOccurred(.success)
         } catch {
             print("[HuntTimer] 고양이 삭제 실패:", error)
             return
         }
-        // 섹션 직접 갱신 (ViewModel 우회 – viewWillAppear에서도 동기화됨)
-        let remaining = (try? Realm())?.objects(Cat.self).map { $0 } ?? []
-        reloadCatSection(Array(remaining))
+
+        // 섹션 갱신 — 새 Realm 인스턴스로 재조회
+        let remaining: [Cat]
+        if let realm = try? Realm() {
+            remaining = Array(realm.objects(Cat.self))
+        } else {
+            remaining = []
+        }
+        reloadCatSection(remaining)
+
+        // 남은 고양이가 없으면 편집 모드 자동 종료
+        if remaining.isEmpty { exitEditMode() }
     }
 
     // MARK: - Badge Label

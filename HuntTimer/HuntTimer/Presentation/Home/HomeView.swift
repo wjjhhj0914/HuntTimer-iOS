@@ -91,8 +91,12 @@ final class HomeView: BaseView {
     let catEditDoneButton: UIButton = {
         let btn = UIButton(type: .system)
         btn.setTitle("완료", for: .normal)
-        btn.titleLabel?.font = .appFont(size: 13, weight: .bold)
-        btn.setTitleColor(AppTheme.Color.primary, for: .normal)
+        btn.titleLabel?.font   = .appFont(size: 13, weight: .bold)
+        btn.setTitleColor(AppTheme.Color.textDark, for: .normal)
+        btn.backgroundColor    = AppTheme.Color.primary
+        btn.layer.cornerRadius = 14
+        btn.clipsToBounds      = true
+        btn.contentEdgeInsets  = UIEdgeInsets(top: 6, left: 14, bottom: 6, right: 14)
         btn.isHidden = true
         return btn
     }()
