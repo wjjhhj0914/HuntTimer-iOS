@@ -13,6 +13,11 @@ final class HomeViewController: BaseViewController {
     private let disposeBag            = DisposeBag()
     private let viewWillAppearSubject = PublishSubject<Void>()
 
+    // MARK: - Cat Section State
+    private var isEditingCats   = false
+    private var selectedCatIds: Set<ObjectId> = []
+    private var catItemViews:   [CatAvatarItemView] = []
+
     // MARK: - loadView
     override func loadView() {
         view = contentView
@@ -111,6 +116,15 @@ final class HomeViewController: BaseViewController {
             })
             .disposed(by: disposeBag)
 
+        contentView.catEditDoneButton.rx.tap
+            .subscribe(onNext: { [weak self] in self?.exitEditMode() })
+            .disposed(by: disposeBag)
+
+        // 고양이 섹션 빈 공간 탭 → 편집 모드 해제
+        let sectionTap = UITapGestureRecognizer(target: self, action: #selector(catSectionBackgroundTapped))
+        sectionTap.cancelsTouchesInView = false
+        contentView.catSectionView?.addGestureRecognizer(sectionTap)
+
         // Recent sessions
         output.recentSessions
             .drive(onNext: { [weak self] sessions in self?.populateRecentSessions(sessions) })
@@ -180,14 +194,23 @@ final class HomeViewController: BaseViewController {
     // MARK: - Cat Section
 
     private func reloadCatSection(_ cats: [Cat]) {
+        catItemViews.removeAll()
         let stack = contentView.catAvatarsStack
         stack.arrangedSubviews.forEach { $0.removeFromSuperview() }
 
         cats.forEach { cat in
-            stack.addArrangedSubview(makeCatAvatarItem(cat))
+            let item = CatAvatarItemView(cat: cat)
+            item.onTap       = { [weak self] in self?.handleCatTap(cat: cat) }
+            item.onLongPress = { [weak self] in self?.enterEditMode() }
+            // 선택 상태 복원
+            item.setSelected(selectedCatIds.contains(cat.id), animated: false)
+            // 편집 중이었다면 편집 상태 유지
+            if isEditingCats { item.setEditing(true) }
+            catItemViews.append(item)
+            stack.addArrangedSubview(item)
         }
 
-        // 추가 버튼 아이템
+        // 추가 버튼
         let addLabel = UILabel.make(text: "추가", size: 12, weight: .semibold,
                                     color: UIColor(hex: "#C4956A"))
         addLabel.textAlignment = .center
@@ -196,42 +219,106 @@ final class HomeViewController: BaseViewController {
         addItem.addArrangedSubview(addLabel)
         stack.addArrangedSubview(addItem)
 
-        contentView.catCountBadgeLabel.text = "\(cats.count)마리"
+        updateCatCountBadge(totalCount: cats.count)
     }
 
-    private func makeCatAvatarItem(_ cat: Cat) -> UIView {
-        let circle = UIView()
-        circle.backgroundColor    = UIColor(hex: "#FFF3E0")
-        circle.layer.cornerRadius = 32
-        circle.layer.borderWidth  = 3
-        circle.layer.borderColor  = AppTheme.Color.primary.cgColor
-        circle.clipsToBounds      = true
-        circle.snp.makeConstraints { $0.width.height.equalTo(64) }
+    // MARK: - Edit Mode
 
-        if let data = cat.profileImageData, let image = UIImage(data: data) {
-            let iv = UIImageView(image: image)
-            iv.contentMode   = .scaleAspectFill
-            iv.clipsToBounds = true
-            circle.addSubview(iv)
-            iv.snp.makeConstraints { $0.edges.equalToSuperview() }
-        } else {
-            let iv = UIImageView(image: UIImage(named: "RegisterProfile_Cat"))
-            iv.contentMode = .scaleAspectFit
-            circle.addSubview(iv)
-            iv.snp.makeConstraints { make in
-                make.center.equalToSuperview()
-                make.width.height.equalTo(28)
-            }
+    private func enterEditMode() {
+        guard !isEditingCats else { return }
+        isEditingCats = true
+        UIImpactFeedbackGenerator(style: .medium).impactOccurred()
+
+        catItemViews.forEach { $0.setEditing(true) }
+
+        UIView.animate(withDuration: 0.2) {
+            self.contentView.catBadgeContainer?.isHidden  = true
+            self.contentView.catEditDoneButton.isHidden   = false
+        }
+    }
+
+    private func exitEditMode() {
+        guard isEditingCats else { return }
+        isEditingCats = false
+
+        catItemViews.forEach { item in
+            item.setEditing(false)
+            item.setSelected(selectedCatIds.contains(item.cat.id), animated: false)
         }
 
-        let nameLabel = UILabel.make(text: cat.name, size: 12, weight: .semibold,
-                                     color: AppTheme.Color.textDark)
-        nameLabel.textAlignment = .center
+        UIView.animate(withDuration: 0.2) {
+            self.contentView.catBadgeContainer?.isHidden  = false
+            self.contentView.catEditDoneButton.isHidden   = true
+        }
+        updateCatCountBadge(totalCount: catItemViews.count)
+    }
 
-        let item = UIStackView.make(axis: .vertical, spacing: 6, alignment: .center)
-        item.addArrangedSubview(circle)
-        item.addArrangedSubview(nameLabel)
-        return item
+    @objc private func catSectionBackgroundTapped() {
+        guard isEditingCats else { return }
+        exitEditMode()
+    }
+
+    // MARK: - Cat Tap Handling
+
+    private func handleCatTap(cat: Cat) {
+        if isEditingCats {
+            showDeleteConfirmation(for: cat)
+        } else {
+            toggleCatSelection(cat)
+        }
+    }
+
+    private func toggleCatSelection(_ cat: Cat) {
+        if selectedCatIds.contains(cat.id) {
+            selectedCatIds.remove(cat.id)
+        } else {
+            selectedCatIds.insert(cat.id)
+        }
+        catItemViews.first { $0.cat.id == cat.id }?
+            .setSelected(selectedCatIds.contains(cat.id))
+        updateCatCountBadge(totalCount: catItemViews.count)
+        UIImpactFeedbackGenerator(style: .light).impactOccurred()
+    }
+
+    // MARK: - Delete
+
+    private func showDeleteConfirmation(for cat: Cat) {
+        let suffix = cat.name.last.map { _ in "" } ?? ""
+        let alert = UIAlertController(
+            title: "\(cat.name)을(를) 삭제할까요?",
+            message: "삭제된 고양이는 복구할 수 없어요.",
+            preferredStyle: .alert
+        )
+        alert.addAction(UIAlertAction(title: "취소", style: .cancel))
+        alert.addAction(UIAlertAction(title: "삭제", style: .destructive) { [weak self] _ in
+            self?.deleteCat(cat)
+        })
+        present(alert, animated: true)
+    }
+
+    private func deleteCat(_ cat: Cat) {
+        guard let realm = try? Realm(),
+              let managed = realm.object(ofType: Cat.self, forPrimaryKey: cat.id) else { return }
+        do {
+            try realm.write { realm.delete(managed) }
+            selectedCatIds.remove(cat.id)
+            UINotificationFeedbackGenerator().notificationOccurred(.success)
+        } catch {
+            print("[HuntTimer] 고양이 삭제 실패:", error)
+            return
+        }
+        // 섹션 직접 갱신 (ViewModel 우회 – viewWillAppear에서도 동기화됨)
+        let remaining = (try? Realm())?.objects(Cat.self).map { $0 } ?? []
+        reloadCatSection(Array(remaining))
+    }
+
+    // MARK: - Badge Label
+
+    private func updateCatCountBadge(totalCount: Int) {
+        let selCount = selectedCatIds.count
+        contentView.catCountBadgeLabel.text = selCount > 0
+            ? "\(selCount)마리 선택"
+            : "\(totalCount)마리"
     }
 
     private func populateRecentSessions(_ sessions: [HuntSession]) {

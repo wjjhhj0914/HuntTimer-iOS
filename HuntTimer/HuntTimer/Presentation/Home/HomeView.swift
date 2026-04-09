@@ -88,7 +88,16 @@ final class HomeView: BaseView {
         btn.tintColor = AppTheme.Color.primary
         return btn
     }()
+    let catEditDoneButton: UIButton = {
+        let btn = UIButton(type: .system)
+        btn.setTitle("완료", for: .normal)
+        btn.titleLabel?.font = .appFont(size: 13, weight: .bold)
+        btn.setTitleColor(AppTheme.Color.primary, for: .normal)
+        btn.isHidden = true
+        return btn
+    }()
     private(set) var catSectionView: UIView?
+    private(set) var catBadgeContainer: UIView?
 
     // MARK: - CTA
     let startButton: UIButton = {
@@ -305,20 +314,24 @@ final class HomeView: BaseView {
             make.leading.trailing.equalToSuperview().inset(10)
         }
 
+        catBadgeContainer = badgeWrap
+
         let headerRow = UIStackView.make(axis: .horizontal, alignment: .center)
         headerRow.addArrangedSubview(titleL)
         headerRow.addArrangedSubview(UIView())   // spacer
         headerRow.addArrangedSubview(badgeWrap)
+        headerRow.addArrangedSubview(catEditDoneButton)
 
-        // 아바타 가로 스크롤
+        // 아바타 가로 스크롤 (상단 4pt: deleteBadge 오버플로우 수용)
         let scroll = UIScrollView()
         scroll.showsHorizontalScrollIndicator = false
+        scroll.contentInset = UIEdgeInsets(top: 4, left: 0, bottom: 0, right: 0)
         scroll.addSubview(catAvatarsStack)
         catAvatarsStack.snp.makeConstraints { make in
             make.edges.equalToSuperview()
             make.height.equalTo(scroll)
         }
-        scroll.snp.makeConstraints { $0.height.equalTo(90) }
+        scroll.snp.makeConstraints { $0.height.equalTo(94) }
 
         // 추가 버튼 크기 고정 (여기서 한 번만 설정)
         addCatButton.snp.makeConstraints { $0.width.height.equalTo(64) }
