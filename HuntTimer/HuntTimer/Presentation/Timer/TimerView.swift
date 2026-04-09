@@ -280,8 +280,8 @@ final class TimerView: BaseView {
 
     private func makeBottomSpacer() -> UIView {
         let v = UIView()
-        // startButton(58) + controlRow(52+12) + safeArea(≈34) + padding(32) ≈ 188
-        v.snp.makeConstraints { $0.height.equalTo(148) }
+        // startButton(58) + safeArea·tabBar(≈83) + 버튼 상단 여백(24) + 여유(35) ≈ 200
+        v.snp.makeConstraints { $0.height.equalTo(200) }
         return v
     }
 
@@ -314,7 +314,7 @@ final class TimerView: BaseView {
 
         startButton.snp.makeConstraints { make in
             make.leading.trailing.equalToSuperview().inset(20)
-            make.bottom.equalTo(safeAreaLayoutGuide).offset(-16)
+            make.bottom.equalTo(safeAreaLayoutGuide).offset(-24)
             make.height.equalTo(58)
         }
         controlRow.snp.makeConstraints { make in
