@@ -76,25 +76,20 @@ final class HomeView: BaseView {
     let startButton: UIButton = {
         let btn = UIButton(type: .system)
         btn.setTitle("사냥 시작하기!", for: .normal)
-        btn.setTitleColor(.white, for: .normal)
+        btn.setTitleColor(AppTheme.Color.textDark, for: .normal)
         btn.titleLabel?.font = .appFont(size: 17, weight: .black)
+        btn.backgroundColor    = AppTheme.Color.primary
         btn.layer.cornerRadius = AppTheme.Radius.xxLarge
         btn.clipsToBounds = true
         AppTheme.applyButtonShadow(to: btn)
         return btn
     }()
-    var startGradientLayer: CAGradientLayer?
 
     // MARK: - BaseView
     override func setupUI() {
         backgroundColor = AppTheme.Color.background
         setupScrollView()
         buildSections()
-    }
-
-    override func layoutSubviews() {
-        super.layoutSubviews()
-        startGradientLayer?.frame = startButton.bounds
     }
 
     // MARK: - Layout
@@ -290,9 +285,6 @@ final class HomeView: BaseView {
     }
 
     private func makeCTAButton() -> UIView {
-        let gradLayer = AppTheme.primaryGradient()
-        startButton.layer.insertSublayer(gradLayer, at: 0)
-        startGradientLayer = gradLayer
         startButton.snp.makeConstraints { $0.height.equalTo(56) }
         return startButton.wrapped(insets: UIEdgeInsets(top: 0, left: 20, bottom: 0, right: 20))
     }
