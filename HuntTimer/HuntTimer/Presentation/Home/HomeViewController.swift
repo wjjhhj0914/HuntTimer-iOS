@@ -201,7 +201,7 @@ final class HomeViewController: BaseViewController {
 
     private func makeCatAvatarItem(_ cat: Cat) -> UIView {
         let circle = UIView()
-        circle.backgroundColor    = UIColor(hex: "#FFF9F0")
+        circle.backgroundColor    = UIColor(hex: "#FFF3E0")
         circle.layer.cornerRadius = 32
         circle.layer.borderWidth  = 3
         circle.layer.borderColor  = AppTheme.Color.primary.cgColor
