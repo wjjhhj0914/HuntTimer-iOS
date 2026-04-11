@@ -14,9 +14,10 @@ final class HomeViewController: BaseViewController {
     private let viewWillAppearSubject = PublishSubject<Void>()
 
     // MARK: - Cat Section State
-    private var isEditingCats   = false
-    private var selectedCatIds: Set<ObjectId> = []
-    private var catItemViews:   [CatAvatarItemView] = []
+    private var isEditingCats:        Bool      = false
+    private var focusedCatId:         ObjectId? = nil   // 페이저와 동기화된 포커스 고양이
+    private var catItemViews:         [CatAvatarItemView] = []
+    private var currentProgressPages: [CatProgressPage] = []
 
     // MARK: - loadView
     override func loadView() {
@@ -74,28 +75,19 @@ final class HomeViewController: BaseViewController {
         output.heroCatName.drive(contentView.heroCatLabel.rx.text).disposed(by: disposeBag)
         output.heroStatus.drive(contentView.heroStatusLabel.rx.text).disposed(by: disposeBag)
 
-        // Progress gauge
-        Driver.combineLatest(output.todaySeconds, output.goalMinutes, output.progressRatio)
-            .drive(onNext: { [weak self] todaySecs, goalMins, ratio in
+        // Progress pager
+        output.catProgressPages
+            .drive(onNext: { [weak self] pages in
                 guard let self else { return }
-                let elapsedText  = Self.formatElapsed(seconds: todaySecs)
-                let remainSecs   = max(0, goalMins * 60 - todaySecs)
-                let pct          = Int(ratio * 100)
-                self.contentView.centerLabel.text           = elapsedText
-                self.contentView.unitLabel.text             = "/ \(goalMins)분"
-                self.contentView.progressPercentLabel.text  = "\(pct)%"
-                self.contentView.progressValueLabel.text    = "\(elapsedText) | \(goalMins)분"
-                self.contentView.goalBadgeLabel.text        = "목표 \(pct)%"
-                self.contentView.timeBadgeLabel.text        = Self.formatRemaining(seconds: remainSecs)
-                self.contentView.gaugeView.animateProgress(ratio)
+                self.currentProgressPages = pages
+                self.contentView.progressPagerView.configure(pages: pages)
             })
             .disposed(by: disposeBag)
 
-        output.completedCount
-            .drive(onNext: { [weak self] count in
-                self?.contentView.sessionCountLabel.text = "오늘 \(count)회 사냥 완료"
-            })
-            .disposed(by: disposeBag)
+        // 페이지 변경 → 고양이 아바타 하이라이트 동기화
+        contentView.progressPagerView.onPageChanged = { [weak self] pageIndex in
+            self?.syncCatHighlight(forPagerPage: pageIndex)
+        }
 
         // Quick stats
         output.weeklyHours.drive(contentView.weeklyValueLabel.rx.text).disposed(by: disposeBag)
@@ -176,21 +168,6 @@ final class HomeViewController: BaseViewController {
             .disposed(by: disposeBag)
     }
 
-    // MARK: - Helpers
-
-    private static func formatElapsed(seconds: Int) -> String {
-        if seconds < 60 { return "\(seconds)초" }
-        let m = seconds / 60, s = seconds % 60
-        return s > 0 ? "\(m)분 \(s)초" : "\(m)분"
-    }
-
-    private static func formatRemaining(seconds: Int) -> String {
-        if seconds == 0 { return "목표 달성!" }
-        if seconds < 60 { return "\(seconds)초 남음" }
-        let m = seconds / 60, s = seconds % 60
-        return s > 0 ? "\(m)분 \(s)초 남음" : "\(m)분 남음"
-    }
-
     // MARK: - Cat Section
 
     private func reloadCatSection(_ cats: [Cat]) {
@@ -202,8 +179,8 @@ final class HomeViewController: BaseViewController {
             let item = CatAvatarItemView(cat: cat)
             item.onTap       = { [weak self] in self?.handleCatTap(cat: cat) }
             item.onLongPress = { [weak self] in self?.enterEditMode() }
-            // 선택 상태 복원
-            item.setSelected(selectedCatIds.contains(cat.id), animated: false)
+            // 포커스 상태 복원
+            item.setFocused(focusState(for: cat), animated: false)
             // 편집 중이었다면 편집 상태 유지
             if isEditingCats { item.setEditing(true) }
             catItemViews.append(item)
@@ -243,7 +220,7 @@ final class HomeViewController: BaseViewController {
 
         catItemViews.forEach { item in
             item.setEditing(false)
-            item.setSelected(selectedCatIds.contains(item.cat.id), animated: false)
+            item.setFocused(focusState(for: item.cat), animated: false)
         }
 
         UIView.animate(withDuration: 0.2) {
@@ -264,20 +241,30 @@ final class HomeViewController: BaseViewController {
         if isEditingCats {
             showDeleteConfirmation(for: cat)
         } else {
-            toggleCatSelection(cat)
+            // 해당 고양이의 페이저 페이지로 스크롤
+            if let pageIdx = currentProgressPages.firstIndex(where: { $0.catId == cat.id }) {
+                contentView.progressPagerView.setPage(pageIdx, animated: true)
+            }
+            UIImpactFeedbackGenerator(style: .light).impactOccurred()
         }
     }
 
-    private func toggleCatSelection(_ cat: Cat) {
-        if selectedCatIds.contains(cat.id) {
-            selectedCatIds.remove(cat.id)
+    /// 페이저 페이지 변경에 따라 고양이 아바타 포커스 동기화
+    private func syncCatHighlight(forPagerPage pageIndex: Int) {
+        if pageIndex == 0 || pageIndex >= currentProgressPages.count {
+            // 전체 페이지 — 포커스 없음 (모두 기본 상태)
+            focusedCatId = nil
         } else {
-            selectedCatIds.insert(cat.id)
+            focusedCatId = currentProgressPages[pageIndex].catId
         }
-        catItemViews.first { $0.cat.id == cat.id }?
-            .setSelected(selectedCatIds.contains(cat.id))
+        catItemViews.forEach { $0.setFocused(focusState(for: $0.cat), animated: true) }
         updateCatCountBadge(totalCount: catItemViews.count)
-        UIImpactFeedbackGenerator(style: .light).impactOccurred()
+    }
+
+    /// 포커스 상태 계산 — nil: 기본, true: 포커스됨, false: 포커스 해제됨
+    private func focusState(for cat: Cat) -> Bool? {
+        guard let id = focusedCatId else { return nil }
+        return cat.id == id
     }
 
     // MARK: - Delete
@@ -305,7 +292,7 @@ final class HomeViewController: BaseViewController {
         do {
             try realm.write { realm.delete(managed) }
             // cat / managed 모두 무효화됨 → catId(값 타입)만 사용
-            selectedCatIds.remove(catId)
+            if focusedCatId == catId { focusedCatId = nil }
             UINotificationFeedbackGenerator().notificationOccurred(.success)
         } catch {
             print("[HuntTimer] 고양이 삭제 실패:", error)
@@ -328,10 +315,7 @@ final class HomeViewController: BaseViewController {
     // MARK: - Badge Label
 
     private func updateCatCountBadge(totalCount: Int) {
-        let selCount = selectedCatIds.count
-        contentView.catCountBadgeLabel.text = selCount > 0
-            ? "\(selCount)마리 선택"
-            : "\(totalCount)마리"
+        contentView.catCountBadgeLabel.text = "\(totalCount)마리"
     }
 
     private func populateRecentSessions(_ sessions: [HuntSession]) {

@@ -47,15 +47,8 @@ final class HomeView: BaseView {
         return l
     }()
 
-    // MARK: - Progress
-    let gaugeView          = CircularProgressView(size: 130)
-    let centerLabel           = UILabel.make(text: "", size: 22, weight: .black, color: AppTheme.Color.textDark, alignment: .center)
-    let unitLabel             = UILabel.make(text: "", size: 11, color: AppTheme.Color.textMuted, alignment: .center)
-    let progressPercentLabel  = UILabel.make(text: "", size: 10, weight: .semibold, color: AppTheme.Color.primary, alignment: .center)
-    let progressValueLabel = UILabel.make(text: "", size: 17, weight: .black, color: AppTheme.Color.textDark)
-    let goalBadgeLabel     = UILabel.make(text: "", size: 11, weight: .semibold, color: AppTheme.Color.primary)
-    let timeBadgeLabel     = UILabel.make(text: "", size: 11, weight: .semibold, color: AppTheme.Color.yellowDark)
-    let sessionCountLabel  = UILabel.make(text: "", size: 11, color: AppTheme.Color.textMuted)
+    // MARK: - Progress Pager
+    let progressPagerView = ProgressPagerView()
 
     // MARK: - Quick Stats
     let weeklyValueLabel  = UILabel.make(text: "", size: 13, weight: .bold, color: AppTheme.Color.textDark, alignment: .center)
@@ -243,37 +236,7 @@ final class HomeView: BaseView {
     }
 
     private func makeProgressSection() -> UIView {
-        let card = UIView()
-        card.applyCardStyle(cornerRadius: AppTheme.Radius.xxLarge)
-
-        let innerStack = UIStackView.make(axis: .vertical, spacing: 0, alignment: .center)
-        innerStack.addArrangedSubview(centerLabel)
-        innerStack.addArrangedSubview(unitLabel)
-        innerStack.addArrangedSubview(progressPercentLabel)
-        gaugeView.addSubview(innerStack)
-        innerStack.snp.makeConstraints { $0.center.equalToSuperview() }
-        gaugeView.snp.makeConstraints { $0.width.height.equalTo(130) }
-
-        let headerLabel = UILabel.make(text: "오늘의 사냥 목표", size: 12, color: AppTheme.Color.textMedium)
-        let goalBadge   = makePill(label: goalBadgeLabel, bg: AppTheme.Color.primaryLight)
-        let timeBadge   = makePill(label: timeBadgeLabel, bg: AppTheme.Color.yellowLight)
-        let badgeRow    = UIStackView.make(axis: .vertical, spacing: 6, alignment: .leading)
-        badgeRow.addArrangedSubview(goalBadge)
-        badgeRow.addArrangedSubview(timeBadge)
-
-        let infoStack = UIStackView.make(axis: .vertical, spacing: 6)
-        infoStack.addArrangedSubview(headerLabel)
-        infoStack.addArrangedSubview(progressValueLabel)
-        infoStack.addArrangedSubview(badgeRow)
-        infoStack.addArrangedSubview(sessionCountLabel)
-
-        let row = UIStackView.make(axis: .horizontal, spacing: 16, alignment: .center)
-        row.addArrangedSubview(gaugeView)
-        row.addArrangedSubview(infoStack)
-        card.addSubview(row)
-        row.snp.makeConstraints { $0.edges.equalToSuperview().inset(16) }
-
-        return card.wrapped(insets: UIEdgeInsets(top: 0, left: 20, bottom: 0, right: 20))
+        return progressPagerView
     }
 
     private func makeQuickStatsSection() -> UIView {
@@ -305,7 +268,7 @@ final class HomeView: BaseView {
     }
 
     private func makeCatSection() -> UIView {
-        let titleL = UILabel.make(text: "오늘 함께할 사냥꾼들", size: 15, weight: .bold,
+        let titleL = UILabel.make(text: "누구의 기록을 볼까요?", size: 15, weight: .bold,
                                   color: AppTheme.Color.textDark)
 
         // N마리 배지

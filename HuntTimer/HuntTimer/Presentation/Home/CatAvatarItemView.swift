@@ -19,7 +19,6 @@ final class CatAvatarItemView: UIView {
     private let photoView   = UIImageView()
     private let defaultIcon = UIImageView(image: UIImage(named: "RegisterProfile_Cat"))
     private let nameLabel   = UILabel()
-    private let checkBadge  = UIView()   // 일반 모드 선택 표시 (우측 하단)
     private let deleteBadge = UIView()   // 편집 모드 X 버튼 (우측 상단)
 
     // MARK: - Init
@@ -39,7 +38,7 @@ final class CatAvatarItemView: UIView {
         // ── Circle ────────────────────────────────────────────────────────
         circleView.backgroundColor    = UIColor(hex: "#FFF3E0")
         circleView.layer.cornerRadius = 32
-        circleView.layer.borderWidth  = 3
+        circleView.layer.borderWidth  = 0   // 기본: 테두리 없음 (포커스 시 primary 테두리)
         circleView.layer.borderColor  = AppTheme.Color.primary.cgColor
         circleView.clipsToBounds      = true
 
@@ -61,22 +60,6 @@ final class CatAvatarItemView: UIView {
         nameLabel.textAlignment = .center
         nameLabel.numberOfLines = 1
 
-        // ── Check badge (우측 하단, 20×20) ─────────────────────────────────
-        checkBadge.backgroundColor    = AppTheme.Color.primary
-        checkBadge.layer.cornerRadius = 10
-        checkBadge.isHidden           = true
-        let checkIcon = UIImageView(
-            image: UIImage(systemName: "checkmark",
-                           withConfiguration: UIImage.SymbolConfiguration(pointSize: 8, weight: .bold))
-        )
-        checkIcon.tintColor   = AppTheme.Color.textDark
-        checkIcon.contentMode = .scaleAspectFit
-        checkBadge.addSubview(checkIcon)
-        checkIcon.snp.makeConstraints { make in
-            make.center.equalToSuperview()
-            make.width.height.equalTo(10)
-        }
-
         // ── Delete badge (우측 상단, 22×22) ────────────────────────────────
         deleteBadge.backgroundColor    = UIColor(hex: "#2d1b0e")
         deleteBadge.layer.cornerRadius = 11
@@ -96,7 +79,6 @@ final class CatAvatarItemView: UIView {
         // ── Add subviews ──────────────────────────────────────────────────
         addSubview(circleView)
         addSubview(nameLabel)
-        addSubview(checkBadge)
         addSubview(deleteBadge)
 
         // 고정 폭: stackView 내에서 크기 결정
@@ -112,10 +94,6 @@ final class CatAvatarItemView: UIView {
             make.bottom.equalToSuperview()
         }
         // Check badge: 원형 우측 하단 모서리
-        checkBadge.snp.makeConstraints { make in
-            make.width.height.equalTo(20)
-            make.trailing.bottom.equalTo(circleView)
-        }
         // Delete badge: 원형 우측 상단 모서리 (약간 바깥으로)
         deleteBadge.snp.makeConstraints { make in
             make.width.height.equalTo(22)
@@ -157,15 +135,29 @@ final class CatAvatarItemView: UIView {
 
     // MARK: - State Updates
 
-    func setSelected(_ selected: Bool, animated: Bool = true) {
-        let update = { self.checkBadge.isHidden = !selected }
-        animated ? UIView.animate(withDuration: 0.15, animations: update) : update()
+    /// nil = 기본(포커스 없음): 테두리 없음 + 불투명
+    /// true  = 포커스됨:       primary 테두리 + 불투명
+    /// false = 포커스 해제됨:  테두리 없음 + 반투명(0.5)
+    func setFocused(_ focused: Bool?, animated: Bool = true) {
+        let apply = {
+            switch focused {
+            case .none:
+                self.circleView.layer.borderWidth = 0
+                self.alpha = 1.0
+            case .some(true):
+                self.circleView.layer.borderWidth = 3
+                self.alpha = 1.0
+            case .some(false):
+                self.circleView.layer.borderWidth = 0
+                self.alpha = 0.5
+            }
+        }
+        animated ? UIView.animate(withDuration: 0.2, animations: apply) : apply()
     }
 
     func setEditing(_ editing: Bool) {
         UIView.animate(withDuration: 0.2) {
             self.deleteBadge.isHidden = !editing
-            if editing { self.checkBadge.isHidden = true }
         }
         editing ? startWiggle() : stopWiggle()
     }
