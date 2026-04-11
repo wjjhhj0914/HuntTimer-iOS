@@ -373,7 +373,7 @@ final class TimerView: BaseView {
         lbl.text          = labelText
         lbl.font          = .appFont(size: 13, weight: .semibold)
         lbl.textColor     = fgColor
-        lbl.textAlignment = .center
+        lbl.textAlignment = .left
         lbl.isUserInteractionEnabled = false
 
         let row = UIStackView.make(axis: .horizontal, spacing: 4, alignment: .center)

@@ -57,7 +57,7 @@ final class HuntInProgressView: BaseView {
         let l = UILabel()
         l.font          = .appFont(size: 17, weight: .bold)
         l.textColor     = AppTheme.Color.textDark
-        l.textAlignment = .center
+        l.textAlignment = .left
         return l
     }()
 
@@ -148,13 +148,11 @@ final class HuntInProgressView: BaseView {
             make.height.equalTo(52)
         }
 
-        // 칩을 중앙 정렬하는 래퍼
+        // 칩을 좌측 정렬하는 래퍼
         let chipWrap = UIView()
         chipWrap.addSubview(chip)
         chip.snp.makeConstraints { make in
-            make.top.bottom.equalToSuperview()
-            make.centerX.equalToSuperview()
-            make.leading.greaterThanOrEqualToSuperview()
+            make.top.bottom.leading.equalToSuperview()
             make.trailing.lessThanOrEqualToSuperview()
         }
 
