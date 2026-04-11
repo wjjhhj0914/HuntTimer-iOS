@@ -111,8 +111,8 @@ final class SessionSaveModalView: UIView {
         contentStack.layoutMargins                  = UIEdgeInsets(top: 14, left: 20, bottom: 20, right: 20)
         contentStack.isLayoutMarginsRelativeArrangement = true
         contentStack.addArrangedSubview(makeResultCard())
-        contentStack.addArrangedSubview(makeMemoSection())
         contentStack.addArrangedSubview(makePhotoSection())
+        contentStack.addArrangedSubview(makeMemoSection())
         contentStack.addArrangedSubview(makeSaveButtonWrap())
 
         // Assemble card

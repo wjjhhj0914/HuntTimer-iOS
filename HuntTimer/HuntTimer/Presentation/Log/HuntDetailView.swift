@@ -81,14 +81,14 @@ private final class SessionPageView: UIView {
         let photoStack = makePhotoSection()
         let memoStack  = makeMemoSection()
 
-        [timeStack, divider1, toyStack, divider2, photoStack, memoStack]
+        [timeStack, divider1, toyStack, divider2, memoStack, photoStack]
             .forEach { stack.addArrangedSubview($0) }
 
         stack.setCustomSpacing(16, after: timeStack)
         stack.setCustomSpacing(16, after: divider1)
         stack.setCustomSpacing(16, after: toyStack)
         stack.setCustomSpacing(16, after: divider2)
-        stack.setCustomSpacing(16, after: photoStack)
+        stack.setCustomSpacing(16, after: memoStack)
 
         vScroll.addSubview(stack)
         // contentLayoutGuide: 스크롤 콘텐츠 영역 전체에 stack을 채움
