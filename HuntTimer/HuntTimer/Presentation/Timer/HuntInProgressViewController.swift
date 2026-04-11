@@ -276,8 +276,9 @@ final class HuntInProgressViewController: BaseViewController {
             guard let self else { return }
             self.endAndSaveSession(memo: memo, photo: photo)
             self.stopTimer()
+            let tabBar = self.tabBarController          // pop 전에 캡처 — pop 후엔 parent가 nil이 됨
             self.navigationController?.popViewController(animated: false)
-            self.tabBarController?.selectedIndex = 2
+            tabBar?.selectedIndex = 2
         }
         modal.onCancel = { [weak self] in
             guard let self else { return }
