@@ -25,11 +25,8 @@ final class HomeViewModel {
         let streakText: Driver<String>
         let heroCatName: Driver<String>
         let heroStatus: Driver<String>
-        // Progress gauge — 초 단위로 보존하여 1분 미만 데이터 손실 방지
-        let todaySeconds: Driver<Int>
-        let goalMinutes: Driver<Int>
-        let progressRatio: Driver<Float>
-        let completedCount: Driver<Int>
+        // Progress pager
+        let catProgressPages: Driver<[CatProgressPage]>
         // Quick stats
         let weeklyHours: Driver<String>
         let bestRecord: Driver<String>
@@ -62,14 +59,13 @@ final class HomeViewModel {
         let bannerImagePathRelay = BehaviorRelay<String?>(value: nil)
 
         // ── 세션 Relay ──────────────────────────────────────────────────────
-        let todaySecondsRelay   = BehaviorRelay<Int>(value: 0)
-        let completedCountRelay = BehaviorRelay<Int>(value: 0)
-        let streakDaysRelay     = BehaviorRelay<Int>(value: 0)
-        let weeklyHoursRelay    = BehaviorRelay<String>(value: "0시간")
-        let bestRecordRelay     = BehaviorRelay<String>(value: "0분")
-        let monthlyDaysRelay    = BehaviorRelay<String>(value: "0일")
-        let recentSessionsRelay = BehaviorRelay<[HuntSession]>(value: [])
-        let catsRelay           = BehaviorRelay<[Cat]>(value: [])
+        let streakDaysRelay      = BehaviorRelay<Int>(value: 0)
+        let weeklyHoursRelay     = BehaviorRelay<String>(value: "0시간")
+        let bestRecordRelay      = BehaviorRelay<String>(value: "0분")
+        let monthlyDaysRelay     = BehaviorRelay<String>(value: "0일")
+        let recentSessionsRelay  = BehaviorRelay<[HuntSession]>(value: [])
+        let catsRelay            = BehaviorRelay<[Cat]>(value: [])
+        let catProgressPagesRelay = BehaviorRelay<[CatProgressPage]>(value: [])
 
         Observable.merge(input.viewDidLoad, input.viewWillAppear)
             .subscribe(onNext: { [weak self] in
@@ -85,27 +81,18 @@ final class HomeViewModel {
                     bannerImagePath: bannerImagePathRelay
                 )
                 self.reloadSessions(
-                    todaySeconds:   todaySecondsRelay,
-                    completedCount: completedCountRelay,
-                    streakDays:     streakDaysRelay,
-                    weeklyHours:    weeklyHoursRelay,
-                    bestRecord:     bestRecordRelay,
-                    monthlyDays:    monthlyDaysRelay,
-                    recentSessions: recentSessionsRelay
+                    streakDays:       streakDaysRelay,
+                    weeklyHours:      weeklyHoursRelay,
+                    bestRecord:       bestRecordRelay,
+                    monthlyDays:      monthlyDaysRelay,
+                    recentSessions:   recentSessionsRelay,
+                    catProgressPages: catProgressPagesRelay
                 )
                 if let realm = try? Realm() {
                     catsRelay.accept(Array(realm.objects(Cat.self)))
                 }
             })
             .disposed(by: disposeBag)
-
-        let progressRatio: Driver<Float> = Driver
-            .combineLatest(todaySecondsRelay.asDriver(), goalMinutesRelay.asDriver())
-            .map { todaySecs, goalMins -> Float in
-                let goalSecs = goalMins * 60
-                guard goalSecs > 0 else { return 0 }
-                return min(1.0, Float(todaySecs) / Float(goalSecs))
-            }
 
         let streakText = streakDaysRelay.asDriver().map { "\($0)일 연속" }
 
@@ -116,23 +103,20 @@ final class HomeViewModel {
 
         // ── Output ──────────────────────────────────────────────────────────
         return Output(
-            greeting:         greetingRelay.asDriver(),
-            catTitle:         catTitleRelay.asDriver(),
-            bannerImagePath:  bannerImagePathRelay.asDriver(),
-            streakText:       streakText,
-            heroCatName:      heroCatNameRelay.asDriver(),
-            heroStatus:       heroStatusRelay.asDriver(),
-            todaySeconds:     todaySecondsRelay.asDriver(),
-            goalMinutes:      goalMinutesRelay.asDriver(),
-            progressRatio:    progressRatio,
-            completedCount:   completedCountRelay.asDriver(),
-            weeklyHours:      weeklyHoursRelay.asDriver(),
-            bestRecord:       bestRecordRelay.asDriver(),
-            monthlyDays:      monthlyDaysRelay.asDriver(),
-            recentSessions:   recentSessionsRelay.asDriver(),
-            cats:             catsRelay.asDriver(),
-            hasCat:           hasCatRelay.asDriver(),
-            startButtonTitle: startBtnTitleRelay.asDriver()
+            greeting:          greetingRelay.asDriver(),
+            catTitle:          catTitleRelay.asDriver(),
+            bannerImagePath:   bannerImagePathRelay.asDriver(),
+            streakText:        streakText,
+            heroCatName:       heroCatNameRelay.asDriver(),
+            heroStatus:        heroStatusRelay.asDriver(),
+            catProgressPages:  catProgressPagesRelay.asDriver(),
+            weeklyHours:       weeklyHoursRelay.asDriver(),
+            bestRecord:        bestRecordRelay.asDriver(),
+            monthlyDays:       monthlyDaysRelay.asDriver(),
+            recentSessions:    recentSessionsRelay.asDriver(),
+            cats:              catsRelay.asDriver(),
+            hasCat:            hasCatRelay.asDriver(),
+            startButtonTitle:  startBtnTitleRelay.asDriver()
         )
     }
 
@@ -186,23 +170,21 @@ final class HomeViewModel {
     // MARK: - Session Realm reload
 
     private func reloadSessions(
-        todaySeconds:   BehaviorRelay<Int>,
-        completedCount: BehaviorRelay<Int>,
-        streakDays:     BehaviorRelay<Int>,
-        weeklyHours:    BehaviorRelay<String>,
-        bestRecord:     BehaviorRelay<String>,
-        monthlyDays:    BehaviorRelay<String>,
-        recentSessions: BehaviorRelay<[HuntSession]>
+        streakDays:       BehaviorRelay<Int>,
+        weeklyHours:      BehaviorRelay<String>,
+        bestRecord:       BehaviorRelay<String>,
+        monthlyDays:      BehaviorRelay<String>,
+        recentSessions:   BehaviorRelay<[HuntSession]>,
+        catProgressPages: BehaviorRelay<[CatProgressPage]>
     ) {
         guard let realm = try? Realm() else { return }
         let all      = Array(realm.objects(PlaySession.self))
+        let allCats  = Array(realm.objects(Cat.self))
         let calendar = Calendar.current
 
-        // ── 오늘 ────────────────────────────────────────────────────────────
+        // ── 오늘 세션 ────────────────────────────────────────────────────────
         let todaySessions = all.filter { calendar.isDateInToday($0.startTime) }
         let todaySecs     = todaySessions.reduce(0) { $0 + $1.duration }
-        todaySeconds.accept(todaySecs)
-        completedCount.accept(todaySessions.count)
 
         // ── 연속 사냥일 (오늘 포함 역방향 탐색) ─────────────────────────────
         streakDays.accept(Self.computeStreak(from: all, calendar: calendar))
@@ -217,9 +199,9 @@ final class HomeViewModel {
         bestRecord.accept(bestSecs > 0 ? "\(bestSecs / 60)분" : "0분")
 
         // ── 이번 달 사냥일 수 ────────────────────────────────────────────────
-        let monthStart  = calendar.date(from: calendar.dateComponents([.year, .month], from: Date())) ?? Date()
-        let monthDays   = Set(all.filter { $0.startTime >= monthStart }
-                                 .map { calendar.startOfDay(for: $0.startTime) }).count
+        let monthStart = calendar.date(from: calendar.dateComponents([.year, .month], from: Date())) ?? Date()
+        let monthDays  = Set(all.filter { $0.startTime >= monthStart }
+                                .map { calendar.startOfDay(for: $0.startTime) }).count
         monthlyDays.accept("\(monthDays)일")
 
         // ── 최근 3회 세션 → HuntSession 변환 ────────────────────────────────
@@ -227,9 +209,9 @@ final class HomeViewModel {
         formatter.locale     = Locale(identifier: "ko_KR")
         formatter.dateFormat = "a h:mm"
 
-        let recent = all.filter { calendar.isDateInToday($0.startTime) }
-                       .sorted { $0.startTime > $1.startTime }
-                       .prefix(3)
+        let recent = todaySessions
+            .sorted { $0.startTime > $1.startTime }
+            .prefix(3)
         let huntSessions: [HuntSession] = recent.enumerated().map { idx, s in
             let mins     = s.duration / 60
             let toyName  = s.toys.first?.name
@@ -253,6 +235,37 @@ final class HomeViewModel {
             )
         }
         recentSessions.accept(huntSessions)
+
+        // ── 목표 대시보드 페이지 계산 ────────────────────────────────────────
+        var pages: [CatProgressPage] = []
+
+        // 전체 overview 페이지 (첫 번째 고양이의 목표 기준)
+        let overviewGoal = allCats.first?.targetTime ?? 30
+        pages.append(CatProgressPage(
+            catId:            nil,
+            catName:          "전체",
+            profileImageData: nil,
+            todaySeconds:     todaySecs,
+            goalMinutes:      overviewGoal,
+            completedCount:   todaySessions.count
+        ))
+
+        // 개별 고양이 페이지
+        for cat in allCats {
+            let catSessions = todaySessions.filter { s in
+                s.cats.contains(where: { $0.id == cat.id })
+            }
+            let catSecs = catSessions.reduce(0) { $0 + $1.duration }
+            pages.append(CatProgressPage(
+                catId:            cat.id,
+                catName:          cat.name,
+                profileImageData: cat.profileImageData,
+                todaySeconds:     catSecs,
+                goalMinutes:      cat.targetTime,
+                completedCount:   catSessions.count
+            ))
+        }
+        catProgressPages.accept(pages)
     }
 
     // MARK: - Helpers
