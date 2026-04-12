@@ -117,7 +117,7 @@ final class AdoptCatCard: UIView {
         tagStack.alignment = .center
         cat.tags.forEach { tag in
             let pill = UIView()
-            pill.backgroundColor  = AppTheme.Color.purpleLight
+            pill.backgroundColor  = AppTheme.Color.pinkLight
             pill.layer.cornerRadius = 10
             let l = UILabel.make(text: "#\(tag)", size: 11, weight: .semibold, color: AppTheme.Color.primary)
             pill.addSubview(l)

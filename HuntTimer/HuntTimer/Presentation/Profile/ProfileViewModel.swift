@@ -26,7 +26,7 @@ final class ProfileViewModel {
         let tint = input.memorialToggled
             .map { isOn -> UIColor in
                 isOn
-                    ? AppTheme.Color.purpleLight.withAlphaComponent(0.3)
+                    ? AppTheme.Color.pinkLight.withAlphaComponent(0.3)
                     : AppTheme.Color.background
             }
             .asDriver(onErrorJustReturn: AppTheme.Color.background)

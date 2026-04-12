@@ -15,9 +15,9 @@ enum AppTheme {
         static let textDark     = UIColor(hex: "#785b35ff")  // Espresso
         static let textMedium   = UIColor(hex: "#8B6A5A")  // Mocha
         static let textMuted    = UIColor(hex: "#C4956A")  // Clay
-        static let purple       = UIColor(hex: "#F0C0C8")  // Rose
+        static let purple       = UIColor(hex: "#fff0f2")  // Rose
         static let purpleDeep   = UIColor(hex: "#C4D4E4")  // Mist
-        static let purpleLight  = UIColor(hex: "#C9EBD8")  // Mint 100
+        static let pinkLight  = UIColor(hex: "#faaab6")
         static let separator    = UIColor(hex: "#EDF7F2")  // Mint 50
     }
 

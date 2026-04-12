@@ -56,7 +56,7 @@ final class AdoptView: BaseView {
     // MARK: - Hero
     private func makeHeroSection() -> UIView {
         let heroBG = UIView()
-        heroBG.backgroundColor = AppTheme.Color.purpleLight
+        heroBG.backgroundColor = AppTheme.Color.pinkLight
 
         let circle1 = UIView()
         circle1.backgroundColor = AppTheme.Color.purple.withAlphaComponent(0.25)
@@ -186,7 +186,7 @@ final class AdoptView: BaseView {
 
     func updateFilterBtn(_ btn: UIButton, isLocation: Bool, isSelected: Bool) {
         if isLocation {
-            btn.backgroundColor = isSelected ? AppTheme.Color.purple : AppTheme.Color.purpleLight
+            btn.backgroundColor = isSelected ? AppTheme.Color.purple : AppTheme.Color.pinkLight
             btn.setTitleColor(isSelected ? .white : AppTheme.Color.primary, for: .normal)
         } else {
             btn.backgroundColor = isSelected ? AppTheme.Color.primary : AppTheme.Color.primaryLight
@@ -200,7 +200,7 @@ final class AdoptView: BaseView {
         card.layer.cornerRadius = AppTheme.Radius.large
 
         let grad = CAGradientLayer()
-        grad.colors     = [AppTheme.Color.purpleLight.cgColor, AppTheme.Color.primaryLight.cgColor]
+        grad.colors     = [AppTheme.Color.pinkLight.cgColor, AppTheme.Color.primaryLight.cgColor]
         grad.startPoint = CGPoint(x: 0, y: 0)
         grad.endPoint   = CGPoint(x: 1, y: 1)
         card.layer.insertSublayer(grad, at: 0)

@@ -97,7 +97,7 @@ final class GoalPickerBottomSheetViewController: BaseViewController {
 
     private func makeHandle() -> UIView {
         let handle = UIView()
-        handle.backgroundColor   = AppTheme.Color.purpleLight
+        handle.backgroundColor   = AppTheme.Color.pinkLight
         handle.layer.cornerRadius = 2.5
 
         let area = UIView()

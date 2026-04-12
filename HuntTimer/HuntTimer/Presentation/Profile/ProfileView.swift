@@ -187,7 +187,7 @@ final class ProfileView: BaseView {
         }
         let remainingRows: [SettingRow] = [
             SettingRow(symbol: "cloud.rainbow.crop", label: "추모 모드", desc: "소중한 추억 간직하기",
-                       bg: AppTheme.Color.purpleLight, fg: AppTheme.Color.purple, hasToggle: true),
+                       bg: AppTheme.Color.purple, fg: AppTheme.Color.pinkLight, hasToggle: true),
         ]
 
         let listStack = UIStackView.make(axis: .vertical, spacing: 8)
