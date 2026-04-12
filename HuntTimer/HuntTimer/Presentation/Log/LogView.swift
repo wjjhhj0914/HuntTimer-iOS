@@ -114,9 +114,8 @@ final class LogView: BaseView {
                                   color: AppTheme.Color.textDark, alignment: .center)
 
     // MARK: - Session list stored properties (VC가 직접 갱신)
-    let sessionTitleLabel   = UILabel.make(text: "날짜를 선택하세요", size: 15,
-                                           weight: .bold, color: AppTheme.Color.textDark)
-    let sessionSummaryLabel = UILabel.make(text: "", size: 12, color: AppTheme.Color.textMuted)
+    let sessionTitleLabel = UILabel.make(text: "날짜를 선택하세요", size: 18,
+                                         weight: .black, color: AppTheme.Color.textDark)
     let rowsStack           = UIStackView.make(axis: .vertical, spacing: 8)
     let emptyStateView      = UIView()
 
@@ -164,13 +163,9 @@ final class LogView: BaseView {
     private func makeHeader() -> UIView {
         let v     = UIView()
         let title = UILabel.make(text: "활동 기록", size: 22, weight: .black, color: AppTheme.Color.textDark)
-        let sub   = UILabel.make(text: "뮤기의 사냥 히스토리", size: 13, color: AppTheme.Color.textMuted)
-        let textStack = UIStackView.make(axis: .vertical, spacing: 2)
-        textStack.addArrangedSubview(title)
-        textStack.addArrangedSubview(sub)
 
         let row = UIStackView.make(axis: .horizontal, spacing: 8, alignment: .center)
-        row.addArrangedSubview(textStack)
+        row.addArrangedSubview(title)
         row.addArrangedSubview(profileButton)
 
         v.addSubview(row)
@@ -324,9 +319,7 @@ final class LogView: BaseView {
         emptyStateView.isHidden = true
 
         let headerRow = UIStackView.make(axis: .horizontal, alignment: .center)
-        sessionSummaryLabel.setContentHuggingPriority(.required, for: .horizontal)
         headerRow.addArrangedSubview(sessionTitleLabel)
-        headerRow.addArrangedSubview(sessionSummaryLabel)
 
         // contentSwitch: UIStackView이므로 isHidden인 뷰를 자동 collapse
         // → rowsStack/emptyStateView 양쪽을 edges로 쓰는 충돌을 방지
@@ -334,24 +327,10 @@ final class LogView: BaseView {
         contentSwitch.addArrangedSubview(rowsStack)
         contentSwitch.addArrangedSubview(emptyStateView)
 
-        let lineView = UIView()
-        lineView.backgroundColor   = AppTheme.Color.primaryLight
-        lineView.layer.cornerRadius = 1
-
-        let timelineContainer = UIView()
-        timelineContainer.addSubview(lineView)
-        timelineContainer.addSubview(contentSwitch)
-        contentSwitch.snp.makeConstraints { $0.edges.equalToSuperview() }
-        lineView.snp.makeConstraints { make in
-            make.leading.equalToSuperview().offset(24)
-            make.top.equalToSuperview().offset(24)
-            make.bottom.equalToSuperview().offset(-24)
-            make.width.equalTo(2)
-        }
-
+        // ⚠️ 글로벌 lineView 제거 — 각 고양이 섹션별 독립 라인은 makeCatSessionsBlock에서 생성
         let mainStack = UIStackView.make(axis: .vertical, spacing: 12)
         mainStack.addArrangedSubview(headerRow)
-        mainStack.addArrangedSubview(timelineContainer)
+        mainStack.addArrangedSubview(contentSwitch)
 
         let wrapper = UIView()
         wrapper.addSubview(mainStack)
@@ -371,22 +350,87 @@ final class LogView: BaseView {
 
     private let swipeRevealWidth: CGFloat = 60
 
-    /// 세션 목록을 갱신 — 빈 배열이면 empty state 표시
-    func reloadSessionRows(_ sessions: [HuntSession]) {
+    /// 고양이별 그룹 세션 목록을 갱신 — 빈 배열이면 empty state 표시
+    func reloadSessionRows(_ groups: [CatSessionGroup]) {
         currentSwipeContent = nil
         rowsStack.arrangedSubviews.forEach { $0.removeFromSuperview() }
 
-        if sessions.isEmpty {
+        let hasAny = groups.contains { !$0.items.isEmpty }
+        if !hasAny {
             rowsStack.isHidden      = true
             emptyStateView.isHidden = false
-            sessionSummaryLabel.text = ""
         } else {
             rowsStack.isHidden      = false
             emptyStateView.isHidden = true
-            sessions.enumerated().forEach { idx, session in
-                rowsStack.addArrangedSubview(makeTimelineRow(session, index: idx))
+
+            groups.enumerated().forEach { groupIdx, group in
+                // H2 헤더
+                rowsStack.addArrangedSubview(makeCatSectionHeader(group.catName))
+
+                // 세션 블록 (2개 이상일 때만 연결선 표시)
+                let block = makeCatSessionsBlock(group.items)
+                rowsStack.addArrangedSubview(block)
+
+                // 마지막 그룹 이외엔 다음 그룹과의 간격을 넓힘
+                if groupIdx < groups.count - 1 {
+                    rowsStack.setCustomSpacing(20, after: block)
+                }
             }
         }
+    }
+
+    // MARK: - Cat Section Timeline Block
+
+    /// 세션 행들을 타임라인 선과 함께 감싸는 컨테이너 — 2개 이상일 때만 연결선 표시
+    private func makeCatSessionsBlock(_ items: [(session: HuntSession, playSessionIndex: Int)]) -> UIView {
+        let innerStack = UIStackView.make(axis: .vertical, spacing: 8)
+        items.forEach { item in
+            innerStack.addArrangedSubview(makeTimelineRow(item.session, index: item.playSessionIndex))
+        }
+
+        let lineView = UIView()
+        lineView.backgroundColor    = AppTheme.Color.primaryLight
+        lineView.layer.cornerRadius = 1
+        lineView.isHidden           = items.count < 2   // 1개면 선 숨김
+
+        let container = UIView()
+        container.addSubview(lineView)
+        container.addSubview(innerStack)
+
+        innerStack.snp.makeConstraints { $0.edges.equalToSuperview() }
+        lineView.snp.makeConstraints { make in
+            make.leading.equalToSuperview().offset(24)   // 아이콘 중심(48/2)
+            make.top.equalToSuperview().offset(24)       // 첫 아이콘 중심
+            make.bottom.equalToSuperview().offset(-24)   // 마지막 아이콘 중심
+            make.width.equalTo(2)
+        }
+        return container
+    }
+
+    // MARK: - Cat Section H2 Header
+
+    private func makeCatSectionHeader(_ catName: String) -> UIView {
+        let cfg  = UIImage.SymbolConfiguration(pointSize: 11, weight: .semibold)
+        let icon = UIImageView(image: UIImage(systemName: "pawprint.fill", withConfiguration: cfg))
+        icon.tintColor   = AppTheme.Color.primary
+        icon.contentMode = .scaleAspectFit
+        icon.snp.makeConstraints { $0.width.height.equalTo(13) }
+
+        let label = UILabel.make(text: "\(catName)의 사냥 기록", size: 13, weight: .bold,
+                                  color: AppTheme.Color.textDark)
+
+        let row = UIStackView.make(axis: .horizontal, spacing: 6, alignment: .center)
+        row.addArrangedSubview(icon)
+        row.addArrangedSubview(label)
+
+        let container = UIView()
+        container.addSubview(row)
+        row.snp.makeConstraints { make in
+            make.top.equalToSuperview().offset(4)
+            make.bottom.equalToSuperview().offset(-4)
+            make.leading.trailing.equalToSuperview()
+        }
+        return container
     }
 
     // MARK: - Timeline Row
@@ -412,8 +456,8 @@ final class LogView: BaseView {
         textS.addArrangedSubview(toyL)
         textS.addArrangedSubview(timeL)
 
-        let durationPill = makePillLabel("⏱ \(session.durationText)", bg: AppTheme.Color.primaryLight, fg: AppTheme.Color.primary)
-        let calPill      = makePillLabel("🔥 \(session.calories)kcal", bg: AppTheme.Color.yellowLight, fg: AppTheme.Color.yellowDark)
+        let durationPill = makePillWithSymbol("clock.fill",  text: session.durationText,       bg: AppTheme.Color.yellowLight, fg: AppTheme.Color.yellowDark)
+        let calPill      = makePillWithSymbol("flame.fill",  text: "\(session.calories)kcal",  bg: AppTheme.Color.yellowLight,  fg: AppTheme.Color.yellowDark)
         let pillStack    = UIStackView.make(axis: .vertical, spacing: 3, alignment: .trailing)
         pillStack.addArrangedSubview(durationPill)
         pillStack.addArrangedSubview(calPill)
@@ -509,6 +553,31 @@ final class LogView: BaseView {
         let label = UILabel.make(text: text, size: 10, weight: .semibold, color: fg)
         pill.addSubview(label)
         label.snp.makeConstraints { make in
+            make.top.bottom.equalToSuperview().inset(3)
+            make.leading.trailing.equalToSuperview().inset(6)
+        }
+        return pill
+    }
+
+    private func makePillWithSymbol(_ symbolName: String, text: String, bg: UIColor, fg: UIColor) -> UIView {
+        let pill = UIView()
+        pill.backgroundColor    = bg
+        pill.layer.cornerRadius = 8
+
+        let cfg  = UIImage.SymbolConfiguration(pointSize: 9, weight: .semibold)
+        let icon = UIImageView(image: UIImage(systemName: symbolName, withConfiguration: cfg))
+        icon.tintColor   = fg
+        icon.contentMode = .scaleAspectFit
+
+        let label = UILabel.make(text: text, size: 10, weight: .semibold, color: fg)
+
+        let row = UIStackView.make(axis: .horizontal, spacing: 3, alignment: .center)
+        row.addArrangedSubview(icon)
+        row.addArrangedSubview(label)
+        icon.snp.makeConstraints { $0.width.height.equalTo(10) }
+
+        pill.addSubview(row)
+        row.snp.makeConstraints { make in
             make.top.bottom.equalToSuperview().inset(3)
             make.leading.trailing.equalToSuperview().inset(6)
         }

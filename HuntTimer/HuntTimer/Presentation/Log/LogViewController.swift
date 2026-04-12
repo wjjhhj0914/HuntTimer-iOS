@@ -98,8 +98,7 @@ final class LogViewController: BaseViewController {
         selectedDay = nil
         reloadCalendar()
         contentView.sessionTitleLabel.text  = "날짜를 선택하세요"
-        contentView.sessionSummaryLabel.text = ""
-        contentView.reloadSessionRows([])
+        contentView.reloadSessionRows([CatSessionGroup]())
         UIImpactFeedbackGenerator(style: .light).impactOccurred()
     }
 
@@ -109,8 +108,7 @@ final class LogViewController: BaseViewController {
         selectedDay = nil
         reloadCalendar()
         contentView.sessionTitleLabel.text  = "날짜를 선택하세요"
-        contentView.sessionSummaryLabel.text = ""
-        contentView.reloadSessionRows([])
+        contentView.reloadSessionRows([CatSessionGroup]())
         UIImpactFeedbackGenerator(style: .light).impactOccurred()
     }
 
@@ -140,7 +138,6 @@ final class LogViewController: BaseViewController {
     }
 
     private func reloadSessions(for date: Date) {
-        // Realm 단일 쿼리 — currentPlaySessions와 HuntSession 목록을 동시에 갱신
         currentPlaySessions = loadAllPlaySessions(for: date)
 
         let cal   = Calendar.current
@@ -148,43 +145,66 @@ final class LogViewController: BaseViewController {
         let day   = cal.component(.day,   from: date)
         contentView.sessionTitleLabel.text = "\(month)월 \(day)일 기록"
 
-        if currentPlaySessions.isEmpty {
-            contentView.sessionSummaryLabel.text = ""
-        } else {
-            let totalMins = currentPlaySessions.reduce(0) { $0 + $1.duration } / 60
-            contentView.sessionSummaryLabel.text = "총 \(currentPlaySessions.count)회 · \(totalMins)분"
-        }
-
-        contentView.reloadSessionRows(buildHuntSessions(from: currentPlaySessions))
+        contentView.reloadSessionRows(buildGroupedSessions(from: currentPlaySessions))
     }
 
-    private func buildHuntSessions(from playSessions: [PlaySession]) -> [HuntSession] {
+    // MARK: - Session Builders
+
+    /// PlaySession 목록을 고양이별로 그룹화해 반환
+    private func buildGroupedSessions(from playSessions: [PlaySession]) -> [CatSessionGroup] {
         let formatter        = DateFormatter()
         formatter.locale     = Locale(identifier: "ko_KR")
         formatter.dateFormat = "a h:mm"
 
-        return playSessions.enumerated().map { idx, s in
-            let mins     = s.duration / 60
-            let toyName  = s.toys.first?.name
-            let category = s.toys.first?.category ?? ""
-            let title: String
-            if let name = toyName {
-                title = "\(name)\(Self.roPostposition(for: name)) 사냥했어요!"
-            } else {
-                title = "열정적으로 사냥했어요!"
+        // 삽입 순서를 유지하는 ordered 그룹 구축
+        var groupOrder: [String] = []
+        var groupMap: [String: [(session: HuntSession, playSessionIndex: Int)]] = [:]
+
+        for (idx, session) in playSessions.enumerated() {
+            let huntSession = makeHuntSession(from: session, index: idx, formatter: formatter)
+
+            // 연결된 고양이가 없으면 "기타" 그룹
+            let catNames: [String] = session.cats.isEmpty
+                ? ["기타"]
+                : session.cats.map { $0.name }
+
+            for catName in catNames {
+                if groupMap[catName] == nil {
+                    groupOrder.append(catName)
+                    groupMap[catName] = []
+                }
+                groupMap[catName]?.append((session: huntSession, playSessionIndex: idx))
             }
-            return HuntSession(
-                id:              idx + 1,
-                time:            formatter.string(from: s.startTime),
-                title:           title,
-                toy:             toyName ?? "장난감 없음",
-                toySymbol:       Self.sfSymbol(for: category),
-                durationText:    mins > 0 ? "\(mins)분" : "1분 미만",
-                durationSeconds: s.duration,
-                calories:        Int(Double(s.duration) / 60.0 * 2.8),
-                imageURL:        ""
-            )
         }
+
+        return groupOrder.compactMap { name in
+            guard let items = groupMap[name] else { return nil }
+            return CatSessionGroup(catName: name, items: items)
+        }
+    }
+
+    private func makeHuntSession(from session: PlaySession, index: Int,
+                                  formatter: DateFormatter) -> HuntSession {
+        let mins     = session.duration / 60
+        let toyName  = session.toys.first?.name
+        let category = session.toys.first?.category ?? ""
+        let title: String
+        if let name = toyName {
+            title = "\(name)\(Self.roPostposition(for: name)) 사냥했어요!"
+        } else {
+            title = "열정적으로 사냥했어요!"
+        }
+        return HuntSession(
+            id:              index + 1,
+            time:            formatter.string(from: session.startTime),
+            title:           title,
+            toy:             toyName ?? "장난감 없음",
+            toySymbol:       Self.sfSymbol(for: category),
+            durationText:    mins > 0 ? "\(mins)분" : "1분 미만",
+            durationSeconds: session.duration,
+            calories:        Int(Double(session.duration) / 60.0 * 2.8),
+            imageURL:        ""
+        )
     }
 
     // MARK: - Delete

@@ -13,6 +13,12 @@ struct HuntSession {
     let imageURL: String
 }
 
+// MARK: - Cat Session Group (캘린더 화면 고양이별 섹션 그룹)
+struct CatSessionGroup {
+    let catName: String
+    let items: [(session: HuntSession, playSessionIndex: Int)]
+}
+
 // MARK: - Achievement Badge
 struct Badge {
     let emoji: String
