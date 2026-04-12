@@ -22,15 +22,10 @@ final class HomeViewModel {
         let catTitle: Driver<String>
         // Banner
         let bannerImagePath: Driver<String?>
-        let streakText: Driver<String>
         let heroCatName: Driver<String>
         let heroStatus: Driver<String>
         // Progress pager
         let catProgressPages: Driver<[CatProgressPage]>
-        // Quick stats
-        let weeklyHours: Driver<String>
-        let bestRecord: Driver<String>
-        let monthlyDays: Driver<String>
         // Recent sessions
         let recentSessions: Driver<[HuntSession]>
         // Cats section
@@ -59,10 +54,6 @@ final class HomeViewModel {
         let bannerImagePathRelay = BehaviorRelay<String?>(value: nil)
 
         // ── 세션 Relay ──────────────────────────────────────────────────────
-        let streakDaysRelay      = BehaviorRelay<Int>(value: 0)
-        let weeklyHoursRelay     = BehaviorRelay<String>(value: "0시간")
-        let bestRecordRelay      = BehaviorRelay<String>(value: "0분")
-        let monthlyDaysRelay     = BehaviorRelay<String>(value: "0일")
         let recentSessionsRelay  = BehaviorRelay<[HuntSession]>(value: [])
         let catsRelay            = BehaviorRelay<[Cat]>(value: [])
         let catProgressPagesRelay = BehaviorRelay<[CatProgressPage]>(value: [])
@@ -81,10 +72,6 @@ final class HomeViewModel {
                     bannerImagePath: bannerImagePathRelay
                 )
                 self.reloadSessions(
-                    streakDays:       streakDaysRelay,
-                    weeklyHours:      weeklyHoursRelay,
-                    bestRecord:       bestRecordRelay,
-                    monthlyDays:      monthlyDaysRelay,
                     recentSessions:   recentSessionsRelay,
                     catProgressPages: catProgressPagesRelay
                 )
@@ -93,8 +80,6 @@ final class HomeViewModel {
                 }
             })
             .disposed(by: disposeBag)
-
-        let streakText = streakDaysRelay.asDriver().map { "\($0)일 연속" }
 
         // ── Side effects ────────────────────────────────────────────────────
         input.startHuntingTapped
@@ -106,13 +91,9 @@ final class HomeViewModel {
             greeting:          greetingRelay.asDriver(),
             catTitle:          catTitleRelay.asDriver(),
             bannerImagePath:   bannerImagePathRelay.asDriver(),
-            streakText:        streakText,
             heroCatName:       heroCatNameRelay.asDriver(),
             heroStatus:        heroStatusRelay.asDriver(),
             catProgressPages:  catProgressPagesRelay.asDriver(),
-            weeklyHours:       weeklyHoursRelay.asDriver(),
-            bestRecord:        bestRecordRelay.asDriver(),
-            monthlyDays:       monthlyDaysRelay.asDriver(),
             recentSessions:    recentSessionsRelay.asDriver(),
             cats:              catsRelay.asDriver(),
             hasCat:            hasCatRelay.asDriver(),
@@ -170,10 +151,6 @@ final class HomeViewModel {
     // MARK: - Session Realm reload
 
     private func reloadSessions(
-        streakDays:       BehaviorRelay<Int>,
-        weeklyHours:      BehaviorRelay<String>,
-        bestRecord:       BehaviorRelay<String>,
-        monthlyDays:      BehaviorRelay<String>,
         recentSessions:   BehaviorRelay<[HuntSession]>,
         catProgressPages: BehaviorRelay<[CatProgressPage]>
     ) {
@@ -185,24 +162,6 @@ final class HomeViewModel {
         // ── 오늘 세션 ────────────────────────────────────────────────────────
         let todaySessions = all.filter { calendar.isDateInToday($0.startTime) }
         let todaySecs     = todaySessions.reduce(0) { $0 + $1.duration }
-
-        // ── 연속 사냥일 (오늘 포함 역방향 탐색) ─────────────────────────────
-        streakDays.accept(Self.computeStreak(from: all, calendar: calendar))
-
-        // ── 이번 주 (7일) ───────────────────────────────────────────────────
-        let weekAgo    = calendar.date(byAdding: .day, value: -7, to: Date()) ?? Date()
-        let weeklySecs = all.filter { $0.startTime >= weekAgo }.reduce(0) { $0 + $1.duration }
-        weeklyHours.accept(Self.formatDuration(seconds: weeklySecs, style: .hoursOnly))
-
-        // ── 최고 기록 (단일 세션) ────────────────────────────────────────────
-        let bestSecs = all.max(by: { $0.duration < $1.duration })?.duration ?? 0
-        bestRecord.accept(bestSecs > 0 ? "\(bestSecs / 60)분" : "0분")
-
-        // ── 이번 달 사냥일 수 ────────────────────────────────────────────────
-        let monthStart = calendar.date(from: calendar.dateComponents([.year, .month], from: Date())) ?? Date()
-        let monthDays  = Set(all.filter { $0.startTime >= monthStart }
-                                .map { calendar.startOfDay(for: $0.startTime) }).count
-        monthlyDays.accept("\(monthDays)일")
 
         // ── 최근 3회 세션 → HuntSession 변환 ────────────────────────────────
         let formatter        = DateFormatter()
@@ -287,29 +246,6 @@ final class HomeViewModel {
         case "카샤카샤": return "timelapse"
         case "오뎅꼬치": return "oar.2.crossed"
         default:       return "pawprint.fill"   // 장난감 미선택 or 알 수 없는 카테고리
-        }
-    }
-
-    private static func computeStreak(from sessions: [PlaySession], calendar: Calendar) -> Int {
-        let activeDays = Set(sessions.map { calendar.startOfDay(for: $0.startTime) })
-        var streak     = 0
-        var date       = calendar.startOfDay(for: Date())
-        while activeDays.contains(date) {
-            streak += 1
-            guard let prev = calendar.date(byAdding: .day, value: -1, to: date) else { break }
-            date = prev
-        }
-        return streak
-    }
-
-    private enum DurationStyle { case hoursOnly, full }
-
-    private static func formatDuration(seconds: Int, style: DurationStyle) -> String {
-        let h = seconds / 3600
-        let m = (seconds % 3600) / 60
-        switch style {
-        case .hoursOnly: return h > 0 ? "\(h)시간" : "\(m)분"
-        case .full:      return h > 0 ? (m > 0 ? "\(h)시간 \(m)분" : "\(h)시간") : "\(m)분"
         }
     }
 

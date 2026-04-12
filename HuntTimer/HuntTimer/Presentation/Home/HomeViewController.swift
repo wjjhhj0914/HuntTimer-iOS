@@ -19,6 +19,10 @@ final class HomeViewController: BaseViewController {
     private var catItemViews:         [CatAvatarItemView] = []
     private var currentProgressPages: [CatProgressPage] = []
 
+    // "전체" 아바타 참조 (포커스 상태 업데이트용)
+    private var allCatCircleView:    UIView?
+    private var allCatContainerView: UIView?
+
     // MARK: - loadView
     override func loadView() {
         view = contentView
@@ -71,7 +75,6 @@ final class HomeViewController: BaseViewController {
             .subscribe(onNext: { [weak self] in self?.presentBannerImagePicker() })
             .disposed(by: disposeBag)
 
-        output.streakText.drive(contentView.streakLabel.rx.text).disposed(by: disposeBag)
         output.heroCatName.drive(contentView.heroCatLabel.rx.text).disposed(by: disposeBag)
         output.heroStatus.drive(contentView.heroStatusLabel.rx.text).disposed(by: disposeBag)
 
@@ -88,11 +91,6 @@ final class HomeViewController: BaseViewController {
         contentView.progressPagerView.onPageChanged = { [weak self] pageIndex in
             self?.syncCatHighlight(forPagerPage: pageIndex)
         }
-
-        // Quick stats
-        output.weeklyHours.drive(contentView.weeklyValueLabel.rx.text).disposed(by: disposeBag)
-        output.bestRecord.drive(contentView.bestValueLabel.rx.text).disposed(by: disposeBag)
-        output.monthlyDays.drive(contentView.monthlyValueLabel.rx.text).disposed(by: disposeBag)
 
         // Cat section
         output.cats
@@ -133,9 +131,8 @@ final class HomeViewController: BaseViewController {
         output.hasCat
             .drive(onNext: { [weak self] hasCat in
                 guard let self else { return }
-                self.contentView.bannerSectionView?.isHidden     = !hasCat
-                self.contentView.progressSectionView?.isHidden   = !hasCat
-                self.contentView.quickStatsSectionView?.isHidden = !hasCat
+                self.contentView.bannerSectionView?.isHidden   = !hasCat
+                self.contentView.progressSectionView?.isHidden = !hasCat
             })
             .disposed(by: disposeBag)
 
@@ -172,8 +169,18 @@ final class HomeViewController: BaseViewController {
 
     private func reloadCatSection(_ cats: [Cat]) {
         catItemViews.removeAll()
+        allCatCircleView    = nil
+        allCatContainerView = nil
         let stack = contentView.catAvatarsStack
         stack.arrangedSubviews.forEach { $0.removeFromSuperview() }
+
+        // "전체" 버튼 (고양이가 1마리 이상일 때만 표시)
+        if !cats.isEmpty {
+            let allItem = makeAllCatAvatarItem()
+            stack.addArrangedSubview(allItem)
+            // 현재 페이지가 overview(0)면 포커스됨, 아니면 반투명
+            setAllCatFocused(focusedCatId == nil, animated: false)
+        }
 
         cats.forEach { cat in
             let item = CatAvatarItemView(cat: cat)
@@ -199,6 +206,73 @@ final class HomeViewController: BaseViewController {
         updateCatCountBadge(totalCount: cats.count)
     }
 
+    // MARK: - All Cat Avatar
+
+    private func makeAllCatAvatarItem() -> UIView {
+        let circleView = UIView()
+        circleView.backgroundColor    = UIColor(hex: "#FFF3E0")
+        circleView.layer.cornerRadius = 32
+        circleView.layer.borderWidth  = 0
+        circleView.layer.borderColor  = AppTheme.Color.primary.cgColor
+        circleView.clipsToBounds      = true
+
+        let cfg  = UIImage.SymbolConfiguration(pointSize: 24, weight: .semibold)
+        let icon = UIImageView(image: UIImage(systemName: "pawprint.fill", withConfiguration: cfg))
+        icon.tintColor   = AppTheme.Color.primary
+        icon.contentMode = .scaleAspectFit
+        circleView.addSubview(icon)
+        icon.snp.makeConstraints { make in
+            make.center.equalToSuperview()
+            make.width.height.equalTo(28)
+        }
+
+        let nameLabel = UILabel.make(text: "전체", size: 12, weight: .semibold,
+                                     color: AppTheme.Color.textDark)
+        nameLabel.textAlignment = .center
+
+        let container = UIView()
+        container.isUserInteractionEnabled = true
+        container.addSubview(circleView)
+        container.addSubview(nameLabel)
+        container.snp.makeConstraints { $0.width.equalTo(64) }
+        circleView.snp.makeConstraints { make in
+            make.top.centerX.equalToSuperview()
+            make.width.height.equalTo(64)
+        }
+        nameLabel.snp.makeConstraints { make in
+            make.top.equalTo(circleView.snp.bottom).offset(6)
+            make.leading.trailing.equalTo(circleView)
+            make.bottom.equalToSuperview()
+        }
+
+        let tap = UITapGestureRecognizer(target: self, action: #selector(allCatAvatarTapped))
+        container.addGestureRecognizer(tap)
+
+        allCatCircleView    = circleView
+        allCatContainerView = container
+        return container
+    }
+
+    @objc private func allCatAvatarTapped() {
+        contentView.progressPagerView.setPage(0, animated: true)
+        UIImpactFeedbackGenerator(style: .light).impactOccurred()
+    }
+
+    private func setAllCatFocused(_ focused: Bool, animated: Bool = true) {
+        guard let circleView    = allCatCircleView,
+              let containerView = allCatContainerView else { return }
+        let apply = {
+            if focused {
+                circleView.layer.borderWidth = 3
+                containerView.alpha          = 1.0
+            } else {
+                circleView.layer.borderWidth = 0
+                containerView.alpha          = 0.5
+            }
+        }
+        animated ? UIView.animate(withDuration: 0.2, animations: apply) : apply()
+    }
+
     // MARK: - Edit Mode
 
     private func enterEditMode() {
@@ -222,6 +296,7 @@ final class HomeViewController: BaseViewController {
             item.setEditing(false)
             item.setFocused(focusState(for: item.cat), animated: false)
         }
+        setAllCatFocused(focusedCatId == nil, animated: false)
 
         UIView.animate(withDuration: 0.2) {
             self.contentView.catBadgeContainer?.isHidden  = false
@@ -254,8 +329,10 @@ final class HomeViewController: BaseViewController {
         if pageIndex == 0 || pageIndex >= currentProgressPages.count {
             // 전체 페이지 — 포커스 없음 (모두 기본 상태)
             focusedCatId = nil
+            setAllCatFocused(true, animated: true)
         } else {
             focusedCatId = currentProgressPages[pageIndex].catId
+            setAllCatFocused(false, animated: true)
         }
         catItemViews.forEach { $0.setFocused(focusState(for: $0.cat), animated: true) }
         updateCatCountBadge(totalCount: catItemViews.count)

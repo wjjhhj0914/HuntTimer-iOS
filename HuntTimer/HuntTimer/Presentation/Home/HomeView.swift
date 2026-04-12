@@ -34,7 +34,6 @@ final class HomeView: BaseView {
         btn.clipsToBounds = true
         return btn
     }()
-    let streakLabel     = UILabel.make(text: "", size: 12, weight: .bold, color: .white)
     let heroCatLabel    = UILabel.make(text: "", size: 18, weight: .black, color: .white)
     let heroStatusLabel = UILabel.make(text: "", size: 13, color: UIColor(white: 1, alpha: 0.85))
     let bannerPlaceholderLabel: UILabel = {
@@ -49,11 +48,6 @@ final class HomeView: BaseView {
 
     // MARK: - Progress Pager
     let progressPagerView = ProgressPagerView()
-
-    // MARK: - Quick Stats
-    let weeklyValueLabel  = UILabel.make(text: "", size: 13, weight: .bold, color: AppTheme.Color.textDark, alignment: .center)
-    let bestValueLabel    = UILabel.make(text: "", size: 13, weight: .bold, color: AppTheme.Color.textDark, alignment: .center)
-    let monthlyValueLabel = UILabel.make(text: "", size: 13, weight: .bold, color: AppTheme.Color.textDark, alignment: .center)
 
     // MARK: - Recent Sessions
     let recentStack  = UIStackView.make(axis: .vertical, spacing: 8)
@@ -135,7 +129,6 @@ final class HomeView: BaseView {
     // hasCat에 따라 show/hide 할 섹션 참조
     private(set) var bannerSectionView: UIView?
     private(set) var progressSectionView: UIView?
-    private(set) var quickStatsSectionView: UIView?
     private(set) var recentSectionView: UIView?
 
     private func buildSections() {
@@ -148,10 +141,6 @@ final class HomeView: BaseView {
         let progress = makeProgressSection()
         progressSectionView = progress
         contentStack.addArrangedSubview(progress)
-
-        let quickStats = makeQuickStatsSection()
-        quickStatsSectionView = quickStats
-        contentStack.addArrangedSubview(quickStats)
 
         let catSection = makeCatSection()
         catSectionView = catSection
@@ -189,14 +178,6 @@ final class HomeView: BaseView {
         container.addSubview(gradView)
 
         container.addSubview(bannerPlaceholderLabel)
-
-        let streakBG = UIView()
-        streakBG.backgroundColor    = UIColor(white: 1, alpha: 0.20)
-        streakBG.layer.cornerRadius = 14
-        streakBG.clipsToBounds      = true
-        streakBG.addSubview(streakLabel)
-        container.addSubview(streakBG)
-
         container.addSubview(editBannerButton)
 
         // ── 2단계: 제약 설정 ──────────────────────────────────────────────
@@ -220,13 +201,6 @@ final class HomeView: BaseView {
             gradView.layer.addSublayer(grad)
         }
 
-        streakLabel.snp.makeConstraints { make in
-            make.edges.equalToSuperview().inset(UIEdgeInsets(top: 5, left: 10, bottom: 5, right: 10))
-        }
-        // 스트릭 배지: 좌하단으로 이동
-        streakBG.snp.makeConstraints { make in
-            make.bottom.leading.equalToSuperview().inset(16)
-        }
         editBannerButton.snp.makeConstraints { make in
             make.bottom.trailing.equalToSuperview().inset(12)
             make.width.height.equalTo(32)
@@ -237,34 +211,6 @@ final class HomeView: BaseView {
 
     private func makeProgressSection() -> UIView {
         return progressPagerView
-    }
-
-    private func makeQuickStatsSection() -> UIView {
-        let stats: [(String, String, UILabel)] = [
-            ("target",   "이번 주",  weeklyValueLabel),
-            ("trophy",   "최고 기록", bestValueLabel),
-            ("calendar", "이번 달",  monthlyValueLabel),
-        ]
-        let row = UIStackView.make(axis: .horizontal, spacing: 8, distribution: .fillEqually)
-        stats.forEach { symbolName, label, valueLabel in
-            let card = UIView()
-            card.applyCardStyle(cornerRadius: AppTheme.Radius.large)
-            let config    = UIImage.SymbolConfiguration(pointSize: 20, weight: .medium)
-            let iconImage = UIImage(systemName: symbolName, withConfiguration: config)
-            let iconView  = UIImageView(image: iconImage)
-            iconView.tintColor = AppTheme.Color.primary
-            iconView.contentMode = .scaleAspectFit
-            let labelL = UILabel.make(text: label, size: 10, color: AppTheme.Color.textMuted, alignment: .center)
-            let stack  = UIStackView.make(axis: .vertical, spacing: 2, alignment: .center)
-            [iconView, labelL, valueLabel].forEach { stack.addArrangedSubview($0) }
-            card.addSubview(stack)
-            stack.snp.makeConstraints { make in
-                make.top.bottom.equalToSuperview().inset(12)
-                make.leading.trailing.equalToSuperview().inset(4)
-            }
-            row.addArrangedSubview(card)
-        }
-        return row.wrapped(insets: UIEdgeInsets(top: 0, left: 20, bottom: 0, right: 20))
     }
 
     private func makeCatSection() -> UIView {
