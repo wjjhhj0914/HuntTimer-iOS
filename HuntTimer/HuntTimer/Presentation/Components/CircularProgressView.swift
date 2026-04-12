@@ -36,7 +36,7 @@ final class CircularProgressView: UIView {
 
         remainingLayer.path        = path
         remainingLayer.fillColor   = UIColor.clear.cgColor
-        remainingLayer.strokeColor = AppTheme.Color.yellow.cgColor
+        remainingLayer.strokeColor = AppTheme.Color.yellowLight.cgColor
         remainingLayer.lineWidth   = 10
         remainingLayer.lineCap     = .round
         remainingLayer.strokeStart = 0
