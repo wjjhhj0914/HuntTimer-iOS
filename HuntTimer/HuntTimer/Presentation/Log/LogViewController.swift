@@ -193,7 +193,7 @@ final class LogViewController: BaseViewController {
             title:           title,
             toy:             toyName ?? "장난감 없음",
             toySymbol:       Self.sfSymbol(for: category),
-            durationText:    mins > 0 ? "\(mins)분" : "1분 미만",
+            durationText:    Self.formatDuration(session.duration),
             durationSeconds: session.duration,
             calories:        Int(Double(session.duration) / 60.0 * 2.8),
             imageURL:        ""
@@ -296,6 +296,17 @@ final class LogViewController: BaseViewController {
     }
 
     // MARK: - Helpers
+
+    /// 초 단위 duration → "SS초" 또는 "M분 SS초" 포맷
+    private static func formatDuration(_ seconds: Int) -> String {
+        if seconds < 60 {
+            return "\(seconds)초"
+        } else {
+            let m = seconds / 60
+            let s = seconds % 60
+            return s > 0 ? "\(m)분 \(s)초" : "\(m)분"
+        }
+    }
 
     private static func sfSymbol(for category: String) -> String {
         switch category {
