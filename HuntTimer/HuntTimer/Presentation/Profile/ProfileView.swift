@@ -31,10 +31,13 @@ final class ProfileView: BaseView {
     }()
 
     let photoEditButton: UIButton = {
-        let btn = UIButton(type: .system)
-        let cfg = UIImage.SymbolConfiguration(pointSize: 11, weight: .semibold)
-        btn.setImage(UIImage(systemName: "camera.fill", withConfiguration: cfg), for: .normal)
-        btn.tintColor = .white
+        let btn = UIButton(type: .custom)
+        let symCfg = UIImage.SymbolConfiguration(pointSize: 9, weight: .semibold)
+        var config = UIButton.Configuration.plain()
+        config.image = UIImage(systemName: "camera.fill", withConfiguration: symCfg)
+        config.baseForegroundColor = .white
+        config.contentInsets = .zero
+        btn.configuration = config
         btn.backgroundColor = AppTheme.Color.primary
         btn.layer.cornerRadius = 13
         btn.clipsToBounds = true
@@ -88,6 +91,7 @@ final class ProfileView: BaseView {
 
     private func buildContent() {
         contentStack.addArrangedSubview(makeHeroSection())
+        contentStack.addArrangedSubview(makeStatsSection())
         contentStack.addArrangedSubview(makeSettingsSection())
         contentStack.addArrangedSubview(makeBadgesSection())
         contentStack.addArrangedSubview(makeAppInfoSection())
@@ -113,36 +117,10 @@ final class ProfileView: BaseView {
             make.width.height.equalTo(112)
         }
 
-        let statsDefs: [(String, UILabel, String)] = [
-            ("🎯", huntCountLabel,  "총 사냥"),
-            ("⏱️", totalTimeLabel,  "총 시간"),
-            ("🏅", statsBadgeLabel, "배지"),
-        ]
-        let statsRow = UIStackView.make(axis: .horizontal, spacing: 12, alignment: .center, distribution: .fillEqually)
-        statsDefs.forEach { emoji, valLabel, lbl in
-            let card = UIView()
-            card.backgroundColor    = AppTheme.Color.primaryLight
-            card.layer.cornerRadius = AppTheme.Radius.medium
-            let col = UIStackView.make(axis: .vertical, spacing: 2, alignment: .center)
-            col.addArrangedSubview(UILabel.make(text: emoji, size: 16, alignment: .center))
-            col.addArrangedSubview(valLabel)
-            col.addArrangedSubview(UILabel.make(text: lbl, size: 10, color: AppTheme.Color.primary, alignment: .center))
-            card.addSubview(col)
-            col.snp.makeConstraints { make in
-                make.centerY.equalToSuperview()
-                make.leading.trailing.equalToSuperview().inset(6)
-            }
-            statsRow.addArrangedSubview(card)
-            card.snp.makeConstraints { $0.height.equalTo(card.snp.width) }
-        }
-
         let mainStack = UIStackView.make(axis: .vertical, spacing: 10, alignment: .center)
         mainStack.addArrangedSubview(avatarContainer)
         mainStack.addArrangedSubview(catNameLabel)
         mainStack.addArrangedSubview(catInfoLabel)
-        mainStack.addArrangedSubview(statsRow)
-        // statsRow는 mainStack과 동일한 너비로 고정 → fillEqually 분배가 카드 너비를 정확히 계산
-        statsRow.snp.makeConstraints { $0.width.equalToSuperview() }
 
         heroBG.addSubview(mainStack)
         mainStack.snp.makeConstraints { make in
@@ -155,6 +133,81 @@ final class ProfileView: BaseView {
         heroBG.layer.cornerRadius  = AppTheme.Radius.xxLarge
         heroBG.layer.maskedCorners = [.layerMinXMaxYCorner, .layerMaxXMaxYCorner]
         return heroBG
+    }
+
+    // MARK: - Stats Section
+    private func makeStatsSection() -> UIView {
+        let wrapper = UIView()
+
+        let card = UIView()
+        card.backgroundColor    = .white
+        card.layer.cornerRadius = 16
+        AppTheme.applyCardShadow(to: card, opacity: 0.07, radius: 8)
+
+        let items: [(String, String, UILabel)] = [
+            ("scope",        "총 사냥", huntCountLabel),
+            ("timer",        "총 시간", totalTimeLabel),
+            ("trophy.fill",  "배지",   statsBadgeLabel),
+        ]
+
+        let vStack = UIStackView.make(axis: .vertical, spacing: 0)
+
+        for (idx, item) in items.enumerated() {
+            let (symbol, title, valueLabel) = item
+
+            // 아이콘 배경 (34×34, cornerRadius 10)
+            let iconBG = UIView()
+            iconBG.backgroundColor    = AppTheme.Color.primaryLight
+            iconBG.layer.cornerRadius = 10
+            iconBG.snp.makeConstraints { $0.width.height.equalTo(34) }
+
+            let symCfg = UIImage.SymbolConfiguration(pointSize: 15, weight: .medium)
+            let iconIV = UIImageView(image: UIImage(systemName: symbol, withConfiguration: symCfg))
+            iconIV.tintColor   = AppTheme.Color.primary
+            iconIV.contentMode = .scaleAspectFit
+            iconBG.addSubview(iconIV)
+            iconIV.snp.makeConstraints { $0.center.equalToSuperview() }
+
+            let titleL = UILabel.make(text: title, size: 14, color: AppTheme.Color.textMedium)
+            titleL.setContentHuggingPriority(.defaultLow, for: .horizontal)
+
+            // 값 레이블 스타일 재설정
+            valueLabel.font          = .appFont(size: 15, weight: .bold)
+            valueLabel.textColor     = AppTheme.Color.textDark
+            valueLabel.textAlignment = .right
+            valueLabel.setContentHuggingPriority(.required, for: .horizontal)
+
+            let row = UIStackView.make(axis: .horizontal, spacing: 12, alignment: .center)
+            row.addArrangedSubview(iconBG)
+            row.addArrangedSubview(titleL)
+            row.addArrangedSubview(valueLabel)
+
+            let rowWrapper = UIView()
+            rowWrapper.addSubview(row)
+            row.snp.makeConstraints { make in
+                make.top.bottom.equalToSuperview().inset(12)
+                make.leading.trailing.equalToSuperview().inset(16)
+            }
+            vStack.addArrangedSubview(rowWrapper)
+
+            // 마지막 행 제외 구분선 추가
+            if idx < items.count - 1 {
+                let div = UIView()
+                div.backgroundColor = UIColor(hex: "#F5EDE6")
+                div.snp.makeConstraints { $0.height.equalTo(1) }
+                vStack.addArrangedSubview(div)
+            }
+        }
+
+        card.addSubview(vStack)
+        vStack.snp.makeConstraints { $0.edges.equalToSuperview() }
+
+        wrapper.addSubview(card)
+        card.snp.makeConstraints { make in
+            make.top.bottom.equalToSuperview()
+            make.leading.trailing.equalToSuperview().inset(20)
+        }
+        return wrapper
     }
 
     // MARK: - Settings Section
@@ -297,7 +350,7 @@ final class ProfileView: BaseView {
 
         let badgeIV          = UIImageView(image: UIImage(named: badge.imageName))
         badgeIV.contentMode  = .scaleAspectFit
-        badgeIV.snp.makeConstraints { $0.width.height.equalTo(28) }
+        badgeIV.snp.makeConstraints { $0.width.height.equalTo(16) }
 
         let nameL = UILabel.make(text: badge.label, size: 11, weight: .bold,
                                   color: badge.unlocked ? AppTheme.Color.textDark : .gray,
@@ -307,6 +360,7 @@ final class ProfileView: BaseView {
 
         let col = UIStackView.make(axis: .vertical, spacing: 4, alignment: .center)
         [badgeIV, nameL, descL].forEach { col.addArrangedSubview($0) }
+        col.setCustomSpacing(8, after: badgeIV)
         card.addSubview(col)
         col.snp.makeConstraints { make in
             make.top.bottom.equalToSuperview().inset(12)

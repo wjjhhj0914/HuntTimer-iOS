@@ -48,7 +48,7 @@ final class ProfileViewController: BaseViewController {
             target: self,
             action: #selector(backTapped)
         )
-        backBtn.tintColor = AppTheme.Color.primary
+        backBtn.tintColor = AppTheme.Color.textDark
         navigationItem.leftBarButtonItem = backBtn
 
         let input = ProfileViewModel.Input(
@@ -123,20 +123,14 @@ final class ProfileViewController: BaseViewController {
         contentView.avatarImageView.image        = image
     }
 
-    /// 기본 이미지(RegisterProfile_Cat)를 패딩과 함께 아바타에 표시
+    /// 기본 이미지(SF Symbols person)를 아바타에 표시
     private func applyDefaultImage() {
-        contentView.avatarImageView.contentMode     = .center
-        contentView.avatarImageView.backgroundColor = .white
-        guard let base = UIImage(named: "RegisterProfile_Cat") else { return }
-        let size     = CGSize(width: 112, height: 112)
-        let padding  = CGFloat(30)
-        let renderer = UIGraphicsImageRenderer(size: size)
-        let padded   = renderer.image { _ in
-            base.draw(in: CGRect(x: padding, y: padding,
-                                 width: size.width  - padding * 2,
-                                 height: size.height - padding * 2))
-        }
-        contentView.avatarImageView.image = padded
+        let symCfg = UIImage.SymbolConfiguration(pointSize: 44, weight: .light)
+        let icon   = UIImage(systemName: "person", withConfiguration: symCfg)
+        contentView.avatarImageView.contentMode  = .center
+        contentView.avatarImageView.backgroundColor = AppTheme.Color.primaryLight
+        contentView.avatarImageView.tintColor    = AppTheme.Color.primary
+        contentView.avatarImageView.image        = icon
     }
 
     // MARK: - Bottom Sheet
