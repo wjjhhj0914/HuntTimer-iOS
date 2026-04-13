@@ -36,6 +36,13 @@ final class LogViewController: BaseViewController {
 
         contentView.profileButton.addTarget(self, action: #selector(profileTapped), for: .touchUpInside)
 
+        // 타임라인 행 탭 → 해당 세션 상세 모달
+        contentView.onRowTap = { [weak self] index in
+            guard let self,
+                  index < self.currentPlaySessions.count else { return }
+            self.presentDetailModal(sessions: [self.currentPlaySessions[index]])
+        }
+
         // 타임라인 행 스와이프 → 삭제 확인 얼럿
         contentView.onDeleteTap = { [weak self] index in
             guard let self,

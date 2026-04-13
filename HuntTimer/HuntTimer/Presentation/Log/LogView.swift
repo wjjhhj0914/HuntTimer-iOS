@@ -283,6 +283,8 @@ final class LogView: BaseView {
 
     /// 삭제 버튼 탭 콜백 — LogViewController에서 주입 (index: 탭된 세션의 순서)
     var onDeleteTap: ((Int) -> Void)?
+    /// 행 탭 콜백 — LogViewController에서 주입 (index: 탭된 세션의 순서)
+    var onRowTap: ((Int) -> Void)?
 
     /// 현재 스와이프로 열린 행의 콘텐츠 뷰 (weak — 행 제거 시 자동 nil)
     private weak var currentSwipeContent: UIView?
@@ -388,6 +390,10 @@ final class LogView: BaseView {
 
         let card = UIView()
         card.applyCardStyle(cornerRadius: AppTheme.Radius.medium)
+        card.isUserInteractionEnabled = true
+        let tap = RowTapGestureRecognizer(target: self, action: #selector(handleRowTap(_:)))
+        tap.rowIndex = index
+        card.addGestureRecognizer(tap)
 
         let toyL  = UILabel.make(text: session.title, size: 13, weight: .bold, color: AppTheme.Color.textDark)
         let timeL = UILabel.make(text: session.time, size: 11, color: AppTheme.Color.textMuted)
@@ -538,6 +544,14 @@ final class LogView: BaseView {
     }
 }
 
+// MARK: - Row Tap Handler
+
+extension LogView {
+    @objc fileprivate func handleRowTap(_ sender: RowTapGestureRecognizer) {
+        onRowTap?(sender.rowIndex)
+    }
+}
+
 // MARK: - UIGestureRecognizerDelegate (수직 스크롤과 충돌 방지)
 extension LogView: UIGestureRecognizerDelegate {
     override func gestureRecognizerShouldBegin(_ gr: UIGestureRecognizer) -> Bool {
@@ -545,4 +559,10 @@ extension LogView: UIGestureRecognizerDelegate {
         let vel = pan.velocity(in: gr.view)
         return abs(vel.x) > abs(vel.y)   // 수평 스와이프일 때만 활성화
     }
+}
+
+// MARK: - RowTapGestureRecognizer (index 저장용)
+
+final class RowTapGestureRecognizer: UITapGestureRecognizer {
+    var rowIndex: Int = 0
 }

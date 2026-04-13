@@ -42,6 +42,9 @@ private final class SessionPageView: UIView {
         return iv
     }()
 
+    // 고양이 아이템을 동적으로 채울 가로 스택
+    private let catsRowStack = UIStackView.make(axis: .horizontal, spacing: 14, alignment: .center)
+
     private let memoLabel: UILabel = {
         let l = UILabel()
         l.font          = .appFont(size: 13, weight: .regular)
@@ -76,18 +79,22 @@ private final class SessionPageView: UIView {
 
         let timeStack  = makeTimeSection()
         let divider1   = makeDivider()
-        let toyStack   = makeToySection()
+        let catStack   = makeCatSection()
         let divider2   = makeDivider()
+        let toyStack   = makeToySection()
+        let divider3   = makeDivider()
         let photoStack = makePhotoSection()
         let memoStack  = makeMemoSection()
 
-        [timeStack, divider1, toyStack, divider2, memoStack, photoStack]
+        [timeStack, divider1, catStack, divider2, toyStack, divider3, memoStack, photoStack]
             .forEach { stack.addArrangedSubview($0) }
 
         stack.setCustomSpacing(16, after: timeStack)
         stack.setCustomSpacing(16, after: divider1)
-        stack.setCustomSpacing(16, after: toyStack)
+        stack.setCustomSpacing(16, after: catStack)
         stack.setCustomSpacing(16, after: divider2)
+        stack.setCustomSpacing(16, after: toyStack)
+        stack.setCustomSpacing(16, after: divider3)
         stack.setCustomSpacing(16, after: memoStack)
 
         vScroll.addSubview(stack)
@@ -105,6 +112,13 @@ private final class SessionPageView: UIView {
         let s = UIStackView.make(axis: .vertical, spacing: 8)
         s.addArrangedSubview(makeSectionHeader(icon: "timer", title: "함께 놀아준 시간"))
         s.addArrangedSubview(durationLabel)
+        return s
+    }
+
+    private func makeCatSection() -> UIStackView {
+        let s = UIStackView.make(axis: .vertical, spacing: 10)
+        s.addArrangedSubview(makeSectionHeader(icon: "pawprint.fill", title: "함께한 사냥꾼"))
+        s.addArrangedSubview(catsRowStack)
         return s
     }
 
@@ -197,8 +211,10 @@ private final class SessionPageView: UIView {
 
     // MARK: - Configure
 
-    func configure(durationSeconds: Int, toyName: String?, image: UIImage?, memo: String?) {
+    func configure(durationSeconds: Int, toyName: String?, image: UIImage?, memo: String?,
+                   cats: [(name: String, imageData: Data?)] = []) {
         durationLabel.text = formatDuration(durationSeconds)
+        renderCats(cats)
 
         if let toy = toyName, !toy.isEmpty {
             toyPillLabel.text   = toy
@@ -224,6 +240,65 @@ private final class SessionPageView: UIView {
             memoLabel.text      = "메모가 없습니다"
             memoLabel.textColor = AppTheme.Color.textMuted
         }
+    }
+
+    private func renderCats(_ cats: [(name: String, imageData: Data?)]) {
+        catsRowStack.arrangedSubviews.forEach { $0.removeFromSuperview() }
+
+        if cats.isEmpty {
+            let empty = UILabel.make(text: "참여한 고양이가 없어요", size: 12,
+                                     color: AppTheme.Color.textMuted)
+            catsRowStack.addArrangedSubview(empty)
+            return
+        }
+
+        cats.forEach { catsRowStack.addArrangedSubview(makeCatItem(name: $0.name, imageData: $0.imageData)) }
+        catsRowStack.addArrangedSubview(UIView())   // 우측 여백 spacer
+    }
+
+    private func makeCatItem(name: String, imageData: Data?) -> UIView {
+        // 섀도용 컨테이너 + 클리핑용 이미지뷰 분리
+        let shadow = UIView()
+        shadow.layer.cornerRadius  = 16
+        shadow.layer.shadowColor   = UIColor.black.cgColor
+        shadow.layer.shadowOpacity = 0.10
+        shadow.layer.shadowRadius  = 4
+        shadow.layer.shadowOffset  = CGSize(width: 0, height: 2)
+
+        let iv = UIImageView()
+        iv.contentMode   = .scaleAspectFill
+        iv.clipsToBounds = true
+        iv.layer.cornerRadius = 16
+
+        if let data = imageData, let img = UIImage(data: data) {
+            iv.image           = img
+            iv.backgroundColor = .clear
+        } else {
+            iv.backgroundColor = .white
+            iv.contentMode     = .center
+            if let base = UIImage(named: "RegisterProfile_Cat") {
+                let size     = CGSize(width: 32, height: 32)
+                let padding  = CGFloat(7)
+                iv.image = UIGraphicsImageRenderer(size: size).image { _ in
+                    base.draw(in: CGRect(x: padding, y: padding,
+                                         width: size.width - padding * 2,
+                                         height: size.height - padding * 2))
+                }
+            }
+        }
+
+        shadow.addSubview(iv)
+        iv.snp.makeConstraints { $0.edges.equalToSuperview() }
+        shadow.snp.makeConstraints { $0.width.height.equalTo(32) }
+
+        let nameLabel = UILabel.make(text: name, size: 10, weight: .semibold,
+                                      color: AppTheme.Color.textDark, alignment: .center)
+        nameLabel.numberOfLines = 1
+
+        let col = UIStackView.make(axis: .vertical, spacing: 5, alignment: .center)
+        col.addArrangedSubview(shadow)
+        col.addArrangedSubview(nameLabel)
+        return col
     }
 
     private func formatDuration(_ seconds: Int) -> String {
@@ -277,7 +352,7 @@ final class HuntDetailView: UIView {
     }()
 
     private var pageViews:   [SessionPageView] = []
-    private var sessionData: [(durationSeconds: Int, toyName: String?, image: UIImage?, memo: String?)] = []
+    private var sessionData: [(durationSeconds: Int, toyName: String?, image: UIImage?, memo: String?, cats: [(name: String, imageData: Data?)])] = []
     private var pagesBuilt = false
 
     // MARK: - Init
@@ -363,7 +438,7 @@ final class HuntDetailView: UIView {
 
     // MARK: - Configure
 
-    func configure(sessions: [(durationSeconds: Int, toyName: String?, image: UIImage?, memo: String?)]) {
+    func configure(sessions: [(durationSeconds: Int, toyName: String?, image: UIImage?, memo: String?, cats: [(name: String, imageData: Data?)])]) {
         sessionData = sessions
         pageControl.numberOfPages = sessions.count
         pageControl.currentPage   = 0
@@ -393,7 +468,8 @@ final class HuntDetailView: UIView {
             page.configure(durationSeconds: data.durationSeconds,
                            toyName: data.toyName,
                            image:   data.image,
-                           memo:    data.memo)
+                           memo:    data.memo,
+                           cats:    data.cats)
             page.frame = CGRect(x: CGFloat(i) * pageW, y: 0, width: pageW, height: pageH)
             scrollView.addSubview(page)
             pageViews.append(page)

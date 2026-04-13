@@ -24,9 +24,10 @@ final class HuntDetailViewController: UIViewController {
 
     // MARK: - Configure
     private func configure() {
-        let data = sessions.map { s -> (durationSeconds: Int, toyName: String?, image: UIImage?, memo: String?) in
+        let data = sessions.map { s -> (durationSeconds: Int, toyName: String?, image: UIImage?, memo: String?, cats: [(name: String, imageData: Data?)]) in
             let image: UIImage? = s.photos.first.flatMap { UIImage(contentsOfFile: $0.imagePath) }
-            return (s.duration, s.toys.first?.name, image, s.memo)
+            let cats = Array(s.cats).map { (name: $0.name, imageData: $0.profileImageData) }
+            return (s.duration, s.toys.first?.name, image, s.memo, cats)
         }
         contentView.configure(sessions: data)
     }
