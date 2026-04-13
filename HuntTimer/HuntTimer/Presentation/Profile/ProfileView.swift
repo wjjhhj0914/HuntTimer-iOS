@@ -26,18 +26,19 @@ final class ProfileView: BaseView {
 
     let avatarImageView: AsyncImageView = {
         let iv = AsyncImageView(contentMode: .scaleAspectFill, cornerRadius: 56)
-        iv.layer.borderWidth = 4
-        iv.layer.borderColor = UIColor.white.cgColor
         AppTheme.applyCardShadow(to: iv, opacity: 0.25, radius: 12)
         return iv
     }()
 
     let photoEditButton: UIButton = {
         let btn = UIButton(type: .system)
-        let cfg = UIImage.SymbolConfiguration(pointSize: 28, weight: .semibold)
-        btn.setImage(UIImage(systemName: "pencil.circle.fill", withConfiguration: cfg), for: .normal)
-        btn.tintColor = AppTheme.Color.primary
-        btn.snp.makeConstraints { $0.width.height.equalTo(32) }
+        let cfg = UIImage.SymbolConfiguration(pointSize: 11, weight: .semibold)
+        btn.setImage(UIImage(systemName: "camera.fill", withConfiguration: cfg), for: .normal)
+        btn.tintColor = .white
+        btn.backgroundColor = AppTheme.Color.primary
+        btn.layer.cornerRadius = 13
+        btn.clipsToBounds = true
+        btn.snp.makeConstraints { $0.width.height.equalTo(26) }
         return btn
     }()
 
@@ -97,26 +98,6 @@ final class ProfileView: BaseView {
         let heroBG = UIView()
 //        heroBG.backgroundColor = AppTheme.Color.primaryLight
 
-        let circle1 = UIView()
-        circle1.backgroundColor  = AppTheme.Color.primary.withAlphaComponent(0.3)
-        circle1.layer.cornerRadius = 64
-        let circle2 = UIView()
-        circle2.backgroundColor  = AppTheme.Color.yellow.withAlphaComponent(0.2)
-        circle2.layer.cornerRadius = 48
-
-        heroBG.addSubview(circle1)
-        heroBG.addSubview(circle2)
-        circle1.snp.makeConstraints { make in
-            make.top.equalToSuperview().offset(-32)
-            make.trailing.equalToSuperview().offset(32)
-            make.width.height.equalTo(128)
-        }
-        circle2.snp.makeConstraints { make in
-            make.bottom.equalToSuperview().offset(16)
-            make.leading.equalToSuperview().offset(-24)
-            make.width.height.equalTo(96)
-        }
-
         let avatarContainer = UIView()
         avatarContainer.addSubview(avatarImageView)
         avatarContainer.addSubview(photoEditButton)
@@ -125,8 +106,8 @@ final class ProfileView: BaseView {
             make.top.leading.trailing.equalToSuperview()
         }
         photoEditButton.snp.makeConstraints { make in
-            make.bottom.equalTo(avatarImageView.snp.bottom)
-            make.trailing.equalTo(avatarImageView.snp.trailing)
+            make.bottom.equalTo(avatarImageView.snp.bottom).offset(-6)
+            make.trailing.equalTo(avatarImageView.snp.trailing).offset(-6)
         }
         avatarContainer.snp.makeConstraints { make in
             make.width.height.equalTo(112)
@@ -309,21 +290,26 @@ final class ProfileView: BaseView {
 
     private func makeBadgeCell(_ badge: Badge) -> UIView {
         let card = UIView()
-        card.backgroundColor   = badge.unlocked ? .white : UIColor(white: 0.95, alpha: 1)
-        card.layer.cornerRadius = AppTheme.Radius.large
-        card.alpha = badge.unlocked ? 1.0 : 0.5
+        card.backgroundColor    = badge.unlocked ? .white : UIColor(white: 0.95, alpha: 1)
+        card.layer.cornerRadius = 16
+        card.alpha              = badge.unlocked ? 1.0 : 0.5
         AppTheme.applyCardShadow(to: card, opacity: badge.unlocked ? 0.10 : 0)
 
-        let emojiL = UILabel.make(text: badge.emoji, size: 24, alignment: .center)
-        let nameL  = UILabel.make(text: badge.label, size: 10, weight: .bold,
-                                   color: badge.unlocked ? AppTheme.Color.textDark : .gray, lines: 2, alignment: .center)
-        let descL  = UILabel.make(text: badge.desc, size: 9, color: AppTheme.Color.textMuted, lines: 2, alignment: .center)
+        let badgeIV          = UIImageView(image: UIImage(named: badge.imageName))
+        badgeIV.contentMode  = .scaleAspectFit
+        badgeIV.snp.makeConstraints { $0.width.height.equalTo(28) }
 
-        let col = UIStackView.make(axis: .vertical, spacing: 2, alignment: .center)
-        [emojiL, nameL, descL].forEach { col.addArrangedSubview($0) }
+        let nameL = UILabel.make(text: badge.label, size: 11, weight: .bold,
+                                  color: badge.unlocked ? AppTheme.Color.textDark : .gray,
+                                  lines: 2, alignment: .center)
+        let descL = UILabel.make(text: badge.desc, size: 9,
+                                  color: AppTheme.Color.textMuted, lines: 2, alignment: .center)
+
+        let col = UIStackView.make(axis: .vertical, spacing: 4, alignment: .center)
+        [badgeIV, nameL, descL].forEach { col.addArrangedSubview($0) }
         card.addSubview(col)
         col.snp.makeConstraints { make in
-            make.top.bottom.equalToSuperview().inset(10)
+            make.top.bottom.equalToSuperview().inset(12)
             make.leading.trailing.equalToSuperview().inset(4)
         }
         return card
