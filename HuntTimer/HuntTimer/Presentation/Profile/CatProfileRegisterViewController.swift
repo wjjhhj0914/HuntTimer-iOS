@@ -126,9 +126,23 @@ final class CatProfileViewController: BaseViewController {
             .foregroundColor: AppTheme.Color.textDark,
             .font: UIFont.appFont(size: 17, weight: .bold)
         ]
+        let buttonAppearance = UIBarButtonItemAppearance(style: .plain)
+        buttonAppearance.normal.titleTextAttributes = [.foregroundColor: AppTheme.Color.textDark]
+        appearance.buttonAppearance     = buttonAppearance
+        appearance.backButtonAppearance = buttonAppearance
         navigationController?.navigationBar.standardAppearance   = appearance
         navigationController?.navigationBar.scrollEdgeAppearance = appearance
-        navigationController?.navigationBar.tintColor = AppTheme.Color.primary
+        navigationController?.navigationBar.tintColor = AppTheme.Color.textDark
+
+        // 커스텀 뒤로가기 버튼 (chevron 색상 명시적 설정)
+        let backBtn = UIBarButtonItem(
+            image: UIImage(systemName: "chevron.left"),
+            style: .plain,
+            target: self,
+            action: #selector(backTapped)
+        )
+        backBtn.tintColor = AppTheme.Color.textDark
+        navigationItem.leftBarButtonItem = backBtn
 
         switch mode {
         case .registration:
@@ -145,6 +159,10 @@ final class CatProfileViewController: BaseViewController {
             )
             contentView.hideCTAForEditMode()
         }
+    }
+
+    @objc private func backTapped() {
+        navigationController?.popViewController(animated: true)
     }
 
     // MARK: - Load Edit Data
@@ -169,7 +187,7 @@ final class CatProfileViewController: BaseViewController {
             contentView.birthdateLabel.textColor            = AppTheme.Color.textMuted
             contentView.dateFieldView.alpha                 = 0.5
             contentView.dateFieldView.isUserInteractionEnabled = false
-            contentView.unknownBirthdayLabel.textColor      = AppTheme.Color.primary
+            contentView.unknownBirthdayLabel.textColor      = AppTheme.Color.textDark
             contentView.unknownBirthdayLabel.font           = .appFont(size: 13, weight: .bold)
         }
 
@@ -386,7 +404,7 @@ final class CatProfileViewController: BaseViewController {
                 self.contentView.birthdateLabel.textColor            = AppTheme.Color.textMuted
                 self.contentView.dateFieldView.alpha                 = 0.5
                 self.contentView.dateFieldView.isUserInteractionEnabled = false
-                self.contentView.unknownBirthdayLabel.textColor      = AppTheme.Color.primary
+                self.contentView.unknownBirthdayLabel.textColor      = AppTheme.Color.textDark
                 self.contentView.unknownBirthdayLabel.font           = .appFont(size: 13, weight: .bold)
             } else {
                 let text = self.tempBirthdate.map { self.dateFormatter.string(from: $0) }
