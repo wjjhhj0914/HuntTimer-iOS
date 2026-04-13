@@ -235,14 +235,23 @@ final class ProfileViewController: BaseViewController {
             let totalSeconds = sessions.sum(ofProperty: "duration") as Int
             let earnedBadges = BadgeManager.evaluateBadges().filter { $0.unlocked }.count
 
+            let noData = "데이터가 없습니다"
+
             let hours = totalSeconds / 3600
             let mins  = (totalSeconds % 3600) / 60
-            let timeText = hours > 0 ? (mins > 0 ? "\(hours)h \(mins)m" : "\(hours)h") : "\(mins)m"
+            let timeText: String
+            if totalSeconds == 0 {
+                timeText = noData
+            } else if hours > 0 {
+                timeText = mins > 0 ? "\(hours)시간 \(mins)분" : "\(hours)시간"
+            } else {
+                timeText = "\(mins)분"
+            }
 
             DispatchQueue.main.async { [weak self] in
-                self?.contentView.huntCountLabel.text  = "\(huntCount)회"
+                self?.contentView.huntCountLabel.text  = huntCount    == 0 ? noData : "\(huntCount)회"
                 self?.contentView.totalTimeLabel.text  = timeText
-                self?.contentView.statsBadgeLabel.text = "\(earnedBadges)개"
+                self?.contentView.statsBadgeLabel.text = earnedBadges == 0 ? noData : "\(earnedBadges)개"
             }
         }
     }

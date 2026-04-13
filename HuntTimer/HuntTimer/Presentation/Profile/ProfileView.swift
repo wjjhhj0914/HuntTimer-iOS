@@ -168,7 +168,7 @@ final class ProfileView: BaseView {
             iconBG.addSubview(iconIV)
             iconIV.snp.makeConstraints { $0.center.equalToSuperview() }
 
-            let titleL = UILabel.make(text: title, size: 14, color: AppTheme.Color.textMedium)
+            let titleL = UILabel.make(text: title, size: 14, weight: .bold, color: AppTheme.Color.textDark)
             titleL.setContentHuggingPriority(.defaultLow, for: .horizontal)
 
             // 값 레이블 스타일 재설정
