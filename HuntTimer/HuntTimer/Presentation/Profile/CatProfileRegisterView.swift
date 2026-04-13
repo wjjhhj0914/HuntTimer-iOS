@@ -72,14 +72,32 @@ final class CatProfileRegisterView: BaseView {
     // MARK: - Updateable Labels
     let goalMinuteLabel = UILabel.make(text: "30", size: 20, weight: .bold, color: AppTheme.Color.textDark)
 
-    // MARK: - Profile Photo ImageView
+    // MARK: - Profile Photo ImageView & Edit Button
     let photoImageView: UIImageView = {
         let iv = UIImageView()
-        iv.contentMode = .scaleAspectFill
-        iv.clipsToBounds = true
-        iv.layer.cornerRadius = 55
-        iv.isHidden = true
+        iv.contentMode    = .center
+        iv.clipsToBounds  = true
+        iv.layer.cornerRadius = 56
+        iv.backgroundColor    = AppTheme.Color.primaryLight
+        let symCfg = UIImage.SymbolConfiguration(pointSize: 44, weight: .light)
+        iv.image     = UIImage(systemName: "person", withConfiguration: symCfg)
+        iv.tintColor = AppTheme.Color.primary
         return iv
+    }()
+
+    let photoEditButton: UIButton = {
+        let btn = UIButton(type: .custom)
+        let symCfg = UIImage.SymbolConfiguration(pointSize: 9, weight: .semibold)
+        var config = UIButton.Configuration.plain()
+        config.image = UIImage(systemName: "camera.fill", withConfiguration: symCfg)
+        config.baseForegroundColor = .white
+        config.contentInsets = .zero
+        btn.configuration = config
+        btn.backgroundColor    = AppTheme.Color.primary
+        btn.layer.cornerRadius = 13
+        btn.clipsToBounds = true
+        btn.snp.makeConstraints { $0.width.height.equalTo(26) }
+        return btn
     }()
 
     // MARK: - Private
@@ -134,49 +152,36 @@ final class CatProfileRegisterView: BaseView {
 
     // MARK: - Photo Section
     private func makePhotoSection() -> UIView {
-        photoContainerView.backgroundColor = .clear
+        // 그림자 전용 뷰 (photoImageView는 clipsToBounds=true라 shadow 클리핑됨)
+        let shadowView = UIView()
+        shadowView.layer.cornerRadius  = 56
+        shadowView.layer.shadowColor   = UIColor.black.cgColor
+        shadowView.layer.shadowOpacity = 0.25
+        shadowView.layer.shadowRadius  = 12
+        shadowView.layer.shadowOffset  = CGSize(width: 0, height: 2)
 
-        let circle = UIView()
-        circle.backgroundColor    = AppTheme.Color.primary
-        circle.layer.cornerRadius = 60
-
-        // 카메라 아이콘
-        let camIcon = UIImageView()
-        let camConfig = UIImage.SymbolConfiguration(pointSize: 28, weight: .regular)
-        camIcon.image       = UIImage(systemName: "camera", withConfiguration: camConfig)
-        camIcon.tintColor   = UIColor(hex: "#FFF5DC")
-        camIcon.contentMode = .scaleAspectFit
-        camIcon.snp.makeConstraints { $0.width.height.equalTo(28) }
-
-        let addLabel = UILabel.make(text: "사진 추가", size: 11, weight: .semibold,
-                                    color: UIColor(hex: "#FFF5DC"))
-
-        let innerStack = UIStackView.make(axis: .vertical, spacing: 6, alignment: .center)
-        innerStack.addArrangedSubview(camIcon)
-        innerStack.addArrangedSubview(addLabel)
-
-        // photoImageView: 사진 선택 시 innerStack 위에 오버레이
-        photoImageView.layer.cornerRadius = 60
-
-        circle.addSubview(innerStack)
-        circle.addSubview(photoImageView)
-        innerStack.snp.makeConstraints { $0.center.equalToSuperview() }
+        shadowView.addSubview(photoImageView)
         photoImageView.snp.makeConstraints { $0.edges.equalToSuperview() }
+        shadowView.snp.makeConstraints { $0.width.height.equalTo(112) }
 
-        photoContainerView.addSubview(circle)
-        circle.snp.makeConstraints { $0.width.height.equalTo(120); $0.edges.equalToSuperview() }
-        photoContainerView.snp.makeConstraints { $0.width.height.equalTo(120) }
+        // photoContainerView: 그림자뷰 + 카메라 버튼 동시 보유
+        photoContainerView.backgroundColor = .clear
+        photoContainerView.addSubview(shadowView)
+        photoContainerView.addSubview(photoEditButton)
 
-        let hintL = UILabel.make(text: "탭하여 프로필 사진을 추가하세요", size: 12, weight: .medium,
-                                 color: AppTheme.Color.textMuted)
-
-        let stack = UIStackView.make(axis: .vertical, spacing: 12, alignment: .center)
-        stack.addArrangedSubview(photoContainerView)
-        stack.addArrangedSubview(hintL)
+        shadowView.snp.makeConstraints { make in
+            make.width.height.equalTo(112)
+            make.top.leading.trailing.equalToSuperview()
+        }
+        photoEditButton.snp.makeConstraints { make in
+            make.bottom.equalTo(shadowView.snp.bottom).offset(-6)
+            make.trailing.equalTo(shadowView.snp.trailing).offset(-6)
+        }
+        photoContainerView.snp.makeConstraints { $0.width.height.equalTo(112) }
 
         let container = UIView()
-        container.addSubview(stack)
-        stack.snp.makeConstraints { make in
+        container.addSubview(photoContainerView)
+        photoContainerView.snp.makeConstraints { make in
             make.top.equalToSuperview().offset(4)
             make.bottom.equalToSuperview().offset(-8)
             make.centerX.equalToSuperview()

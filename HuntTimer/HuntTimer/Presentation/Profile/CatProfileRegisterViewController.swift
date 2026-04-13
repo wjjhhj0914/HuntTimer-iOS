@@ -36,6 +36,9 @@ final class CatProfileViewController: BaseViewController {
     private var tempIsMale:       Bool       = false
     private var tempGoalMinutes:  Int        = 30
     private var tempBreed:        CatBreed?  = nil
+    /// 실제 선택된 사진 데이터 (nil = 기본 이미지)
+    private var tempPhotoData:    Data?      = nil
+    private var hasProfileImage:  Bool       = false
 
     // MARK: - View
     private let contentView = CatProfileRegisterView()
@@ -87,7 +90,7 @@ final class CatProfileViewController: BaseViewController {
         contentView.maleButton.addTarget(self, action: #selector(maleTapped), for: .touchUpInside)
 
         // Photo
-        contentView.photoContainerView.onTap(self, action: #selector(photoTapped))
+        contentView.photoEditButton.addTarget(self, action: #selector(photoEditTapped), for: .touchUpInside)
 
         // Date field
         contentView.dateFieldView.onTap(self, action: #selector(dateTapped))
@@ -204,9 +207,9 @@ final class CatProfileViewController: BaseViewController {
         }
 
         // 프로필 사진
-        if let data = cat.profileImageData, let image = UIImage(data: data) {
-            contentView.photoImageView.image    = image
-            contentView.photoImageView.isHidden = false
+        if let data = cat.profileImageData {
+            tempPhotoData = data
+            applyUserPhoto(UIImage(data: data))
         }
 
         // 생년월일이 이미 설정돼 있으면 textDark 색상으로 표시
@@ -237,9 +240,7 @@ final class CatProfileViewController: BaseViewController {
         cat.breed       = tempBreed?.rawValue ?? ""
         cat.targetTime  = tempGoalMinutes
 
-        if let image = contentView.photoImageView.image {
-            cat.profileImageData = image.jpegData(compressionQuality: 0.8)
-        }
+        cat.profileImageData = tempPhotoData
 
         do {
             let realm = try Realm()
@@ -259,14 +260,12 @@ final class CatProfileViewController: BaseViewController {
         do {
             let realm = try Realm()
             try realm.write {
-                cat.name       = name
-                cat.isMale     = tempIsMale
-                cat.birthday   = contentView.unknownBirthdayToggle.isOn ? nil : tempBirthdate
-                cat.breed      = tempBreed?.rawValue ?? cat.breed
-                cat.targetTime = tempGoalMinutes
-                if let image = contentView.photoImageView.image {
-                    cat.profileImageData = image.jpegData(compressionQuality: 0.8)
-                }
+                cat.name             = name
+                cat.isMale           = tempIsMale
+                cat.birthday         = contentView.unknownBirthdayToggle.isOn ? nil : tempBirthdate
+                cat.breed            = tempBreed?.rawValue ?? cat.breed
+                cat.targetTime       = tempGoalMinutes
+                cat.profileImageData = tempPhotoData
             }
         } catch {
             showAlert(title: "저장 실패", message: "프로필 저장 중 오류가 발생했습니다.\n\(error.localizedDescription)")
@@ -286,7 +285,7 @@ final class CatProfileViewController: BaseViewController {
             isMale:          tempIsMale,
             goalMinutes:     tempGoalMinutes,
             breed:           tempBreed,
-            photoData:       contentView.photoImageView.image?.jpegData(compressionQuality: 0.8)
+            photoData:       tempPhotoData
         )
     }
 
@@ -323,9 +322,9 @@ final class CatProfileViewController: BaseViewController {
         }
 
         // 사진
-        if let data = d.photoData, let image = UIImage(data: data) {
-            contentView.photoImageView.image    = image
-            contentView.photoImageView.isHidden = false
+        if let data = d.photoData {
+            tempPhotoData = data
+            applyUserPhoto(UIImage(data: data))
         }
     }
 
@@ -370,13 +369,60 @@ final class CatProfileViewController: BaseViewController {
     }
 
     // MARK: - Photo
-    @objc private func photoTapped() {
-        guard UIImagePickerController.isSourceTypeAvailable(.photoLibrary) else { return }
-        let picker = UIImagePickerController()
-        picker.sourceType    = .photoLibrary
+    @objc private func photoEditTapped() {
+        let sheet = ProfileImagePickerBottomSheet(hasCurrentImage: hasProfileImage)
+        sheet.onAlbum        = { [weak self] in self?.presentImagePicker(source: .photoLibrary) }
+        sheet.onCamera       = { [weak self] in self?.presentImagePicker(source: .camera) }
+        sheet.onResetDefault = { [weak self] in self?.resetToDefaultPhoto() }
+        present(sheet, animated: false)
+    }
+
+    private func presentImagePicker(source: UIImagePickerController.SourceType) {
+        guard UIImagePickerController.isSourceTypeAvailable(source) else {
+            let msg = source == .camera ? "카메라를 사용할 수 없어요." : "앨범에 접근할 수 없어요."
+            let alert = UIAlertController(title: nil, message: msg, preferredStyle: .alert)
+            alert.addAction(UIAlertAction(title: "확인", style: .default))
+            present(alert, animated: true)
+            return
+        }
+        let picker           = UIImagePickerController()
+        picker.sourceType    = source
         picker.allowsEditing = true
         picker.delegate      = self
         present(picker, animated: true)
+    }
+
+    private func applyUserPhoto(_ image: UIImage?) {
+        guard let image else { applyDefaultPhoto(); return }
+        hasProfileImage = true
+        contentView.photoImageView.image       = image
+        contentView.photoImageView.contentMode = .scaleAspectFill
+        contentView.photoImageView.backgroundColor = .clear
+        contentView.photoImageView.tintColor   = .clear
+    }
+
+    private func applyDefaultPhoto() {
+        hasProfileImage = false
+        tempPhotoData   = nil
+        let symCfg = UIImage.SymbolConfiguration(pointSize: 44, weight: .light)
+        contentView.photoImageView.image           = UIImage(systemName: "person", withConfiguration: symCfg)
+        contentView.photoImageView.contentMode     = .center
+        contentView.photoImageView.backgroundColor = AppTheme.Color.primaryLight
+        contentView.photoImageView.tintColor       = AppTheme.Color.primary
+    }
+
+    private func resetToDefaultPhoto() {
+        applyDefaultPhoto()
+    }
+
+    private func resized(_ image: UIImage, maxDimension: CGFloat) -> UIImage? {
+        let size  = image.size
+        let ratio = max(size.width, size.height) / maxDimension
+        guard ratio > 1 else { return image }
+        let newSize = CGSize(width: size.width / ratio, height: size.height / ratio)
+        return UIGraphicsImageRenderer(size: newSize).image { _ in
+            image.draw(in: CGRect(origin: .zero, size: newSize))
+        }
     }
 
     // MARK: - Birthdate
@@ -460,11 +506,11 @@ extension CatProfileViewController: UIImagePickerControllerDelegate, UINavigatio
     func imagePickerController(_ picker: UIImagePickerController,
                                didFinishPickingMediaWithInfo info: [UIImagePickerController.InfoKey: Any]) {
         picker.dismiss(animated: true)
-        // allowsEditing = true 이므로 크롭 완료 이미지는 .editedImage로 전달됨
         let image = info[.editedImage] as? UIImage ?? info[.originalImage] as? UIImage
         guard let image else { return }
-        contentView.photoImageView.image    = image
-        contentView.photoImageView.isHidden = false
+        let compressed = resized(image, maxDimension: 512)?.jpegData(compressionQuality: 0.75)
+        tempPhotoData = compressed
+        applyUserPhoto(compressed.flatMap { UIImage(data: $0) } ?? image)
     }
 
     func imagePickerControllerDidCancel(_ picker: UIImagePickerController) {
