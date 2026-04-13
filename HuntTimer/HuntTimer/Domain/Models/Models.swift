@@ -21,7 +21,7 @@ struct CatSessionGroup {
 
 // MARK: - Achievement Badge
 struct Badge {
-    let emoji: String
+    let imageName: String   // Assets/Badges 내 에셋 이름
     let label: String
     let desc: String
     let unlocked: Bool
@@ -71,14 +71,14 @@ enum SampleData {
     ]
 
     static let badges: [Badge] = [
-        Badge(emoji: "🏆", label: "사냥 마스터",  desc: "100회 달성",    unlocked: true),
-        Badge(emoji: "🪶", label: "깃털 광팬",    desc: "깃털 30회",     unlocked: true),
-        Badge(emoji: "🔥", label: "연속 7일",     desc: "7일 연속",      unlocked: true),
-        Badge(emoji: "⚡", label: "번개 냥이",    desc: "5분 이내 10회", unlocked: true),
-        Badge(emoji: "🌙", label: "야행성",       desc: "밤 사냥 20회",  unlocked: false),
-        Badge(emoji: "🎯", label: "퍼펙트",       desc: "목표 30일",     unlocked: false),
-        Badge(emoji: "💎", label: "다이아",       desc: "총 50시간",     unlocked: false),
-        Badge(emoji: "🌟", label: "슈퍼스타",     desc: "모든 배지",     unlocked: false),
+        Badge(imageName: "Icon",       label: "사냥 마스터", desc: "100회 달성",    unlocked: true),
+        Badge(imageName: "Feather",    label: "깃털 광팬",   desc: "깃털 30회",     unlocked: true),
+        Badge(imageName: "Fire",       label: "연속 7일",    desc: "7일 연속",      unlocked: true),
+        Badge(imageName: "Lightening", label: "번개 냥이",   desc: "5분 이내 10회", unlocked: true),
+        Badge(imageName: "Moon",       label: "야행성",      desc: "밤 사냥 20회",  unlocked: false),
+        Badge(imageName: "Perfect",    label: "퍼펙트",      desc: "목표 30일",     unlocked: false),
+        Badge(imageName: "Diamond",    label: "다이아",      desc: "총 50시간",     unlocked: false),
+        Badge(imageName: "Star",       label: "슈퍼스타",    desc: "모든 배지",     unlocked: false),
     ]
 
     static var products: [ShopProduct] = [

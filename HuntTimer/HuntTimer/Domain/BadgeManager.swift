@@ -22,14 +22,14 @@ enum BadgeManager {
                             lightningCat  && nightOwl   && perfect   && diamond
 
         return [
-            Badge(emoji: "🏆", label: "사냥 마스터", desc: "100회 달성",    unlocked: huntingMaster),
-            Badge(emoji: "🪶", label: "깃털 광팬",   desc: "깃털 30회",     unlocked: featherFan),
-            Badge(emoji: "🔥", label: "연속 7일",    desc: "7일 연속",      unlocked: sevenDays),
-            Badge(emoji: "⚡", label: "번개 냥이",   desc: "5분 이내 10회", unlocked: lightningCat),
-            Badge(emoji: "🌙", label: "야행성",      desc: "밤 사냥 20회",  unlocked: nightOwl),
-            Badge(emoji: "🎯", label: "퍼펙트",      desc: "목표 30일",     unlocked: perfect),
-            Badge(emoji: "💎", label: "다이아",      desc: "총 50시간",     unlocked: diamond),
-            Badge(emoji: "🌟", label: "슈퍼스타",    desc: "모든 배지",     unlocked: superstar),
+            Badge(imageName: "Icon",       label: "사냥 마스터", desc: "100회 달성",    unlocked: huntingMaster),
+            Badge(imageName: "Feather",    label: "깃털 광팬",   desc: "깃털 30회",     unlocked: featherFan),
+            Badge(imageName: "Fire",       label: "연속 7일",    desc: "7일 연속",      unlocked: sevenDays),
+            Badge(imageName: "Lightening", label: "번개 냥이",   desc: "5분 이내 10회", unlocked: lightningCat),
+            Badge(imageName: "Moon",       label: "야행성",      desc: "밤 사냥 20회",  unlocked: nightOwl),
+            Badge(imageName: "Perfect",    label: "퍼펙트",      desc: "목표 30일",     unlocked: perfect),
+            Badge(imageName: "Diamond",    label: "다이아",      desc: "총 50시간",     unlocked: diamond),
+            Badge(imageName: "Star",       label: "슈퍼스타",    desc: "모든 배지",     unlocked: superstar),
         ]
     }
 
@@ -103,14 +103,14 @@ enum BadgeManager {
 
     private static func locked() -> [Badge] {
         [
-            Badge(emoji: "🏆", label: "사냥 마스터", desc: "100회 달성",    unlocked: false),
-            Badge(emoji: "🪶", label: "깃털 광팬",   desc: "깃털 30회",     unlocked: false),
-            Badge(emoji: "🔥", label: "연속 7일",    desc: "7일 연속",      unlocked: false),
-            Badge(emoji: "⚡", label: "번개 냥이",   desc: "5분 이내 10회", unlocked: false),
-            Badge(emoji: "🌙", label: "야행성",      desc: "밤 사냥 20회",  unlocked: false),
-            Badge(emoji: "🎯", label: "퍼펙트",      desc: "목표 30일",     unlocked: false),
-            Badge(emoji: "💎", label: "다이아",      desc: "총 50시간",     unlocked: false),
-            Badge(emoji: "🌟", label: "슈퍼스타",    desc: "모든 배지",     unlocked: false),
+            Badge(imageName: "Icon",       label: "사냥 마스터", desc: "100회 달성",    unlocked: false),
+            Badge(imageName: "Feather",    label: "깃털 광팬",   desc: "깃털 30회",     unlocked: false),
+            Badge(imageName: "Fire",       label: "연속 7일",    desc: "7일 연속",      unlocked: false),
+            Badge(imageName: "Lightening", label: "번개 냥이",   desc: "5분 이내 10회", unlocked: false),
+            Badge(imageName: "Moon",       label: "야행성",      desc: "밤 사냥 20회",  unlocked: false),
+            Badge(imageName: "Perfect",    label: "퍼펙트",      desc: "목표 30일",     unlocked: false),
+            Badge(imageName: "Diamond",    label: "다이아",      desc: "총 50시간",     unlocked: false),
+            Badge(imageName: "Star",       label: "슈퍼스타",    desc: "모든 배지",     unlocked: false),
         ]
     }
 }
