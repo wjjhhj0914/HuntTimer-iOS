@@ -32,7 +32,7 @@ final class LogView: BaseView {
         cfg.imagePadding = 4
         cfg.imagePlacement = .leading
         cfg.baseBackgroundColor = AppTheme.Color.primary
-        cfg.baseForegroundColor = .white
+        cfg.baseForegroundColor = AppTheme.Color.textDark
         cfg.cornerStyle = .capsule
         cfg.contentInsets = NSDirectionalEdgeInsets(top: 8, leading: 12, bottom: 8, trailing: 12)
         cfg.titleTextAttributesTransformer = UIConfigurationTextAttributesTransformer { attr in
@@ -95,18 +95,9 @@ final class LogView: BaseView {
         return btn
     }()
 
-    // MARK: - Profile Button
-    let profileButton: UIButton = {
-        let btn = UIButton(type: .system)
-        let cfg = UIImage.SymbolConfiguration(pointSize: 16, weight: .medium)
-        btn.setImage(UIImage(systemName: "pawprint.circle.fill", withConfiguration: cfg), for: .normal)
-        btn.tintColor = AppTheme.Color.primary
-        btn.backgroundColor = .white
-        btn.layer.cornerRadius = 20
-        AppTheme.applyCardShadow(to: btn, opacity: 0.12, radius: 8)
-        btn.snp.makeConstraints { $0.width.height.equalTo(40) }
-        return btn
-    }()
+
+    // MARK: - Profile Button (makeHeader 에서 구성)
+    let profileButton = UIButton(type: .system)
 
     // MARK: - Calendar month label (VC가 월 이동 시 갱신)
     let monthLabel = UILabel.make(text: "", size: 16, weight: .bold,
@@ -148,22 +139,29 @@ final class LogView: BaseView {
         contentStack.addArrangedSubview(makeSessionList())
     }
 
-    // MARK: - Sections
     private func makeHeader() -> UIView {
-        let v     = UIView()
-        let title = UILabel.make(text: "활동 기록", size: 22, weight: .black, color: AppTheme.Color.textDark)
+        let wrapper = UIView()
 
-        let row = UIStackView.make(axis: .horizontal, spacing: 8, alignment: .center)
-        row.addArrangedSubview(title)
+        let titleLabel = UILabel.make(text: "활동 기록", size: 22, weight: .black,
+                                       color: AppTheme.Color.textDark)
+
+        let cfg = UIImage.SymbolConfiguration(pointSize: 22, weight: .regular)
+        profileButton.setImage(UIImage(systemName: "person.circle", withConfiguration: cfg),
+                               for: .normal)
+        profileButton.tintColor = AppTheme.Color.primary
+
+        let row = UIStackView.make(axis: .horizontal, alignment: .center)
+        row.addArrangedSubview(titleLabel)
+        row.addArrangedSubview(UIView())        // spacer
         row.addArrangedSubview(profileButton)
 
-        v.addSubview(row)
+        wrapper.addSubview(row)
         row.snp.makeConstraints { make in
-            make.top.bottom.equalToSuperview()
-            make.leading.equalToSuperview().offset(20)
-            make.trailing.equalToSuperview().offset(-20)
+            make.top.equalToSuperview().offset(8)
+            make.bottom.equalToSuperview().offset(-4)
+            make.leading.trailing.equalToSuperview().inset(20)
         }
-        return v
+        return wrapper
     }
 
     private func makeToggle() -> UIView {
@@ -184,12 +182,12 @@ final class LogView: BaseView {
     func setToggleState(isCalendar: Bool) {
         var calCfg = calendarButton.configuration!
         calCfg.baseBackgroundColor = isCalendar ? AppTheme.Color.primary : AppTheme.Color.primaryLight
-        calCfg.baseForegroundColor = isCalendar ? .white : AppTheme.Color.textMedium
+        calCfg.baseForegroundColor = isCalendar ? AppTheme.Color.textDark : AppTheme.Color.textMedium
         calendarButton.configuration = calCfg
 
         var listCfg = listButton.configuration!
         listCfg.baseBackgroundColor = isCalendar ? AppTheme.Color.primaryLight : AppTheme.Color.primary
-        listCfg.baseForegroundColor = isCalendar ? AppTheme.Color.textMedium : .white
+        listCfg.baseForegroundColor = isCalendar ? AppTheme.Color.textMedium : AppTheme.Color.textDark
         listButton.configuration = listCfg
     }
 

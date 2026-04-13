@@ -53,6 +53,7 @@ final class LogViewController: BaseViewController {
 
     override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
+        navigationController?.setNavigationBarHidden(true, animated: false)
         // 타이머 저장 후 탭 전환 시 최신 데이터 반영
         reloadCalendar()
         if let day = selectedDay {
@@ -65,7 +66,6 @@ final class LogViewController: BaseViewController {
         }
     }
 
-    // MARK: - Navigation
     @objc private func profileTapped() {
         navigationController?.pushViewController(ProfileViewController(), animated: true)
     }
