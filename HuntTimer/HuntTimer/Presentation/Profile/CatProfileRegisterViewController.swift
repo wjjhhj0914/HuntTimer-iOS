@@ -139,7 +139,7 @@ final class CatProfileViewController: BaseViewController {
             contentView.registerButton.isHidden = true
             navigationItem.rightBarButtonItem = UIBarButtonItem(
                 title: "저장",
-                style: .done,
+                style: .plain,
                 target: self,
                 action: #selector(saveTapped)
             )
