@@ -58,8 +58,7 @@ final class LogView: BaseView {
         return UIButton(configuration: cfg)
     }()
 
-    var calendarContainer    = UIView()
-    var summaryCardContainer = UIView()
+    var calendarContainer = UIView()
 
     let calendarCollectionView: UICollectionView = {
         let layout = UICollectionViewFlowLayout()
@@ -119,14 +118,6 @@ final class LogView: BaseView {
     let rowsStack           = UIStackView.make(axis: .vertical, spacing: 8)
     let emptyStateView      = UIView()
 
-    // MARK: - Summary Card stored labels (VC가 월 변경 시 갱신)
-    private let summaryCountLabel = UILabel.make(text: "—", size: 14, weight: .bold,
-                                                  color: AppTheme.Color.textDark, alignment: .center)
-    private let summaryHoursLabel = UILabel.make(text: "—", size: 14, weight: .bold,
-                                                  color: AppTheme.Color.textDark, alignment: .center)
-    private let summaryDaysLabel  = UILabel.make(text: "—", size: 14, weight: .bold,
-                                                  color: AppTheme.Color.textDark, alignment: .center)
-
     private var calendarHeightConstraint: Constraint?
 
     // MARK: - BaseView
@@ -154,8 +145,6 @@ final class LogView: BaseView {
         contentStack.addArrangedSubview(makeHeader())
         contentStack.addArrangedSubview(makeToggle())
         contentStack.addArrangedSubview(makeCalendarSection())
-        summaryCardContainer = makeSummaryCard()
-        contentStack.addArrangedSubview(summaryCardContainer)
         contentStack.addArrangedSubview(makeSessionList())
     }
 
@@ -255,54 +244,6 @@ final class LogView: BaseView {
         let calH  = CGFloat(rows) * (itemW + 10) + CGFloat(rows - 1) * 2
         calendarHeightConstraint?.update(offset: calH)
         layoutIfNeeded()
-    }
-
-    private func makeSummaryCard() -> UIView {
-        let card = UIView()
-        card.backgroundColor   = AppTheme.Color.yellowLight
-        card.layer.cornerRadius = AppTheme.Radius.large
-
-        let statDefs: [(String, UILabel, String)] = [
-            ("target",   summaryCountLabel, "총 사냥 횟수"),
-            ("clock",    summaryHoursLabel, "총 시간"),
-            ("calendar", summaryDaysLabel,  "활동 일수"),
-        ]
-        let row = UIStackView.make(axis: .horizontal, distribution: .fillEqually)
-        statDefs.forEach { symbolName, valueLabel, desc in
-            let config   = UIImage.SymbolConfiguration(pointSize: 18, weight: .medium)
-            let iconView = UIImageView(image: UIImage(systemName: symbolName, withConfiguration: config))
-            iconView.tintColor   = AppTheme.Color.textMuted
-            iconView.contentMode = .scaleAspectFit
-            let col = UIStackView.make(axis: .vertical, spacing: 2, alignment: .center)
-            col.addArrangedSubview(iconView)
-            col.addArrangedSubview(valueLabel)
-            col.addArrangedSubview(UILabel.make(text: desc, size: 10, color: AppTheme.Color.textMuted, alignment: .center))
-            row.addArrangedSubview(col)
-        }
-        card.addSubview(row)
-        row.snp.makeConstraints { $0.edges.equalToSuperview().inset(12) }
-
-        let wrapper = UIView()
-        wrapper.addSubview(card)
-        card.snp.makeConstraints { make in
-            make.top.bottom.equalToSuperview()
-            make.leading.equalToSuperview().offset(20)
-            make.trailing.equalToSuperview().offset(-20)
-        }
-        return wrapper
-    }
-
-    func updateSummaryCard(count: Int, totalSeconds: Int, activeDays: Int) {
-        summaryCountLabel.text = "\(count)회"
-        summaryHoursLabel.text = formatSummaryTime(totalSeconds)
-        summaryDaysLabel.text  = "\(activeDays)일"
-    }
-
-    private func formatSummaryTime(_ seconds: Int) -> String {
-        let hours = seconds / 3600
-        let mins  = (seconds % 3600) / 60
-        if hours > 0 { return mins > 0 ? "\(hours)시간 \(mins)분" : "\(hours)시간" }
-        return mins > 0 ? "\(mins)분" : "0분"
     }
 
     private func makeSessionList() -> UIView {

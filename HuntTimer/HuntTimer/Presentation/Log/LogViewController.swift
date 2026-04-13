@@ -74,20 +74,16 @@ final class LogViewController: BaseViewController {
     @objc private func calendarTapped() {
         contentView.setToggleState(isCalendar: true)
         UIView.animate(withDuration: 0.25) {
-            self.contentView.calendarContainer.isHidden     = false
-            self.contentView.calendarContainer.alpha        = 1
-            self.contentView.summaryCardContainer.isHidden  = false
-            self.contentView.summaryCardContainer.alpha     = 1
+            self.contentView.calendarContainer.isHidden = false
+            self.contentView.calendarContainer.alpha    = 1
         }
     }
 
     @objc private func listTapped() {
         contentView.setToggleState(isCalendar: false)
         UIView.animate(withDuration: 0.25) {
-            self.contentView.calendarContainer.isHidden     = true
-            self.contentView.calendarContainer.alpha        = 0
-            self.contentView.summaryCardContainer.isHidden  = true
-            self.contentView.summaryCardContainer.alpha     = 0
+            self.contentView.calendarContainer.isHidden = true
+            self.contentView.calendarContainer.alpha    = 0
         }
     }
 
@@ -129,9 +125,6 @@ final class LogViewController: BaseViewController {
         let monthly = loadMonthlyData(year: year, month: month)
         activityDays   = monthly.activityDays
         activityPhotos = monthly.activityPhotos
-        contentView.updateSummaryCard(count: monthly.sessionCount,
-                                      totalSeconds: monthly.totalSeconds,
-                                      activeDays: monthly.activityDays.count)
 
         contentView.updateCalendarHeight()
         contentView.calendarCollectionView.reloadData()
@@ -249,8 +242,8 @@ final class LogViewController: BaseViewController {
     // MARK: - Realm Queries
 
     private func loadMonthlyData(year: Int, month: Int)
-        -> (activityDays: Set<Int>, activityPhotos: [Int: String], sessionCount: Int, totalSeconds: Int) {
-        guard let realm = try? Realm() else { return ([], [:], 0, 0) }
+        -> (activityDays: Set<Int>, activityPhotos: [Int: String]) {
+        guard let realm = try? Realm() else { return ([], [:]) }
         let cal        = Calendar.current
         let monthStart = cal.date(from: DateComponents(year: year, month: month, day: 1)) ?? Date()
         let monthEnd   = cal.date(byAdding: .month, value: 1, to: monthStart) ?? Date()
@@ -260,13 +253,10 @@ final class LogViewController: BaseViewController {
 
         var days: Set<Int>        = []
         var photos: [Int: String] = [:]
-        var totalDuration         = 0
         for session in sessions {
             let day = cal.component(.day, from: session.startTime)
             days.insert(day)
-            totalDuration += session.duration
 
-            // 해당 세션에 연결된 사진이 있으면 날짜에 매핑
             if photos[day] == nil,
                let log = realm.objects(PhotoLog.self)
                    .filter("session == %@ AND imagePath != %@", session, "")
@@ -274,7 +264,7 @@ final class LogViewController: BaseViewController {
                 photos[day] = log.imagePath
             }
         }
-        return (days, photos, sessions.count, totalDuration)
+        return (days, photos)
     }
 
     private func loadAllPlaySessions(for date: Date) -> [PlaySession] {
