@@ -396,7 +396,7 @@ final class LogView: BaseView {
         textS.addArrangedSubview(timeL)
 
         let durationPill = makePillWithSymbol("clock.fill",  text: session.durationText,       bg: AppTheme.Color.yellowLight, fg: AppTheme.Color.yellowDark)
-        let calPill      = makePillWithSymbol("flame.fill",  text: "\(session.calories)kcal",  bg: AppTheme.Color.yellowLight,  fg: AppTheme.Color.yellowDark)
+        let calPill      = makePillWithSymbol("flame.fill",  text: "\(session.calories)kcal",  bg: AppTheme.Color.yellowLight,  fg: UIColor(hex: "#e68a7a"))
         let pillStack    = UIStackView.make(axis: .vertical, spacing: 3, alignment: .trailing)
         pillStack.addArrangedSubview(durationPill)
         pillStack.addArrangedSubview(calPill)
