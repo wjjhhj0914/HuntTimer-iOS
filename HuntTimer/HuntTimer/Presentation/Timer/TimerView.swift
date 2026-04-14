@@ -135,18 +135,19 @@ final class TimerView: BaseView {
     }
 
     private func buildContent() {
-        let header = makeHeaderSection()
-        let timer  = makeTimerCard()
-        let toy    = makeToyCard()
-        let cat    = makeCatCard()
-        let tip    = makeTipView()
-        let spacer = makeBottomSpacer()
+        let header       = makeHeaderSection()
+        let timer        = makeTimerCard()
+        let toy          = makeToyCard()
+        let cat          = makeCatCard()
+        let tip          = makeTipView()
+        let startSection = makeStartButtonSection()
 
-        [header, timer, toy, cat, tip, spacer].forEach { contentStack.addArrangedSubview($0) }
+        [header, timer, toy, cat, tip, startSection].forEach { contentStack.addArrangedSubview($0) }
         contentStack.setCustomSpacing(12, after: header)
         contentStack.setCustomSpacing(12, after: timer)
         contentStack.setCustomSpacing(12, after: toy)
         contentStack.setCustomSpacing(16, after: cat)
+        contentStack.setCustomSpacing(20, after: tip)
     }
 
     // MARK: - Section Builders
@@ -291,13 +292,6 @@ final class TimerView: BaseView {
         return wrap
     }
 
-    private func makeBottomSpacer() -> UIView {
-        let v = UIView()
-        // startButton(58) + safeArea·tabBar(≈83) + 버튼 상단 여백(24) + 여유(35) ≈ 200
-        v.snp.makeConstraints { $0.height.equalTo(200) }
-        return v
-    }
-
     // MARK: - Cat Collection Height
 
     private func setupCatCollectionHeight() {
@@ -310,10 +304,23 @@ final class TimerView: BaseView {
         catCollectionHeightConstraint?.update(offset: max(height, 0))
     }
 
-    // MARK: - Bottom Area
+    // MARK: - Start Button Section (스크롤 컨텐츠 최하단)
+
+    private func makeStartButtonSection() -> UIView {
+        let wrap = UIView()
+        wrap.addSubview(startButton)
+        startButton.snp.makeConstraints { make in
+            make.top.equalToSuperview()
+            make.leading.trailing.equalToSuperview().inset(20)
+            make.height.equalTo(58)
+            make.bottom.equalToSuperview().inset(24)
+        }
+        return wrap
+    }
+
+    // MARK: - Bottom Area (stop/pause 컨트롤 — 타이머 활성 시 표시)
 
     private func setupBottomArea() {
-        // stop + pause 버튼 행
         let btnRow = UIStackView.make(axis: .horizontal, spacing: 16, alignment: .center)
         btnRow.addArrangedSubview(stopButton)
         btnRow.addArrangedSubview(pauseButton)
@@ -322,17 +329,10 @@ final class TimerView: BaseView {
         controlRow.addSubview(btnRow)
         btnRow.snp.makeConstraints { $0.center.equalToSuperview() }
 
-        addSubview(startButton)
         addSubview(controlRow)
-
-        startButton.snp.makeConstraints { make in
-            make.leading.trailing.equalToSuperview().inset(20)
-            make.bottom.equalTo(safeAreaLayoutGuide).offset(-24)
-            make.height.equalTo(58)
-        }
         controlRow.snp.makeConstraints { make in
             make.leading.trailing.equalToSuperview()
-            make.bottom.equalTo(startButton.snp.top).offset(-12)
+            make.bottom.equalTo(safeAreaLayoutGuide).offset(-24)
             make.height.equalTo(52)
         }
     }
