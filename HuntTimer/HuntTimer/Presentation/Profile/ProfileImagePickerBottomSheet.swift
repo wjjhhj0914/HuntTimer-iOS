@@ -12,9 +12,15 @@ final class ProfileImagePickerBottomSheet: BaseViewController {
 
     // MARK: - State
     private let hasCurrentImage: Bool
+    private let sheetTitle:      String
+    private let resetOptionTitle: String
 
-    init(hasCurrentImage: Bool) {
-        self.hasCurrentImage = hasCurrentImage
+    init(hasCurrentImage: Bool,
+         sheetTitle: String = "프로필 사진 변경",
+         resetOptionTitle: String = "기본 이미지로 변경") {
+        self.hasCurrentImage  = hasCurrentImage
+        self.sheetTitle       = sheetTitle
+        self.resetOptionTitle = resetOptionTitle
         super.init(nibName: nil, bundle: nil)
         modalPresentationStyle = .overFullScreen
         modalTransitionStyle   = .crossDissolve
@@ -115,7 +121,7 @@ final class ProfileImagePickerBottomSheet: BaseViewController {
     }
 
     private func makeHeader() -> UIView {
-        let titleL = UILabel.make(text: "프로필 사진 변경", size: 17, weight: .bold,
+        let titleL = UILabel.make(text: sheetTitle, size: 17, weight: .bold,
                                   color: AppTheme.Color.textDark)
         let row = UIView()
         row.addSubview(titleL)
@@ -164,7 +170,7 @@ final class ProfileImagePickerBottomSheet: BaseViewController {
                 symbol: "arrow.counterclockwise",
                 symbolBg: UIColor(hex: "#FFF0F2"),
                 symbolFg: UIColor.systemRed,
-                title: "기본 이미지로 변경",
+                title: resetOptionTitle,
                 titleColor: .systemRed,
                 action: #selector(resetTapped)
             ))

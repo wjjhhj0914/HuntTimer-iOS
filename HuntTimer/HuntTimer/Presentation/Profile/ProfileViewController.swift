@@ -1,4 +1,5 @@
 import UIKit
+import AVFoundation
 import RxSwift
 import RxCocoa
 import RealmSwift
@@ -146,13 +147,71 @@ final class ProfileViewController: BaseViewController {
     // MARK: - Image Picker
 
     private func presentImagePicker(source: UIImagePickerController.SourceType) {
-        guard UIImagePickerController.isSourceTypeAvailable(source) else {
-            let msg = source == .camera ? "카메라를 사용할 수 없어요." : "앨범에 접근할 수 없어요."
-            let alert = UIAlertController(title: nil, message: msg, preferredStyle: .alert)
-            alert.addAction(UIAlertAction(title: "확인", style: .default))
-            present(alert, animated: true)
-            return
+        if source == .camera {
+            openCameraWithPermission()
+        } else {
+            openPicker(source: .photoLibrary)
         }
+    }
+
+    // MARK: - Camera Permission
+
+    private func openCameraWithPermission() {
+        switch AVCaptureDevice.authorizationStatus(for: .video) {
+        case .authorized:
+            openPicker(source: .camera)
+        case .notDetermined:
+            AVCaptureDevice.requestAccess(for: .video) { [weak self] granted in
+                DispatchQueue.main.async {
+                    if granted { self?.openPicker(source: .camera) }
+                }
+            }
+        case .denied, .restricted:
+            showCameraPermissionAlert()
+        @unknown default:
+            break
+        }
+    }
+
+    private func showCameraPermissionAlert() {
+        let alert = UIAlertController(
+            title: "카메라 권한이 필요해요",
+            message: cameraPermissionMessage(),
+            preferredStyle: .alert
+        )
+        alert.addAction(UIAlertAction(title: "취소", style: .cancel))
+        alert.addAction(UIAlertAction(title: "설정으로 이동", style: .default) { _ in
+            guard let url = URL(string: UIApplication.openSettingsURLString) else { return }
+            UIApplication.shared.open(url)
+        })
+        present(alert, animated: true)
+    }
+
+    private func cameraPermissionMessage() -> String {
+        let cats  = (try? Realm()).map { Array($0.objects(Cat.self)) } ?? []
+        let names = cats.map { $0.name.isEmpty ? "냥이" : $0.name }
+
+        switch names.count {
+        case 0:
+            return "사진을 등록하기 위해 카메라 권한이 필요해요."
+        case 1:
+            return "\(names[0])의 사진을 등록하기 위해 카메라 권한이 필요해요."
+        default:
+            let front    = Array(names.dropLast())
+            let last     = names.last!
+            let particle = hasBatchim(front.last ?? "") ? "과" : "와"
+            return "\(front.joined(separator: ", "))\(particle) \(last)의 사진을 등록하기 위해 카메라 권한이 필요해요."
+        }
+    }
+
+    private func hasBatchim(_ text: String) -> Bool {
+        guard let code = text.unicodeScalars.last?.value,
+              code >= 0xAC00, code <= 0xD7A3 else { return false }
+        return (code - 0xAC00) % 28 != 0
+    }
+
+    private func openPicker(source: UIImagePickerController.SourceType) {
+        guard UIImagePickerController.isSourceTypeAvailable(source) else { return }
         let picker        = UIImagePickerController()
         picker.sourceType = source
         picker.allowsEditing = true
