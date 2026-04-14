@@ -535,8 +535,8 @@ final class LogView: BaseView {
         let cal      = Calendar(identifier: .gregorian)
         let comps    = DateComponents(calendar: .current, year: year, month: month + 1, day: 1)
         let firstDay = cal.component(.weekday, from: comps.date ?? Date()) - 1
-        let daysInMonth = cal.range(of: .day, in: .month,
-                                    for: DateComponents(calendar: .current, year: year, month: month + 1).date ?? Date())!.count
+        let refDate = DateComponents(calendar: .current, year: year, month: month + 1).date ?? Date()
+        let daysInMonth = cal.range(of: .day, in: .month, for: refDate)?.count ?? 30
         var cells: [Int?] = Array(repeating: nil, count: firstDay)
         (1...daysInMonth).forEach { cells.append($0) }
         while cells.count % 7 != 0 { cells.append(nil) }
