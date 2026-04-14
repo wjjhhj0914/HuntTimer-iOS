@@ -98,6 +98,18 @@ final class TimerView: BaseView {
         return btn
     }()
 
+    // MARK: - Memorial Overlay
+    private let memorialOverlayView: UIView = {
+        let v = UIView()
+        v.backgroundColor = AppTheme.Color.background
+        v.isHidden = true
+        return v
+    }()
+
+    func setMemorialMode(_ isOn: Bool) {
+        memorialOverlayView.isHidden = !isOn
+    }
+
     // MARK: - BaseView
     override func setupUI() {
         backgroundColor = AppTheme.Color.background
@@ -105,6 +117,7 @@ final class TimerView: BaseView {
         buildContent()
         setupCatCollectionHeight()
         setupBottomArea()
+        setupMemorialOverlay()
     }
 
     // MARK: - Scroll
@@ -321,6 +334,39 @@ final class TimerView: BaseView {
             make.leading.trailing.equalToSuperview()
             make.bottom.equalTo(startButton.snp.top).offset(-12)
             make.height.equalTo(52)
+        }
+    }
+
+    // MARK: - Memorial Overlay Setup
+    private func setupMemorialOverlay() {
+        addSubview(memorialOverlayView)
+        memorialOverlayView.snp.makeConstraints { make in
+            make.top.equalTo(safeAreaLayoutGuide)
+            make.leading.trailing.bottom.equalToSuperview()
+        }
+
+        let moonCfg = UIImage.SymbolConfiguration(pointSize: 52, weight: .light)
+        let moonIV  = UIImageView(image: UIImage(systemName: "moon.stars.fill",
+                                                  withConfiguration: moonCfg))
+        moonIV.tintColor   = AppTheme.Color.purple
+        moonIV.contentMode = .scaleAspectFit
+
+        let titleL = UILabel.make(text: "추모 모드가 활성화되어 있어요",
+                                   size: 18, weight: .bold,
+                                   color: AppTheme.Color.textDark, alignment: .center)
+        let descL  = UILabel.make(text: "소중한 아이의 기록을 보호하기 위해\n사냥 타이머 기능이 제한됩니다.",
+                                   size: 14, color: AppTheme.Color.textMedium,
+                                   lines: 0, alignment: .center)
+
+        let stack = UIStackView.make(axis: .vertical, spacing: 12, alignment: .center)
+        [moonIV, titleL, descL].forEach { stack.addArrangedSubview($0) }
+        stack.setCustomSpacing(20, after: moonIV)
+
+        memorialOverlayView.addSubview(stack)
+        stack.snp.makeConstraints { make in
+            make.centerX.equalToSuperview()
+            make.centerY.equalToSuperview().offset(-40)
+            make.leading.trailing.equalToSuperview().inset(32)
         }
     }
 

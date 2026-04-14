@@ -31,6 +31,8 @@ final class TimerViewController: BaseViewController {
         super.viewWillAppear(animated)
         reloadCats()
         updateTipLabel()
+        let isMemorial = UserDefaults.standard.bool(forKey: "isMemorialMode")
+        contentView.setMemorialMode(isMemorial)
     }
 
     // MARK: - BaseViewController
