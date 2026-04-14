@@ -35,11 +35,27 @@ final class AppSettingsViewController: BaseViewController {
     // MARK: - BaseViewController
 
     override func setupBind() {
+        let appearance = UINavigationBarAppearance()
+        appearance.configureWithOpaqueBackground()
+        appearance.backgroundColor = AppTheme.Color.background
+        appearance.shadowColor     = .clear
+        appearance.titleTextAttributes = [
+            .foregroundColor: AppTheme.Color.textDark,
+            .font: UIFont.appFont(size: 17, weight: .bold)
+        ]
+        let buttonAppearance = UIBarButtonItemAppearance(style: .plain)
+        buttonAppearance.normal.titleTextAttributes = [.foregroundColor: AppTheme.Color.textDark]
+        appearance.buttonAppearance     = buttonAppearance
+        appearance.backButtonAppearance = buttonAppearance
+        navigationController?.navigationBar.standardAppearance   = appearance
+        navigationController?.navigationBar.scrollEdgeAppearance = appearance
+        navigationController?.navigationBar.tintColor = AppTheme.Color.textDark
+
         let backBtn = UIBarButtonItem(
             image: UIImage(systemName: "chevron.left"),
             style: .plain, target: self, action: #selector(backTapped)
         )
-        backBtn.tintColor = AppTheme.Color.primary
+        backBtn.tintColor = AppTheme.Color.textDark
         navigationItem.leftBarButtonItem = backBtn
 
         contentView.allNotifToggle.addTarget(self, action: #selector(allToggleChanged), for: .valueChanged)
