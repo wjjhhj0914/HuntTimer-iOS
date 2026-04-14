@@ -73,11 +73,14 @@ final class CatProfileViewController: BaseViewController {
     override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
         navigationController?.setNavigationBarHidden(false, animated: animated)
+        navigationController?.interactivePopGestureRecognizer?.isEnabled = true
+        navigationController?.interactivePopGestureRecognizer?.delegate  = self
     }
 
     override func viewWillDisappear(_ animated: Bool) {
         super.viewWillDisappear(animated)
         navigationController?.setNavigationBarHidden(true, animated: animated)
+        navigationController?.interactivePopGestureRecognizer?.delegate = nil
         if mode == .registration { saveDraft() }
     }
 
@@ -89,7 +92,10 @@ final class CatProfileViewController: BaseViewController {
         contentView.femaleButton.addTarget(self, action: #selector(femaleTapped), for: .touchUpInside)
         contentView.maleButton.addTarget(self, action: #selector(maleTapped), for: .touchUpInside)
 
-        // Photo
+        // Photo — 이미지 영역 탭 또는 카메라 버튼 탭 모두 동일 동작
+        contentView.photoImageView.isUserInteractionEnabled = true
+        let photoTap = UITapGestureRecognizer(target: self, action: #selector(photoEditTapped))
+        contentView.photoImageView.addGestureRecognizer(photoTap)
         contentView.photoEditButton.addTarget(self, action: #selector(photoEditTapped), for: .touchUpInside)
 
         // Date field
@@ -515,5 +521,12 @@ extension CatProfileViewController: UIImagePickerControllerDelegate, UINavigatio
 
     func imagePickerControllerDidCancel(_ picker: UIImagePickerController) {
         picker.dismiss(animated: true)
+    }
+}
+
+// MARK: - UIGestureRecognizerDelegate (스와이프 뒤로가기)
+extension CatProfileViewController: UIGestureRecognizerDelegate {
+    func gestureRecognizerShouldBegin(_ gestureRecognizer: UIGestureRecognizer) -> Bool {
+        (navigationController?.viewControllers.count ?? 0) > 1
     }
 }
