@@ -1,12 +1,74 @@
 import UIKit
+import AVFoundation
 
 /// 사냥 기록 저장 커스텀 모달 ViewController
 final class SessionSaveModalViewController: UIViewController {
 
+    // MARK: - Pending Session Draft (앱 종료 대비 UserDefaults 임시 저장)
+
+    struct PendingSessionDraft: Codable {
+        let duration:          Int
+        let catIds:            [String]   // ObjectId.stringValue
+        let toyName:           String?
+        let targetDuration:    Int
+        let sessionStartTime:  TimeInterval   // Date.timeIntervalSince1970
+        let memo:              String?
+        let photoData:         Data?
+    }
+
+    private static let draftKey = "pendingSessionDraft"
+
+    /// 드래프트 불러오기 (HomeViewController에서 호출)
+    static func loadDraft() -> PendingSessionDraft? {
+        guard let data  = UserDefaults.standard.data(forKey: draftKey),
+              let draft = try? JSONDecoder().decode(PendingSessionDraft.self, from: data)
+        else { return nil }
+        return draft
+    }
+
+    /// 드래프트 삭제 (복구 완료 또는 정상 저장 후 호출)
+    static func clearSavedDraft() {
+        UserDefaults.standard.removeObject(forKey: draftKey)
+    }
+
+    /// 현재 모달 상태를 UserDefaults에 임시 저장
+    private func saveDraft() {
+        let memo: String? = {
+            guard !contentView.isShowingPlaceholder else { return nil }
+            let t = contentView.memoTextView.text.trimmingCharacters(in: .whitespacesAndNewlines)
+            return t.isEmpty ? nil : t
+        }()
+        let draft = PendingSessionDraft(
+            duration:         duration,
+            catIds:           catIds,
+            toyName:          toyName,
+            targetDuration:   targetDuration,
+            sessionStartTime: sessionStartTime.timeIntervalSince1970,
+            memo:             memo,
+            photoData:        selectedPhoto?.jpegData(compressionQuality: 0.75)
+        )
+        if let data = try? JSONEncoder().encode(draft) {
+            UserDefaults.standard.set(data, forKey: Self.draftKey)
+        }
+    }
+
+    /// 모달이 살아있을 때 드래프트 삭제 (복구 불필요)
+    private func clearDraft() {
+        SessionSaveModalViewController.clearSavedDraft()
+    }
+
     // MARK: - Configuration (호출 전 설정)
-    var duration: Int = 0
-    var onSave:   ((String?, UIImage?) -> Void)?
-    var onCancel: (() -> Void)?
+    var duration:        Int    = 0
+    var onSave:          ((String?, UIImage?) -> Void)?
+    var onCancel:        (() -> Void)?
+    // 드래프트 저장용 세션 메타 데이터 (HuntInProgressVC에서 주입)
+    var catIds:          [String] = []
+    var toyName:         String?  = nil
+    var targetDuration:  Int      = 0
+    var sessionStartTime: Date    = Date()
+    // 드래프트 복구 시 초기값 (HomeVC에서 주입)
+    var initialMemo:     String?  = nil
+    var initialPhoto:    UIImage? = nil
 
     // MARK: - View / State
     private let contentView = SessionSaveModalView()
@@ -23,15 +85,42 @@ final class SessionSaveModalViewController: UIViewController {
         configure()
         bind()
         registerKeyboardObservers()
+        // 앱이 포그라운드로 돌아올 때 모달이 살아있으면 드래프트 삭제
+        NotificationCenter.default.addObserver(
+            self, selector: #selector(appWillEnterForeground),
+            name: UIApplication.willEnterForegroundNotification, object: nil)
+    }
+
+    override func viewDidAppear(_ animated: Bool) {
+        super.viewDidAppear(animated)
+        // 모달이 처음 나타날 때 이전 드래프트 정리 (설정 복귀 후 재노출 케이스도 포함)
+        clearDraft()
     }
 
     deinit {
         NotificationCenter.default.removeObserver(self)
     }
 
+    @objc private func appWillEnterForeground() {
+        // 모달이 화면에 있는 채로 포그라운드 복귀 → 드래프트 불필요
+        clearDraft()
+    }
+
     // MARK: - Configure
     private func configure() {
         contentView.durationLabel.text = formatDuration(duration)
+        // 드래프트 복구 시 메모·사진 초기값 적용
+        if let memo = initialMemo {
+            contentView.memoTextView.text      = memo
+            contentView.memoTextView.textColor = AppTheme.Color.textDark
+            contentView.isShowingPlaceholder   = false
+        }
+        if let photo = initialPhoto {
+            selectedPhoto = photo
+            contentView.photoImageView.image           = photo
+            contentView.photoImageView.isHidden        = false
+            contentView.cameraPlaceholderStack.isHidden = true
+        }
     }
 
     // MARK: - Bind
@@ -65,12 +154,14 @@ final class SessionSaveModalViewController: UIViewController {
         // 시간만 저장 — 메모·사진 없이 사냥 시간만 Realm에 기록
         alert.addAction(UIAlertAction(title: "시간만 저장", style: .default) { [weak self] _ in
             guard let self else { return }
+            self.clearDraft()
             dismiss(animated: true) { self.onSave?(nil, nil) }
         })
 
         // 기록 삭제 — 아무것도 저장하지 않고 파기
         alert.addAction(UIAlertAction(title: "기록 삭제", style: .destructive) { [weak self] _ in
             guard let self else { return }
+            self.clearDraft()
             dismiss(animated: true) { self.onCancel?() }
         })
 
@@ -89,6 +180,7 @@ final class SessionSaveModalViewController: UIViewController {
                 .trimmingCharacters(in: .whitespacesAndNewlines)
             return trimmed.isEmpty ? nil : trimmed
         }()
+        clearDraft()
         dismiss(animated: true) { [weak self] in
             self?.onSave?(memo, self?.selectedPhoto)
         }
@@ -99,12 +191,73 @@ final class SessionSaveModalViewController: UIViewController {
     }
 
     @objc private func photoSlotTapped() {
-        guard UIImagePickerController.isSourceTypeAvailable(.photoLibrary) else { return }
-        let picker = UIImagePickerController()
-        picker.sourceType    = .photoLibrary
+        let sheet = ProfileImagePickerBottomSheet(
+            hasCurrentImage: selectedPhoto != nil,
+            sheetTitle:      "사진 추가",
+            resetOptionTitle: "사진 삭제"
+        )
+        sheet.onAlbum        = { [weak self] in self?.presentImagePicker(source: .photoLibrary) }
+        sheet.onCamera       = { [weak self] in self?.presentImagePicker(source: .camera) }
+        sheet.onResetDefault = { [weak self] in self?.removeSelectedPhoto() }
+        present(sheet, animated: false)
+    }
+
+    private func presentImagePicker(source: UIImagePickerController.SourceType) {
+        if source == .camera {
+            openCameraWithPermission()
+        } else {
+            openPicker(source: .photoLibrary)
+        }
+    }
+
+    // MARK: - Camera Permission
+
+    private func openCameraWithPermission() {
+        switch AVCaptureDevice.authorizationStatus(for: .video) {
+        case .authorized:
+            openPicker(source: .camera)
+        case .notDetermined:
+            AVCaptureDevice.requestAccess(for: .video) { [weak self] granted in
+                DispatchQueue.main.async {
+                    if granted { self?.openPicker(source: .camera) }
+                }
+            }
+        case .denied, .restricted:
+            showCameraPermissionAlert()
+        @unknown default:
+            break
+        }
+    }
+
+    private func showCameraPermissionAlert() {
+        let alert = UIAlertController(
+            title: "카메라 권한이 필요해요",
+            message: "사냥 놀이의 소중한 순간을 촬영하기 위해 카메라 접근 권한이 필요해요.",
+            preferredStyle: .alert
+        )
+        alert.addAction(UIAlertAction(title: "취소", style: .cancel))
+        alert.addAction(UIAlertAction(title: "설정으로 이동", style: .default) { [weak self] _ in
+            self?.saveDraft()
+            guard let url = URL(string: UIApplication.openSettingsURLString) else { return }
+            UIApplication.shared.open(url)
+        })
+        present(alert, animated: true)
+    }
+
+    private func openPicker(source: UIImagePickerController.SourceType) {
+        guard UIImagePickerController.isSourceTypeAvailable(source) else { return }
+        let picker        = UIImagePickerController()
+        picker.sourceType = source
         picker.allowsEditing = true
-        picker.delegate      = self
+        picker.delegate   = self
         present(picker, animated: true)
+    }
+
+    private func removeSelectedPhoto() {
+        selectedPhoto = nil
+        contentView.photoImageView.image    = nil
+        contentView.photoImageView.isHidden = true
+        contentView.cameraPlaceholderStack.isHidden = false
     }
 
     // MARK: - Keyboard Avoidance

@@ -28,10 +28,17 @@ final class HomeViewController: BaseViewController {
         view = contentView
     }
 
+    // MARK: - Draft Recovery Flag
+    private static var hasCheckedDraftThisLaunch = false
+
     // MARK: - Lifecycle
     override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
         viewWillAppearSubject.onNext(())
+        if !HomeViewController.hasCheckedDraftThisLaunch {
+            HomeViewController.hasCheckedDraftThisLaunch = true
+            checkForPendingSessionDraft()
+        }
     }
 
     // MARK: - BaseViewController
@@ -460,6 +467,61 @@ final class HomeViewController: BaseViewController {
         } catch {
             print("[HuntTimer] 배너 이미지 경로 Realm 저장 실패:", error)
         }
+    }
+
+    // MARK: - Draft Recovery
+
+    private func checkForPendingSessionDraft() {
+        guard let draft = SessionSaveModalViewController.loadDraft() else { return }
+        let alert = UIAlertController(
+            title: "이전 기록을 이어 작성할까요?",
+            message: "설정을 다녀오는 사이 저장 중이던 사냥 기록이 있어요.",
+            preferredStyle: .alert
+        )
+        alert.addAction(UIAlertAction(title: "이어 작성", style: .default) { [weak self] _ in
+            self?.restorePendingSession(from: draft)
+        })
+        alert.addAction(UIAlertAction(title: "기록 삭제", style: .destructive) { _ in
+            SessionSaveModalViewController.clearSavedDraft()
+        })
+        present(alert, animated: true)
+    }
+
+    private func restorePendingSession(from draft: SessionSaveModalViewController.PendingSessionDraft) {
+        SessionSaveModalViewController.clearSavedDraft()
+
+        let modal              = SessionSaveModalViewController()
+        modal.duration         = draft.duration
+        modal.catIds           = draft.catIds
+        modal.toyName          = draft.toyName
+        modal.targetDuration   = draft.targetDuration
+        modal.sessionStartTime = Date(timeIntervalSince1970: draft.sessionStartTime)
+        modal.initialMemo      = draft.memo
+        modal.initialPhoto     = draft.photoData.flatMap { UIImage(data: $0) }
+
+        modal.onSave = { [weak self] memo, photo in
+            guard let realm = try? Realm() else { return }
+            let cats = draft.catIds.compactMap { idStr -> Cat? in
+                guard let oid = try? ObjectId(string: idStr) else { return nil }
+                return realm.object(ofType: Cat.self, forPrimaryKey: oid)
+            }
+            TimerViewModel().saveSession(
+                startTime:      Date(timeIntervalSince1970: draft.sessionStartTime),
+                endTime:        Date(),
+                duration:       draft.duration,
+                targetDuration: draft.targetDuration,
+                cats:           cats,
+                toyName:        draft.toyName,
+                memo:           memo,
+                photo:          photo
+            )
+            self?.viewWillAppearSubject.onNext(())
+        }
+        modal.onCancel = { }
+
+        modal.modalPresentationStyle = .overFullScreen
+        modal.modalTransitionStyle   = .crossDissolve
+        present(modal, animated: true)
     }
 }
 

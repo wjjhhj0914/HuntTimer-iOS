@@ -270,8 +270,12 @@ final class HuntInProgressViewController: BaseViewController {
     }
 
     private func showSessionSaveModal() {
-        let modal      = SessionSaveModalViewController()
-        modal.duration = elapsedSeconds
+        let modal             = SessionSaveModalViewController()
+        modal.duration        = elapsedSeconds
+        modal.catIds          = selectedCats.map { $0.id.stringValue }
+        modal.toyName         = toyName
+        modal.targetDuration  = totalSeconds
+        modal.sessionStartTime = sessionStartTime ?? Date()
         modal.onSave   = { [weak self] memo, photo in
             guard let self else { return }
             self.endAndSaveSession(memo: memo, photo: photo)
