@@ -70,6 +70,15 @@ final class SessionSaveModalView: UIView {
         return btn
     }()
 
+    // MARK: - Card (키보드 회피에서 접근)
+    private(set) var card = UIView()
+    private var cardCenterYConstraint: Constraint?
+
+    /// 키보드 표시/숨김 시 카드의 centerY 오프셋을 갱신한다.
+    func updateCardOffset(_ offset: CGFloat) {
+        cardCenterYConstraint?.update(offset: offset)
+    }
+
     // MARK: - Init
 
     override init(frame: CGRect) {
@@ -86,7 +95,6 @@ final class SessionSaveModalView: UIView {
         backdropView.snp.makeConstraints { $0.edges.equalToSuperview() }
 
         // Modal card
-        let card = UIView()
         card.backgroundColor     = .white
         card.layer.cornerRadius  = 20
         card.layer.shadowColor   = UIColor.black.cgColor
@@ -96,7 +104,7 @@ final class SessionSaveModalView: UIView {
         addSubview(card)
         card.snp.makeConstraints { make in
             make.leading.trailing.equalToSuperview().inset(24)
-            make.centerY.equalToSuperview()
+            cardCenterYConstraint = make.centerY.equalToSuperview().constraint
         }
 
         // Header

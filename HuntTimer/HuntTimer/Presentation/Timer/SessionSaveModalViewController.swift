@@ -22,6 +22,11 @@ final class SessionSaveModalViewController: UIViewController {
         super.viewDidLoad()
         configure()
         bind()
+        registerKeyboardObservers()
+    }
+
+    deinit {
+        NotificationCenter.default.removeObserver(self)
     }
 
     // MARK: - Configure
@@ -100,6 +105,48 @@ final class SessionSaveModalViewController: UIViewController {
         picker.allowsEditing = true
         picker.delegate      = self
         present(picker, animated: true)
+    }
+
+    // MARK: - Keyboard Avoidance
+
+    private func registerKeyboardObservers() {
+        NotificationCenter.default.addObserver(
+            self, selector: #selector(keyboardWillShow(_:)),
+            name: UIResponder.keyboardWillShowNotification, object: nil)
+        NotificationCenter.default.addObserver(
+            self, selector: #selector(keyboardWillHide(_:)),
+            name: UIResponder.keyboardWillHideNotification, object: nil)
+    }
+
+    @objc private func keyboardWillShow(_ notification: Notification) {
+        guard let userInfo = notification.userInfo,
+              let kbFrame  = userInfo[UIResponder.keyboardFrameEndUserInfoKey]          as? CGRect,
+              let duration = userInfo[UIResponder.keyboardAnimationDurationUserInfoKey] as? Double,
+              let curveRaw = userInfo[UIResponder.keyboardAnimationCurveUserInfoKey]    as? UInt
+        else { return }
+
+        // 최신 레이아웃 반영 후 저장 버튼(카드 하단)이 키보드 바로 위에 오도록 이동량 계산
+        view.layoutIfNeeded()
+        let keyboardTop = view.bounds.height - kbFrame.height
+        let cardBottom  = contentView.card.frame.maxY
+        let shift       = max(0, cardBottom - keyboardTop + 8)
+
+        let options = UIView.AnimationOptions(rawValue: curveRaw << 16)
+        UIView.animate(withDuration: duration, delay: 0, options: options) {
+            self.view.frame.origin.y = -shift
+        }
+    }
+
+    @objc private func keyboardWillHide(_ notification: Notification) {
+        guard let userInfo = notification.userInfo,
+              let duration = userInfo[UIResponder.keyboardAnimationDurationUserInfoKey] as? Double,
+              let curveRaw = userInfo[UIResponder.keyboardAnimationCurveUserInfoKey]    as? UInt
+        else { return }
+
+        let options = UIView.AnimationOptions(rawValue: curveRaw << 16)
+        UIView.animate(withDuration: duration, delay: 0, options: options) {
+            self.view.frame.origin.y = 0
+        }
     }
 
     // MARK: - Duration Formatting
