@@ -18,6 +18,7 @@ final class HuntInProgressViewController: BaseViewController {
     private var elapsedSeconds:     Int    = 0
     private var isRunning:          Bool   = false
     private var isPaused:           Bool   = false
+    private var isCountingUp:       Bool   = false
     private var timer:              Timer? = nil
     private var sessionStartTime:   Date?  = nil
     private var timerResumedAt:     Date?  = nil
@@ -156,7 +157,6 @@ final class HuntInProgressViewController: BaseViewController {
     // MARK: - Timer Logic
 
     private func startTimer() {
-        guard elapsedSeconds < totalSeconds else { return }
         timer?.invalidate()
         timer = nil
         if sessionStartTime == nil { sessionStartTime = Date() }
@@ -164,24 +164,24 @@ final class HuntInProgressViewController: BaseViewController {
         isRunning = true
         isPaused  = false
 
-        let remaining = totalSeconds - elapsedSeconds
-        NotificationManager.shared.scheduleTimerEndNotification(remainingSeconds: TimeInterval(remaining))
+        if !isCountingUp {
+            let remaining = totalSeconds - elapsedSeconds
+            if remaining > 0 {
+                NotificationManager.shared.scheduleTimerEndNotification(remainingSeconds: TimeInterval(remaining))
+            }
+        }
 
         timer = Timer.scheduledTimer(withTimeInterval: 1, repeats: true) { [weak self] _ in
             guard let self, let resumedAt = self.timerResumedAt else { return }
             self.elapsedSeconds = self.elapsedBeforePause + Int(Date().timeIntervalSince(resumedAt))
-            if self.elapsedSeconds >= self.totalSeconds {
-                self.elapsedSeconds      = self.totalSeconds
-                self.timer?.invalidate()
-                self.timer               = nil
-                self.isRunning           = false
-                self.timerResumedAt      = nil
-                self.elapsedBeforePause  = 0
-                self.huntFinished()
+            if !self.isCountingUp && self.elapsedSeconds >= self.totalSeconds {
+                self.isCountingUp = true
+                self.handleGoalReached()
             }
             self.updateDisplay()
         }
         contentView.updatePauseResumeState(isPaused: false)
+        if isCountingUp { contentView.updateOvertimeState() }
         updateDisplay()
     }
 
@@ -210,6 +210,7 @@ final class HuntInProgressViewController: BaseViewController {
         timer              = nil
         isRunning          = false
         isPaused           = false
+        isCountingUp       = false
         elapsedSeconds     = 0
         elapsedBeforePause = 0
         timerResumedAt     = nil
@@ -217,10 +218,9 @@ final class HuntInProgressViewController: BaseViewController {
         NotificationManager.shared.cancelTimerEndNotification()
     }
 
-    private func huntFinished() {
+    private func handleGoalReached() {
         UINotificationFeedbackGenerator().notificationOccurred(.success)
-        contentView.updatePauseResumeState(isPaused: true)
-        showSessionSaveModal()
+        contentView.updateOvertimeState()
     }
 
     // MARK: - Background Handling
@@ -235,16 +235,15 @@ final class HuntInProgressViewController: BaseViewController {
     @objc private func handleForeground() {
         NotificationManager.shared.handleForegroundReturn()
         guard isRunning, let resumedAt = timerResumedAt else { return }
-        elapsedSeconds = elapsedBeforePause + Int(Date().timeIntervalSince(resumedAt))
-        if elapsedSeconds >= totalSeconds {
-            elapsedSeconds      = totalSeconds
-            timer?.invalidate()
-            timer               = nil
-            isRunning           = false
-            timerResumedAt      = nil
-            elapsedBeforePause  = 0
+        let newElapsed = elapsedBeforePause + Int(Date().timeIntervalSince(resumedAt))
+        elapsedSeconds = newElapsed
+
+        if !isCountingUp && newElapsed >= totalSeconds {
+            isCountingUp = true
             updateDisplay()
-            huntFinished()
+            handleGoalReached()
+        } else if isCountingUp {
+            updateDisplay()
         } else {
             updateDisplay()
             let remaining = totalSeconds - elapsedSeconds
@@ -314,8 +313,13 @@ final class HuntInProgressViewController: BaseViewController {
     // MARK: - UI Updates
 
     private func updateDisplay() {
-        let remaining = max(totalSeconds - elapsedSeconds, 0)
-        contentView.timerLabel.text = formatTime(remaining)
+        if isCountingUp {
+            let extra = max(elapsedSeconds - totalSeconds, 0)
+            contentView.timerLabel.text = "+" + formatTime(extra)
+        } else {
+            let remaining = max(totalSeconds - elapsedSeconds, 0)
+            contentView.timerLabel.text = formatTime(remaining)
+        }
     }
 
     private func formatTime(_ seconds: Int) -> String {
