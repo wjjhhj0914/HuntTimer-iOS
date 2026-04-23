@@ -5,10 +5,12 @@ import SnapKit
 final class HuntInProgressView: BaseView {
 
     // MARK: - Timer Card
+    // height = 30pt → cornerRadius = 15pt → 완벽한 캡슐
     private let statusPillView: UIView = {
         let v = UIView()
         v.backgroundColor    = AppTheme.Color.yellowLight
-        v.layer.cornerRadius = 20
+        v.layer.cornerRadius = 15
+        v.clipsToBounds      = true
         return v
     }()
 
@@ -105,16 +107,17 @@ final class HuntInProgressView: BaseView {
     // MARK: - Card Builders
 
     private func makeTimerCard() -> UIView {
-        // 상태 pill
+        // 상태 pill: 내부 row를 pill 가장자리에 inset 고정, pill 자체는 height=30 명시
         let pillRow = UIStackView.make(axis: .horizontal, spacing: 6, alignment: .center)
         pillRow.addArrangedSubview(statusDot)
         pillRow.addArrangedSubview(statusLabel)
         statusDot.snp.makeConstraints { $0.width.height.equalTo(8) }
         statusPillView.addSubview(pillRow)
         pillRow.snp.makeConstraints { make in
-            make.top.bottom.equalToSuperview().inset(6)
+            make.top.bottom.equalToSuperview().inset(7)
             make.leading.trailing.equalToSuperview().inset(14)
         }
+        statusPillView.snp.makeConstraints { $0.height.equalTo(30) }
 
         // 제어 버튼 행
         let ctrlRow = UIStackView.make(axis: .horizontal, spacing: 12, distribution: .fillEqually)
@@ -227,8 +230,21 @@ final class HuntInProgressView: BaseView {
 
     // MARK: - State Updates
 
+    func updateOvertimeState() {
+        UIView.animate(withDuration: 0.3) {
+            self.statusPillView.backgroundColor = AppTheme.Color.primaryLight
+            self.statusDot.backgroundColor      = UIColor(hex: "#E06C1E")
+            self.statusLabel.text               = "🐾 추가 사냥 중"
+            self.statusLabel.textColor          = UIColor(hex: "#E06C1E")
+            self.timerLabel.textColor           = UIColor(hex: "#E06C1E")
+        }
+        stopButton.setTitle("종료", for: .normal)
+    }
+
     func updatePauseResumeState(isPaused: Bool) {
         UIView.animate(withDuration: 0.18) {
+            self.statusPillView.backgroundColor = AppTheme.Color.yellowLight
+            self.statusLabel.textColor          = AppTheme.Color.textDark
             if isPaused {
                 self.pauseResumeButton.setTitle("재개하기", for: .normal)
                 self.statusDot.backgroundColor = AppTheme.Color.yellow
