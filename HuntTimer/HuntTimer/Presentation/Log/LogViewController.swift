@@ -38,6 +38,13 @@ final class LogViewController: BaseViewController {
         contentView.prevMonthButton.addTarget(self, action: #selector(prevMonth),      for: .touchUpInside)
         contentView.nextMonthButton.addTarget(self, action: #selector(nextMonth),      for: .touchUpInside)
 
+        let swipeLeft  = UISwipeGestureRecognizer(target: self, action: #selector(nextMonth))
+        swipeLeft.direction = .left
+        let swipeRight = UISwipeGestureRecognizer(target: self, action: #selector(prevMonth))
+        swipeRight.direction = .right
+        contentView.calendarContainer.addGestureRecognizer(swipeLeft)
+        contentView.calendarContainer.addGestureRecognizer(swipeRight)
+
         contentView.profileButton.addTarget(self, action: #selector(profileTapped), for: .touchUpInside)
 
         // 타임라인 행 탭 → 해당 세션 상세 모달
