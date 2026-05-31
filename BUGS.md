@@ -1,122 +1,254 @@
 # HuntTimer — 구현 중 마주한 버그 기록
 
-> 커밋 히스토리에서 추출한 실제 버그 목록입니다.  
+> 커밋 히스토리에서 추출한 실제 버그 목록입니다.
 > 빌드/런타임 크래시 → 데이터·로직 오류 → UI/UX 순으로 정리했습니다.
 
 ---
 
 ## 빌드 / 런타임 크래시
 
-### 1. iOS 17.6 dyld 크래시 — Swift 6 빌드 플래그
-**커밋** `2dc26ef`  
-**증상** 실기기(iOS 17.6) 에서 앱 실행 즉시 크래시, 시뮬레이터에서는 재현 안 됨  
-**원인** Xcode가 자동 삽입한 Swift 6 관련 플래그 3개(`SWIFT_DEFAULT_ACTOR_ISOLATION`, `SWIFT_APPROACHABLE_CONCURRENCY`, `SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY`)가 iOS 26.2 SDK 전용 Swift 런타임 심볼을 참조 → 구형 OS의 dyld가 심볼을 찾지 못해 크래시  
-**해결** `project.pbxproj`의 Debug/Release 양쪽 설정에서 해당 플래그 3개 제거
+### 1. 타이머 화면 진입 시 간헐적 EXC_BAD_ACCESS 크래시
 
----
+**상황**
 
-### 2. `EXC_BAD_ACCESS` — `CircularTimerView` sublayer 파괴
-**커밋** `4040488`  
-**증상** 타이머 화면 진입 시 간헐적 `EXC_BAD_ACCESS` 크래시  
-**원인** `CircularTimerView.setupLayers()`가 `layoutSubviews()` 호출마다 `layer.sublayers`를 전부 제거하는데, `timerLabels`가 `gaugeView`의 자식으로 배치되어 있어 backing layer가 함께 파괴된 뒤 접근 시도  
-**해결** `timerLabels`를 `gaugeView` 내부가 아닌 `gaugeWrapper`(상위 래퍼 뷰)의 자식으로 이동 → sublayer 제거 사이클에 영향받지 않도록 격리
+원형 게이지 타이머 화면(`CircularTimerView`)을 구현한 직후, 화면 진입 시 간헐적으로 앱이 `EXC_BAD_ACCESS`로 종료되는 문제가 발생했습니다. 재현 조건이 일정하지 않아 원인을 특정하기 어려웠습니다.
+
+**원인 분석**
+
+크래시 스택 트레이스를 확인하니 UIKit 렌더링 과정에서 이미 해제된 메모리에 접근하고 있었습니다. `CircularTimerView`의 코드를 추적한 결과 다음 흐름에서 문제가 발생함을 발견했습니다.
+
+1. `CircularTimerView`는 `layoutSubviews()`가 호출될 때마다 `setupLayers()`를 실행합니다.
+2. `setupLayers()` 내부에서 `layer.sublayers?.forEach { $0.removeFromSuperlayer() }`로 **모든 sublayer를 일괄 제거**합니다.
+3. 타이머 레이블(`timerLabels`)은 `CircularTimerView` 내부에 자식 뷰로 배치되어 있었고, 모든 `UIView`는 자신의 `CALayer`(backing layer)를 가집니다.
+4. `setupLayers()`가 sublayer를 제거할 때 `timerLabels`의 backing layer도 함께 파괴되고, 이후 UIKit이 해당 레이어에 접근하는 시점에 `EXC_BAD_ACCESS`가 발생했습니다.
+
+회전, 키보드 표시 등 레이아웃 변경이 일어날 때마다 `layoutSubviews()`가 재호출되어 간헐적으로 재현되는 이유도 이 구조로 설명할 수 있었습니다.
+
+**해결**
+
+`timerLabels`를 `CircularTimerView`(`gaugeView`) 내부에서 꺼내, 이를 감싸는 래퍼 뷰(`gaugeWrapper`)의 자식으로 이동했습니다. `gaugeWrapper`는 `setupLayers()`의 영향을 받지 않으므로 `timerLabels`의 backing layer가 안전하게 유지됩니다. 시각적으로는 `gaugeWrapper`가 `gaugeView`와 동일한 크기를 가지기 때문에 기존 레이아웃을 그대로 유지할 수 있었습니다.
 
 ```
-gaugeWrapper
-├── gaugeView     ← layer.sublayers 반복 재생성 (여기만 영향)
-└── timerLabels   ← gaugeWrapper 직속 → 안전
+// 수정 전
+gaugeView (CircularTimerView)
+└── timerLabels  ← setupLayers() 호출 시 backing layer 파괴
+
+// 수정 후
+gaugeWrapper (UIView)
+├── gaugeView (CircularTimerView)  ← sublayer 재생성 범위
+└── timerLabels  ← 영향권 밖, backing layer 보존
 ```
 
----
+**배운 점**
 
-### 3. SnapKit `convertPoint` 크래시 — 뷰 계층 미완성 상태에서 제약 설치
-**커밋** `0c2e8f8`  
-**증상** 장난감 칩(chip) 버튼 생성 시 런타임 크래시  
-**원인** `iconView.snp.makeConstraints`를 `addSubview` 이전에 호출하면 SnapKit이 공통 조상을 탐색하다 유효하지 않은 뷰 계층에 `NSLayoutConstraint` 메시지를 전송  
-**해결** `iconView → chipStack → btn` 순으로 `addSubview` 완료 후 `makeConstraints` 호출하도록 순서 교정
+`layoutSubviews()`가 단순히 "레이아웃을 갱신하는 메서드"가 아니라 조건에 따라 반복 호출되는 사이클임을 직접 경험했습니다. 또한 `CALayer` 기반 커스텀 뷰를 설계할 때 UIView 계층과 CALayer 계층을 분리해서 사고하는 습관이 생겼습니다.
 
 ---
 
-### 4. Realm 고양이 삭제 크래시 — `invalidated` 객체 접근
-**커밋** `d258a3e`  
-**증상** 홈 화면에서 고양이를 삭제하면 앱 크래시  
-**원인** `realm.delete(managed)` 실행 후 `cat`/`managed` 모두 **invalidated** 상태가 되는데, 바로 다음 줄 `selectedCatIds.remove(cat.id)`에서 invalidated 객체의 `.id` 프로퍼티에 접근  
-**해결** `realm.write` 진입 전 `let catId = cat.id`로 ID를 값 타입 복사 → 삭제 후에는 `catId`만 사용, 목록 갱신도 새 Realm 인스턴스로 재조회
+### 2. 실기기에서만 발생하는 앱 시작 즉시 크래시 — Swift 6 빌드 플래그
+
+**상황**
+
+개발 중 시뮬레이터에서는 정상 동작하던 앱이, 실기기(iOS 17.6)에서는 런치 스크린조차 표시되지 않고 즉시 종료되는 문제가 발생했습니다.
+
+**원인 분석**
+
+Xcode 콘솔 로그에서 `dyld: Symbol not found` 메시지를 확인했습니다. `project.pbxproj`를 분석한 결과, Xcode가 자동으로 삽입한 Swift 6 관련 빌드 플래그 3개 — `SWIFT_DEFAULT_ACTOR_ISOLATION`, `SWIFT_APPROACHABLE_CONCURRENCY`, `SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY` — 가 iOS 26.2 SDK 전용 Swift 런타임 심볼을 참조하고 있었습니다. 해당 심볼이 iOS 17.6 기기에는 존재하지 않아 동적 링커(dyld)가 앱 실행 전에 크래시를 발생시키는 구조였습니다. 최신 Xcode가 SDK 전용 플래그를 프로젝트에 조용히 삽입한다는 점을 인지하지 못한 것이 근본 원인이었습니다.
+
+**해결**
+
+`project.pbxproj`의 Debug/Release 빌드 설정 양쪽에서 해당 플래그 3개를 제거하고, `SWIFT_VERSION`은 `5.0`으로 명시적으로 유지했습니다. 이후 iOS 17.6 실기기에서 정상 실행을 확인했습니다.
+
+**배운 점**
+
+시뮬레이터와 실기기의 런타임 환경이 다르다는 점, 그리고 Xcode가 프로젝트 설정을 자동으로 변경할 수 있다는 점을 인식하게 됐습니다. 이후 빌드 설정을 직접 확인하는 습관이 생겼습니다.
+
+---
+
+### 3. 장난감 칩 버튼 생성 시 런타임 크래시 — SnapKit 뷰 계층 순서 오류
+
+**상황**
+
+타이머 화면에서 장난감 태그를 칩(chip) 형태의 버튼으로 구성하던 중, 해당 버튼이 포함된 화면 진입 시 런타임 크래시가 발생했습니다.
+
+**원인 분석**
+
+SnapKit의 `makeConstraints` 내부 동작을 추적한 결과, 제약 설치 시점에 뷰가 공통 조상(common ancestor)을 공유하지 않으면 SnapKit이 `NSLayoutConstraint` 관련 메서드를 잘못된 대상에 전송한다는 것을 확인했습니다. 문제가 된 코드는 `iconView.snp.makeConstraints`를 `addSubview` 이전에 호출하고 있었습니다. 즉 `iconView → chipStack → btn`으로 이어지는 뷰 계층이 완성되기 전에 제약을 설치하려 해서 공통 조상 탐색에 실패한 것이었습니다.
+
+**해결**
+
+`addSubview` 호출 순서와 `makeConstraints` 호출 순서를 맞췄습니다. `iconView`를 `chipStack`에 추가하고, `chipStack`을 `btn`에 추가한 뒤, 마지막에 `iconView.snp.makeConstraints`를 호출하도록 순서를 교정했습니다.
+
+**배운 점**
+
+SnapKit(Auto Layout)의 제약 설치는 뷰 계층이 완성된 이후에 이루어져야 한다는 전제를 명확히 인식했습니다. 이후 제약 코드를 작성할 때 항상 `addSubview` 완료 후 제약을 설치하는 순서를 지키게 됐습니다.
+
+---
+
+### 4. 고양이 삭제 후 앱 크래시 — Realm invalidated 객체 접근
+
+**상황**
+
+홈 화면 편집 모드에서 고양이를 삭제하면 앱이 즉시 크래시되는 문제가 발생했습니다. 삭제 자체는 Realm에 정상 반영되고 있었습니다.
+
+**원인 분석**
+
+Realm 객체는 `realm.delete()` 실행 후 **invalidated** 상태로 전환되어 어떤 프로퍼티에도 접근할 수 없습니다. 문제가 된 코드는 `realm.write { realm.delete(managed) }` 직후 `selectedCatIds.remove(cat.id)`를 호출하고 있었는데, 이 시점의 `cat`은 이미 invalidated 상태였습니다. 크래시 원인이 삭제 로직 자체가 아니라 삭제 이후의 접근에 있다는 것을 Realm 객체 생명주기 문서를 통해 확인했습니다.
+
+**해결**
+
+`realm.write` 블록 진입 전 `let catId = cat.id`로 ID를 값 타입(String)으로 미리 복사했습니다. 삭제 이후 로직은 `cat` 대신 `catId`만 사용하도록 변경하고, 목록 갱신도 새 Realm 인스턴스를 통한 재조회로 교체했습니다.
 
 ```swift
 // Before (crash)
 try realm.write { realm.delete(managed) }
-selectedCatIds.remove(cat.id)   // ← cat이 이미 invalidated
+selectedCatIds.remove(cat.id)   // cat은 이미 invalidated
 
 // After (fix)
-let catId = cat.id              // 값 복사
+let catId = cat.id              // 값 타입으로 복사
 try realm.write { realm.delete(managed) }
-selectedCatIds.remove(catId)    // ← 값 타입, 안전
+selectedCatIds.remove(catId)    // 값 타입, 안전
 ```
+
+**배운 점**
+
+Realm 관리 객체는 삭제 후 참조를 유지해도 접근이 불가능하다는 생명주기 규칙을 직접 경험했습니다. 이후 Realm 객체를 삭제하는 코드를 작성할 때 항상 필요한 값을 먼저 추출하는 습관이 생겼습니다.
 
 ---
 
 ## 데이터 / 로직 오류
 
-### 5. UIColor hex 8자리 파싱 오류 — 색상이 보라색으로 렌더링
-**커밋** `c27f2d3`  
-**증상** `"#ffbf6cff"`(주황 계열) 같은 alpha 포함 hex를 사용하면 보라색으로 표시됨  
-**원인** 기존 파서가 6자리 `RRGGBB`만 처리 → 8자리 입력 시 뒤 2자리(`AA`)를 B 채널로 잘못 읽어 Blue = 0xFF  
-**해결** 문자열 길이 분기 추가: 8자리일 경우 `RRGGBBAA`로 파싱, 6자리는 기존 로직 유지
+### 5. alpha 포함 hex 색상 코드가 보라색으로 렌더링되는 버그
+
+**상황**
+
+앱 전반에 걸쳐 사용하는 커스텀 `UIColor(hex:)` 이니셜라이저에서, `"#ffbf6cff"`처럼 alpha 채널이 포함된 8자리 hex 코드를 사용하면 의도한 주황 계열 대신 보라색이 표시되는 문제가 발생했습니다.
+
+**원인 분석**
+
+기존 파서가 6자리 `RRGGBB` 형식만 처리하도록 구현되어 있었습니다. 8자리 문자열이 입력되면 처음 6자리만 파싱하므로, `"ffbf6c"` 중 `6c`까지만 읽혀야 할 Blue 채널이 이후 `"ff"`(= alpha byte)까지 흡수하여 Blue = 0xFF로 계산됩니다. 결과적으로 R·G는 낮고 B만 최대치가 되어 보라색으로 렌더링되었습니다.
+
+**해결**
+
+파서에 문자열 길이 분기를 추가했습니다. 8자리일 경우 `RRGGBBAA`로, 6자리일 경우 기존 `RRGGBB`(alpha = 1.0 고정)로 파싱하도록 처리했습니다.
+
+**배운 점**
+
+유틸리티 코드는 입력 다양성을 명시적으로 처리해야 한다는 점을 인식했습니다. 이후 파서 계열 함수를 작성할 때 경계값과 포맷 변형을 먼저 정의하게 됐습니다.
 
 ---
 
-### 6. 배너 이미지 재빌드 후 소실 — 절대 경로 저장
-**커밋** `228dce1`  
-**증상** 시뮬레이터 재빌드 후 홈 배너 이미지가 사라짐  
-**원인** Realm에 `Documents/` 절대 경로를 저장했는데, 재빌드 시 iOS 시뮬레이터 컨테이너 UUID가 변경되어 기존 경로가 유효하지 않게 됨  
-**해결** 파일명(`lastPathComponent`)만 Realm에 저장하고, 런타임에 현재 `Documents` 디렉토리와 조합해 전체 경로 재구성 (구버전 호환: 절대 경로가 이미 저장된 경우 `lastPathComponent` 추출 후 동일 처리)
+### 6. 재빌드 후 배너 이미지 소실 — iOS 앱 샌드박스 컨테이너 경로
+
+**상황**
+
+고양이 배너 이미지를 등록하면 정상 표시되지만, 시뮬레이터에서 앱을 재빌드하거나 재설치하면 이미지가 사라지는 문제가 반복됐습니다. Realm에 저장된 데이터는 유지되는데 이미지만 사라지는 상황이었습니다.
+
+**원인 분석**
+
+Realm에 저장된 이미지 경로를 확인하니 `/Users/.../Containers/Data/Application/[UUID]/Documents/banner.jpg` 형태의 절대 경로였습니다. iOS 시뮬레이터는 재빌드 시 앱 컨테이너 UUID를 변경하므로, 저장된 절대 경로가 매 빌드마다 무효화되고 있었습니다. 실기기에서도 앱 재설치 시 동일한 문제가 발생할 수 있는 구조였습니다.
+
+**해결**
+
+Realm에는 파일명(`lastPathComponent`)만 저장하고, 런타임에 `FileManager`로 현재 `Documents` 디렉토리 경로를 조회한 뒤 조합해 전체 경로를 재구성하도록 변경했습니다. 기존에 절대 경로가 저장된 경우의 하위 호환도 `lastPathComponent` 추출을 통해 처리했습니다.
+
+**배운 점**
+
+iOS 앱 샌드박스에서 `Documents` 디렉토리의 절대 경로는 빌드·설치 환경에 따라 변할 수 있다는 것을 직접 경험했습니다. 이후 파일 시스템을 다루는 코드에서 절대 경로 대신 상대 식별자(파일명)를 저장하는 원칙을 지키게 됐습니다.
 
 ---
 
-### 7. 사냥 완료 후 캘린더 탭 전환 실패
-**커밋** `3959d5f`  
-**증상** 사냥 세션 저장 후 캘린더 탭으로 이동하지 않음  
-**원인** `popViewController(animated:)` 호출 후 `self.parent`가 `nil`이 되어 `self.tabBarController`도 `nil` 반환  
-**해결** `popViewController` **이전**에 `let tabBar = self.tabBarController`로 참조 캡처 → pop 이후 `tabBar?.selectedIndex = 2`로 탭 전환
+### 7. 사냥 완료 후 캘린더 탭 전환이 동작하지 않는 버그
+
+**상황**
+
+사냥 세션이 완료되고 저장 모달을 닫으면 캘린더 탭으로 자동 이동해야 하는데, 탭 전환이 일어나지 않고 이전 화면에 그대로 머무는 문제가 발생했습니다.
+
+**원인 분석**
+
+해당 코드는 `popViewController` 이후 `self.tabBarController?.selectedIndex = 2`를 호출하는 구조였습니다. `UIViewController`의 `tabBarController` 프로퍼티는 뷰 계층 탐색으로 반환되는데, `popViewController` 실행 후 `self.parent`가 `nil`이 되면서 `self.tabBarController`도 `nil`을 반환하고 있었습니다. 즉 탭 전환 코드 자체는 올바르지만 실행 시점에 이미 참조가 무효화된 상황이었습니다.
+
+**해결**
+
+`popViewController` 호출 이전에 `let tabBar = self.tabBarController`로 참조를 로컬 변수에 미리 캡처했습니다. pop 이후에는 캡처해둔 `tabBar`를 통해 탭 전환을 수행했습니다.
 
 ```swift
 // Before (no-op)
 self.navigationController?.popViewController(animated: false)
-self.tabBarController?.selectedIndex = 2   // ← tabBarController가 이미 nil
+self.tabBarController?.selectedIndex = 2   // 이미 nil
 
 // After (fix)
-let tabBar = self.tabBarController          // pop 전에 캡처
+let tabBar = self.tabBarController          // pop 전 캡처
 self.navigationController?.popViewController(animated: false)
 tabBar?.selectedIndex = 2
 ```
 
+**배운 점**
+
+UIKit 뷰 계층은 `pop` 시점에 즉시 해제될 수 있으며, 이후 `self`를 통한 계층 탐색은 신뢰할 수 없다는 것을 경험했습니다. 뷰 계층 기반 참조가 필요한 경우 해제 이전에 캡처해두는 습관이 생겼습니다.
+
 ---
 
-### 8. 타이머 중복 실행 — 재생 버튼 연타
-**커밋** `f975a64`  
-**증상** 타이머 재생 버튼을 빠르게 여러 번 탭하면 타이머가 비정상적으로 빨라짐  
-**원인** `startTimer()` 진입 시 기존 `Timer` 인스턴스를 정리하지 않아, 연타 시 타이머가 중첩 생성됨  
-**해결** `startTimer()` 진입 시 `timer?.invalidate(); timer = nil`로 기존 타이머를 먼저 정리
+### 8. 재생 버튼 연타 시 타이머가 비정상적으로 빨라지는 버그
+
+**상황**
+
+타이머 재생 버튼을 짧은 간격으로 여러 번 탭하면, 타이머가 1초에 여러 번 증가하며 비정상적으로 빠르게 진행되는 문제가 발생했습니다.
+
+**원인 분석**
+
+`startTimer()`는 내부에서 `Timer.scheduledTimer`로 새 타이머 인스턴스를 생성합니다. 그런데 진입 시 기존 타이머를 정리하는 코드가 없어, 버튼을 N번 탭하면 N개의 타이머가 동시에 RunLoop에 등록됐습니다. 각 타이머가 독립적으로 1초마다 콜백을 호출하므로 N배속으로 동작하는 것처럼 보인 것이었습니다.
+
+**해결**
+
+`startTimer()` 진입 시 `timer?.invalidate(); timer = nil`을 먼저 실행해 기존 타이머를 정리하도록 했습니다. 이후 새 타이머가 생성되므로, 어떤 순서로 호출되더라도 항상 하나의 타이머만 활성 상태를 유지합니다.
+
+**배운 점**
+
+`Timer`는 `invalidate()` 없이 참조를 덮어써도 RunLoop에 여전히 살아있는 상태로 남는다는 것을 직접 확인했습니다. 이후 타이머를 시작하기 전 항상 기존 타이머를 명시적으로 정리하는 습관이 생겼습니다.
 
 ---
 
 ## UI / UX 버그
 
-### 9. 키보드가 저장 버튼을 가리는 문제
-**커밋** `83869ca`  
-**증상** 세션 저장 모달에서 메모 텍스트필드를 탭하면 키보드가 저장 버튼을 완전히 덮음  
-**원인** 모달 카드가 `centerY.equalToSuperview()`로 고정되어 키보드 높이를 고려하지 않음  
-**해결** `centerY` 제약을 `Constraint` 변수로 노출 후, `UIKeyboardWillShow/Hide` 노티피케이션을 구독해 키보드 높이만큼 카드를 위로 올리는 `updateCardOffset()` 메서드 구현
+### 9. 메모 입력 시 키보드가 저장 버튼을 가리는 문제
+
+**상황**
+
+세션 저장 모달에서 메모 텍스트필드를 탭하면 키보드가 올라오면서 저장 버튼을 완전히 덮어, 키보드를 내리지 않으면 저장할 수 없는 문제가 발생했습니다.
+
+**원인 분석**
+
+모달 카드의 레이아웃이 `centerY.equalToSuperview()`로 화면 정중앙에 고정되어 있었습니다. UIKit은 키보드 표시 시 콘텐츠를 자동으로 회피하지 않으므로, 키보드 높이만큼 카드를 위로 이동시키는 처리가 별도로 필요했습니다.
+
+**해결**
+
+카드의 `centerY` 제약을 `Constraint` 타입 변수로 노출하고, `UIKeyboardWillShowNotification` / `UIKeyboardWillHideNotification` 노티피케이션을 구독했습니다. 키보드 표시 시 `userInfo`에서 키보드 높이를 추출해 `updateCardOffset()`으로 제약 오프셋을 갱신하고, 키보드 해제 시 원위치로 복귀하는 애니메이션을 적용했습니다.
+
+**배운 점**
+
+UIKit에서 키보드 회피는 자동으로 처리되지 않는다는 것을 경험했습니다. `KeyboardLayoutGuide`(iOS 15+)나 노티피케이션 기반 오프셋 조정이 필요한 상황을 직접 구현하면서, 키보드 높이 추출 및 애니메이션 연동 방식을 익혔습니다.
 
 ---
 
-### 10. DayCell 잔상 / UI 프리징 — 셀 재사용 + 비동기 이미지 로딩
-**커밋** `57ff218`  
-**증상** 캘린더 스크롤 시 날짜 셀에 잘못된 사진이 표시되거나 스크롤이 끊김  
-**원인 1** `AsyncImageView`가 셀 재사용 시 이전 비동기 요청 결과를 취소하지 않아 stale 이미지가 새 셀에 렌더링  
-**원인 2** 이미지를 메인 스레드에서 동기 로드해 UI 프리징 발생  
+### 10. 캘린더 스크롤 시 날짜 셀에 잘못된 사진이 표시되고 스크롤이 끊기는 문제
+
+**상황**
+
+캘린더 화면에서 날짜 셀(`DayCell`)을 빠르게 스크롤하면, 다른 날짜의 사진이 표시되거나 스크롤이 일시적으로 멈추는 두 가지 문제가 동시에 발생했습니다.
+
+**원인 분석**
+
+두 가지 독립적인 원인이 복합적으로 작용하고 있었습니다.
+
+첫 번째로, `AsyncImageView`를 사용해 이미지를 로드하고 있었는데 셀이 재사용될 때 이전 비동기 요청을 취소하지 않았습니다. 결과적으로 빠른 스크롤 시 이전 요청이 뒤늦게 완료되면서 현재 셀에 다른 날짜의 사진이 표시되는 경쟁 조건(race condition)이 발생했습니다.
+
+두 번째로, 이미지 파일을 메인 스레드에서 동기 로드하고 있어, 이미지 크기가 클수록 스크롤 중 UI가 순간적으로 프리징됐습니다.
+
 **해결**
-- `UIImageView`로 교체 후 `DispatchQueue.global(qos: .userInitiated)`에서 비동기 로드
-- `currentDay` 프로퍼티로 요청 식별: 완료 시 `currentDay != targetDay`이면 결과 폐기
-- `prepareForReuse()`에서 이미지·아이콘 초기화로 잔상 제거
+
+`AsyncImageView`를 `UIImageView`로 교체하고 `DispatchQueue.global(qos: .userInitiated)`에서 비동기로 파일을 읽도록 변경했습니다. 경쟁 조건을 방지하기 위해 `currentDay` 프로퍼티를 도입하여, 비동기 로딩이 완료되는 시점에 `currentDay != targetDay`이면 결과를 폐기하도록 처리했습니다. `prepareForReuse()`에서는 이미지와 상태 아이콘을 초기화해 스크롤 방향 전환 시 잔상이 남지 않도록 했습니다.
+
+**배운 점**
+
+셀 재사용 패턴에서 비동기 작업을 다룰 때는 요청 식별자가 반드시 필요하다는 것을 직접 경험했습니다. 또한 파일 I/O처럼 잠재적으로 느릴 수 있는 작업은 항상 백그라운드 스레드에서 처리해야 스크롤 성능이 유지된다는 원칙을 체득했습니다.
