@@ -134,9 +134,9 @@ final class HomeView: BaseView {
     private func buildSections() {
         contentStack.addArrangedSubview(makeHeaderSection())
 
-        let banner = makeBannerSection()
-        bannerSectionView = banner
-        contentStack.addArrangedSubview(banner)
+        // let banner = makeBannerSection()
+        // bannerSectionView = banner
+        // contentStack.addArrangedSubview(banner)
 
         let progress = makeProgressSection()
         progressSectionView = progress
