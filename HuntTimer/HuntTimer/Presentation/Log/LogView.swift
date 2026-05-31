@@ -8,6 +8,15 @@ final class LogView: BaseView {
     var year: Int  = Calendar.current.component(.year,  from: Date())
     var month: Int = Calendar.current.component(.month, from: Date()) - 1  // 0-indexed
 
+    // MARK: - List Mode UI (공개)
+    /// 기간 필터 칩 (전체 / 1주일 / 1개월) — 목록 모드에서만 표시
+    private(set) var filterChipButtons: [UIButton] = []
+    var onFilterChanged: ((Int) -> Void)?           // 0=전체, 1=1주일, 2=1개월
+    /// 날짜별 놀이시간 바 차트 — 목록 모드에서만 표시
+    let chartView = PlayTimeChartView()
+    // 목록 모드 전용 컨테이너 (isHidden 토글)
+    private let listOnlyStack = UIStackView.make(axis: .vertical, spacing: 12)
+
     // MARK: - Scroll (private)
     private let scrollView: UIScrollView = {
         let sv = UIScrollView()
@@ -136,7 +145,63 @@ final class LogView: BaseView {
         contentStack.addArrangedSubview(makeHeader())
         contentStack.addArrangedSubview(makeToggle())
         contentStack.addArrangedSubview(makeCalendarSection())
+        contentStack.addArrangedSubview(makeListOnlySection())
         contentStack.addArrangedSubview(makeSessionList())
+    }
+
+    private func makeListOnlySection() -> UIView {
+        // 차트
+        let chartWrapper = UIView()
+        chartWrapper.addSubview(chartView)
+        chartView.snp.makeConstraints { make in
+            make.top.bottom.equalToSuperview()
+            make.leading.equalToSuperview().offset(20)
+            make.trailing.equalToSuperview().offset(-20)
+            make.height.equalTo(130)
+        }
+
+        // 기간 필터 칩
+        let chipTitles = ["전체", "1주일", "1개월"]
+        let chipStack  = UIStackView.make(axis: .horizontal, spacing: 8)
+        chipTitles.enumerated().forEach { idx, title in
+            let btn = UIButton(type: .system)
+            btn.setTitle(title, for: .normal)
+            btn.titleLabel?.font  = .systemFont(ofSize: 12, weight: .semibold)
+            btn.layer.cornerRadius = 14
+            btn.clipsToBounds     = true
+            btn.contentEdgeInsets = UIEdgeInsets(top: 6, left: 14, bottom: 6, right: 14)
+            btn.tag = idx
+            btn.addTarget(self, action: #selector(filterChipTapped(_:)), for: .touchUpInside)
+            filterChipButtons.append(btn)
+            chipStack.addArrangedSubview(btn)
+        }
+        updateFilterChipStyles(selected: 0)
+
+        let chipWrapper = UIView()
+        chipWrapper.addSubview(chipStack)
+        chipStack.snp.makeConstraints { make in
+            make.top.bottom.equalToSuperview()
+            make.leading.equalToSuperview().offset(20)
+            make.trailing.lessThanOrEqualToSuperview().offset(-20)
+        }
+
+        listOnlyStack.addArrangedSubview(chartWrapper)
+        listOnlyStack.addArrangedSubview(chipWrapper)
+        listOnlyStack.isHidden = true   // 캘린더 모드가 기본
+        return listOnlyStack
+    }
+
+    @objc private func filterChipTapped(_ sender: UIButton) {
+        updateFilterChipStyles(selected: sender.tag)
+        onFilterChanged?(sender.tag)
+    }
+
+    func updateFilterChipStyles(selected idx: Int) {
+        filterChipButtons.enumerated().forEach { i, btn in
+            let sel = i == idx
+            btn.backgroundColor = sel ? AppTheme.Color.primary : AppTheme.Color.primaryLight
+            btn.setTitleColor(sel ? AppTheme.Color.textDark : AppTheme.Color.textMedium, for: .normal)
+        }
     }
 
     private func makeHeader() -> UIView {
@@ -189,6 +254,8 @@ final class LogView: BaseView {
         listCfg.baseBackgroundColor = isCalendar ? AppTheme.Color.primaryLight : AppTheme.Color.primary
         listCfg.baseForegroundColor = isCalendar ? AppTheme.Color.textMedium : AppTheme.Color.textDark
         listButton.configuration = listCfg
+
+        listOnlyStack.isHidden = isCalendar
     }
 
     private func makeCalendarSection() -> UIView {
@@ -290,6 +357,52 @@ final class LogView: BaseView {
     private weak var currentSwipeContent: UIView?
 
     private let swipeRevealWidth: CGFloat = 60
+
+    /// 날짜별 그룹 세션 목록을 갱신 — 목록 모드 전용
+    func reloadDateGroupedRows(_ groups: [DateSessionGroup]) {
+        currentSwipeContent = nil
+        rowsStack.arrangedSubviews.forEach { $0.removeFromSuperview() }
+
+        let hasAny = groups.contains { !$0.items.isEmpty }
+        if !hasAny {
+            rowsStack.isHidden      = true
+            emptyStateView.isHidden = false
+        } else {
+            rowsStack.isHidden      = false
+            emptyStateView.isHidden = true
+            groups.enumerated().forEach { groupIdx, group in
+                rowsStack.addArrangedSubview(makeDateSectionHeader(group.dateTitle))
+                let block = makeCatSessionsBlock(group.items)
+                rowsStack.addArrangedSubview(block)
+                if groupIdx < groups.count - 1 {
+                    rowsStack.setCustomSpacing(20, after: block)
+                }
+            }
+        }
+    }
+
+    private func makeDateSectionHeader(_ title: String) -> UIView {
+        let cfg  = UIImage.SymbolConfiguration(pointSize: 11, weight: .semibold)
+        let icon = UIImageView(image: UIImage(systemName: "calendar", withConfiguration: cfg))
+        icon.tintColor   = AppTheme.Color.primary
+        icon.contentMode = .scaleAspectFit
+        icon.snp.makeConstraints { $0.width.height.equalTo(13) }
+
+        let label = UILabel.make(text: title, size: 13, weight: .bold, color: AppTheme.Color.textDark)
+
+        let row = UIStackView.make(axis: .horizontal, spacing: 6, alignment: .center)
+        row.addArrangedSubview(icon)
+        row.addArrangedSubview(label)
+
+        let container = UIView()
+        container.addSubview(row)
+        row.snp.makeConstraints { make in
+            make.top.equalToSuperview().offset(4)
+            make.bottom.equalToSuperview().offset(-4)
+            make.leading.trailing.equalToSuperview()
+        }
+        return container
+    }
 
     /// 고양이별 그룹 세션 목록을 갱신 — 빈 배열이면 empty state 표시
     func reloadSessionRows(_ groups: [CatSessionGroup]) {

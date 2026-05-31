@@ -19,6 +19,12 @@ struct CatSessionGroup {
     let items: [(session: HuntSession, playSessionIndex: Int)]
 }
 
+// MARK: - Date Session Group (목록 화면 날짜별 섹션 그룹)
+struct DateSessionGroup {
+    let dateTitle: String
+    let items: [(session: HuntSession, playSessionIndex: Int)]
+}
+
 // MARK: - Achievement Badge
 struct Badge {
     let imageName: String   // Assets/Badges 내 에셋 이름

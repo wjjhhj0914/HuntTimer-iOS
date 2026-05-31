@@ -11,9 +11,8 @@ final class TimerViewController: BaseViewController {
     private var totalSeconds = 15 * 60
 
     // MARK: - Toy Selection
-    private(set) var selectedToy: String? = nil
-    private var selectedToyIndex: Int     = -1
-    private let toyNames: [String?]       = ["깃털", "벌레", "레이저", "카샤카샤", "오뎅꼬치", nil]
+    private(set) var selectedToys: [String] = []
+    private let toyNames: [String?] = ["깃털", "벌레", "레이저", "카샤카샤", "오뎅꼬치", nil]
 
     // MARK: - Cat Selection
     private var cats:           [Cat]         = []
@@ -110,15 +109,24 @@ final class TimerViewController: BaseViewController {
     @objc private func startTapped() {
         let huntVC = HuntInProgressViewController()
         huntVC.totalSeconds  = totalSeconds
-        huntVC.toyName       = selectedToy
+        huntVC.toyNames      = selectedToys
         huntVC.selectedCats  = cats.filter { selectedCatIds.contains($0.id) }
         navigationController?.pushViewController(huntVC, animated: true)
         UIImpactFeedbackGenerator(style: .medium).impactOccurred()
     }
 
     @objc private func toyChipTapped(_ sender: UIButton) {
-        selectedToyIndex = sender.tag
-        selectedToy      = toyNames[sender.tag]
+        let tapped = toyNames[sender.tag]
+        if tapped == nil {
+            // "없음" 칩 → 모든 선택 해제
+            selectedToys.removeAll()
+        } else if let name = tapped {
+            if let i = selectedToys.firstIndex(of: name) {
+                selectedToys.remove(at: i)
+            } else {
+                selectedToys.append(name)
+            }
+        }
         updateToyUI()
         UIImpactFeedbackGenerator(style: .light).impactOccurred()
     }
@@ -155,16 +163,22 @@ final class TimerViewController: BaseViewController {
     }
 
     private func updateToyUI() {
+        let isNoneSelected = selectedToys.isEmpty
         contentView.toyChipButtons.enumerated().forEach { idx, btn in
-            let isSelected = idx == selectedToyIndex
-            let isMuted    = idx == contentView.toyChipButtons.count - 1
+            let isLastChip = idx == contentView.toyChipButtons.count - 1  // "없음" 칩
+            let isSelected: Bool
+            if isLastChip {
+                isSelected = isNoneSelected
+            } else {
+                isSelected = toyNames[idx].map { selectedToys.contains($0) } ?? false
+            }
             let fgColor: UIColor = isSelected ? AppTheme.Color.textDark
-                : (isMuted ? AppTheme.Color.textMuted : AppTheme.Color.primary)
+                : (isLastChip ? AppTheme.Color.textMuted : AppTheme.Color.primary)
             UIView.animate(withDuration: 0.15) {
                 if isSelected {
                     btn.backgroundColor   = AppTheme.Color.primary
                     btn.layer.borderColor = AppTheme.Color.primary.cgColor
-                } else if isMuted {
+                } else if isLastChip {
                     btn.backgroundColor   = UIColor(hex: "#F5F0EE")
                     btn.layer.borderColor = UIColor(hex: "#C4B5B5").cgColor
                 } else {

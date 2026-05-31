@@ -9,7 +9,7 @@ final class SessionSaveModalViewController: UIViewController {
     struct PendingSessionDraft: Codable {
         let duration:          Int
         let catIds:            [String]   // ObjectId.stringValue
-        let toyName:           String?
+        let toyNames:          [String]
         let targetDuration:    Int
         let sessionStartTime:  TimeInterval   // Date.timeIntervalSince1970
         let memo:              String?
@@ -41,7 +41,7 @@ final class SessionSaveModalViewController: UIViewController {
         let draft = PendingSessionDraft(
             duration:         duration,
             catIds:           catIds,
-            toyName:          toyName,
+            toyNames:         toyNames,
             targetDuration:   targetDuration,
             sessionStartTime: sessionStartTime.timeIntervalSince1970,
             memo:             memo,
@@ -63,7 +63,7 @@ final class SessionSaveModalViewController: UIViewController {
     var onCancel:        (() -> Void)?
     // 드래프트 저장용 세션 메타 데이터 (HuntInProgressVC에서 주입)
     var catIds:          [String] = []
-    var toyName:         String?  = nil
+    var toyNames:        [String] = []
     var targetDuration:  Int      = 0
     var sessionStartTime: Date    = Date()
     // 드래프트 복구 시 초기값 (HomeVC에서 주입)

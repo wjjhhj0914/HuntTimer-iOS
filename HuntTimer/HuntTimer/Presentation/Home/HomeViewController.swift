@@ -493,7 +493,7 @@ final class HomeViewController: BaseViewController {
         let modal              = SessionSaveModalViewController()
         modal.duration         = draft.duration
         modal.catIds           = draft.catIds
-        modal.toyName          = draft.toyName
+        modal.toyNames         = draft.toyNames
         modal.targetDuration   = draft.targetDuration
         modal.sessionStartTime = Date(timeIntervalSince1970: draft.sessionStartTime)
         modal.initialMemo      = draft.memo
@@ -511,7 +511,7 @@ final class HomeViewController: BaseViewController {
                 duration:       draft.duration,
                 targetDuration: draft.targetDuration,
                 cats:           cats,
-                toyName:        draft.toyName,
+                toyNames:       draft.toyNames,
                 memo:           memo,
                 photo:          photo
             )

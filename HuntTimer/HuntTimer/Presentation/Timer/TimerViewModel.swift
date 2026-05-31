@@ -37,7 +37,7 @@ final class TimerViewModel {
     // MARK: - Session Save
 
     func saveSession(startTime: Date, endTime: Date, duration: Int, targetDuration: Int,
-                     cats: [Cat] = [], toyName: String? = nil,
+                     cats: [Cat] = [], toyNames: [String] = [],
                      memo: String? = nil, photo: UIImage? = nil) {
         let session = PlaySession()
         session.startTime      = startTime
@@ -54,8 +54,8 @@ final class TimerViewModel {
                 // 선택된 고양이들 저장 (이미 Realm 관리 객체이므로 append 가능)
                 session.cats.append(objectsIn: cats)
 
-                // 장난감 저장
-                if let name = toyName, !name.isEmpty {
+                // 장난감 저장 (다중 선택 지원)
+                for name in toyNames where !name.isEmpty {
                     let toy = Toy()
                     toy.name     = name
                     toy.category = name
@@ -72,7 +72,7 @@ final class TimerViewModel {
                     realm.add(log)
                 }
             }
-            print("[HuntTimer] 세션 저장 완료 — duration: \(duration)초 / cats: \(cats.map { $0.name }) / toy: \(toyName ?? "없음")")
+            print("[HuntTimer] 세션 저장 완료 — duration: \(duration)초 / cats: \(cats.map { $0.name }) / toys: \(toyNames)")
         } catch {
             print("[HuntTimer] 세션 저장 실패:", error)
             return

@@ -7,7 +7,7 @@ final class HuntInProgressViewController: BaseViewController {
 
     // MARK: - Configuration (push 전 설정)
     var totalSeconds: Int  = 15 * 60
-    var toyName: String?   = nil
+    var toyNames: [String] = []
     var selectedCats: [Cat] = []
 
     // MARK: - View / ViewModel
@@ -81,7 +81,7 @@ final class HuntInProgressViewController: BaseViewController {
     private func configureInitialState() {
         configureNavBar()
         contentView.timerLabel.text       = formatTime(totalSeconds)
-        contentView.toyChipLabel.text     = toyName ?? "선택 안 함"
+        contentView.toyChipLabel.text     = toyNames.isEmpty ? "선택 안 함" : toyNames.joined(separator: ", ")
         contentView.catCountBadgeLabel.text = "\(selectedCats.count)마리"
         buildCatAvatars()
     }
@@ -261,7 +261,7 @@ final class HuntInProgressViewController: BaseViewController {
             duration:       elapsedSeconds,
             targetDuration: totalSeconds,
             cats:           selectedCats,
-            toyName:        toyName,
+            toyNames:       toyNames,
             memo:           memo,
             photo:          photo
         )
@@ -272,7 +272,7 @@ final class HuntInProgressViewController: BaseViewController {
         let modal             = SessionSaveModalViewController()
         modal.duration        = elapsedSeconds
         modal.catIds          = selectedCats.map { $0.id.stringValue }
-        modal.toyName         = toyName
+        modal.toyNames        = toyNames
         modal.targetDuration  = totalSeconds
         modal.sessionStartTime = sessionStartTime ?? Date()
         modal.onSave   = { [weak self] memo, photo in

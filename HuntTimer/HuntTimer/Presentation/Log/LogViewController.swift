@@ -20,6 +20,10 @@ final class LogViewController: BaseViewController {
     /// 현재 선택된 날짜의 PlaySession 목록 — 행 탭 시 상세 모달에 전달
     private var currentPlaySessions: [PlaySession] = []
 
+    // MARK: - List Mode State
+    enum ListFilter: Int { case all, week, month }
+    private var currentListFilter: ListFilter = .all
+
     // MARK: - loadView
     override func loadView() {
         view = contentView
@@ -48,6 +52,12 @@ final class LogViewController: BaseViewController {
             guard let self,
                   index < self.currentPlaySessions.count else { return }
             self.showDeleteAlert(at: index)
+        }
+
+        contentView.onFilterChanged = { [weak self] idx in
+            guard let self else { return }
+            self.currentListFilter = ListFilter(rawValue: idx) ?? .all
+            self.reloadSessionsForList(filter: self.currentListFilter)
         }
 
         reloadCalendar()
@@ -92,6 +102,8 @@ final class LogViewController: BaseViewController {
             self.contentView.calendarContainer.isHidden = true
             self.contentView.calendarContainer.alpha    = 0
         }
+        reloadSessionsForList(filter: currentListFilter)
+        reloadChart()
     }
 
     // MARK: - Month Navigation
@@ -146,6 +158,94 @@ final class LogViewController: BaseViewController {
         contentView.sessionTitleLabel.text = "\(month)월 \(day)일 기록"
 
         contentView.reloadSessionRows(buildGroupedSessions(from: currentPlaySessions))
+    }
+
+    // MARK: - List Mode
+
+    private func reloadSessionsForList(filter: ListFilter) {
+        let sessions = loadAllPlaySessionsForList(filter: filter)
+        currentPlaySessions = sessions
+
+        let title: String
+        switch filter {
+        case .all:   title = "전체 기록"
+        case .week:  title = "최근 1주일"
+        case .month: title = "최근 1개월"
+        }
+        contentView.sessionTitleLabel.text = title
+
+        let groups = buildDateGroupedSessions(from: sessions)
+        contentView.reloadDateGroupedRows(groups)
+    }
+
+    private func loadAllPlaySessionsForList(filter: ListFilter) -> [PlaySession] {
+        guard let realm = try? Realm() else { return [] }
+        let cal = Calendar.current
+        switch filter {
+        case .all:
+            return Array(realm.objects(PlaySession.self)
+                .sorted(byKeyPath: "startTime", ascending: false))
+        case .week:
+            let start = cal.date(byAdding: .day, value: -7, to: Date()) ?? Date()
+            return Array(realm.objects(PlaySession.self)
+                .filter("startTime >= %@", start)
+                .sorted(byKeyPath: "startTime", ascending: false))
+        case .month:
+            let start = cal.date(byAdding: .month, value: -1, to: Date()) ?? Date()
+            return Array(realm.objects(PlaySession.self)
+                .filter("startTime >= %@", start)
+                .sorted(byKeyPath: "startTime", ascending: false))
+        }
+    }
+
+    private func buildDateGroupedSessions(from playSessions: [PlaySession]) -> [DateSessionGroup] {
+        let timeFmt        = DateFormatter()
+        timeFmt.locale     = Locale(identifier: "ko_KR")
+        timeFmt.dateFormat = "a h:mm"
+
+        let dateFmt        = DateFormatter()
+        dateFmt.locale     = Locale(identifier: "ko_KR")
+        dateFmt.dateFormat = "M월 d일 (EEE)"
+
+        var groupOrder: [String] = []
+        var groupMap: [String: [(session: HuntSession, playSessionIndex: Int)]] = [:]
+
+        for (idx, session) in playSessions.enumerated() {
+            let dateKey   = dateFmt.string(from: session.startTime)
+            let huntSess  = makeHuntSession(from: session, index: idx, formatter: timeFmt)
+            if groupMap[dateKey] == nil {
+                groupOrder.append(dateKey)
+                groupMap[dateKey] = []
+            }
+            groupMap[dateKey]?.append((session: huntSess, playSessionIndex: idx))
+        }
+
+        return groupOrder.compactMap { key in
+            guard let items = groupMap[key] else { return nil }
+            return DateSessionGroup(dateTitle: key, items: items)
+        }
+    }
+
+    // MARK: - Chart
+
+    private func reloadChart() {
+        let entries = loadChartEntries(days: 7)
+        contentView.chartView.configure(entries: entries)
+    }
+
+    private func loadChartEntries(days: Int) -> [(date: Date, totalSeconds: Int)] {
+        guard let realm = try? Realm() else { return [] }
+        let cal   = Calendar.current
+        let today = cal.startOfDay(for: Date())
+
+        return (0..<days).reversed().map { offset -> (date: Date, totalSeconds: Int) in
+            let day   = cal.date(byAdding: .day, value: -offset, to: today) ?? today
+            let next  = cal.date(byAdding: .day, value: 1, to: day) ?? day
+            let total = realm.objects(PlaySession.self)
+                .filter("startTime >= %@ AND startTime < %@", day, next)
+                .sum(ofProperty: "duration") as Int
+            return (date: day, totalSeconds: total)
+        }
     }
 
     // MARK: - Session Builders
